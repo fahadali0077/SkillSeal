@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { SkillTier } from '@SkillSeal/shared';
-const BASE = '/api/v1/recruiter';
+import { API_ORIGIN } from '../../lib/apiBase';
+const BASE = `${API_ORIGIN}/api/v1/recruiter`;
 async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...init });
   const json = await res.json() as { success: boolean; data: T; message: string };

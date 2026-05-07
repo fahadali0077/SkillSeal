@@ -13,7 +13,8 @@ import type {
 
 // ── Base fetch ────────────────────────────────────────────────────────────────
 
-const API_BASE = '/api/v1/auth';
+import { API_ORIGIN } from '../../lib/apiBase';
+const API_BASE = `${API_ORIGIN}/api/v1/auth`;
 
 async function authFetch<T>(
   path: string,

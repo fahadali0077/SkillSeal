@@ -2,7 +2,8 @@
 // messagingApi.ts  –  typed REST calls for the messaging system
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BASE = '/api/v1/messages';
+import { API_ORIGIN } from '../../lib/apiBase';
+const BASE = `${API_ORIGIN}/api/v1/messages`;
 
 async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {

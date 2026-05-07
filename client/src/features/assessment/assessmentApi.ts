@@ -1,5 +1,6 @@
 import type { IQuestion, ISessionState, SkillTier } from '@SkillSeal/shared';
-const SESSIONS_BASE = '/api/v1/sessions', ANSWERS_BASE = '/api/v1/answers', EVENTS_BASE = '/api/v1/events';
+import { API_ORIGIN } from '../../lib/apiBase';
+const SESSIONS_BASE = `${API_ORIGIN}/api/v1/sessions`, ANSWERS_BASE = `${API_ORIGIN}/api/v1/answers`, EVENTS_BASE = `${API_ORIGIN}/api/v1/events`;
 async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...init });
   const json = await res.json() as { success: boolean; data: T; message: string };

@@ -1,3 +1,4 @@
+import { API_ORIGIN } from '../../lib/apiBase';
 // ─────────────────────────────────────────────────────────────────────────────
 // feedApi.ts  –  typed API calls for feed, posts, reactions, hashtags
 // ─────────────────────────────────────────────────────────────────────────────
@@ -48,7 +49,7 @@ export const feedApi = {
 
   // Posts
   createPost: (data: CreatePostInput) =>
-    apiFetch<IPost>('/api/v1/posts', { method: 'POST', body: JSON.stringify(data) }),
+    apiFetch<IPost>(`${API_ORIGIN}/api/v1/posts`, { method: 'POST', body: JSON.stringify(data) }),
 
   getPost: (id: string) =>
     apiFetch<IPost>(`/api/v1/posts/${id}`),
@@ -82,5 +83,5 @@ export const feedApi = {
     apiFetch<{ posts: IPostCard[]; total: number }>(`/api/v1/hashtags/${encodeURIComponent(tag)}/posts?page=${page}&limit=20`),
 
   getTrending: () =>
-    apiFetch<{ tag: string; count: number }[]>('/api/v1/hashtags/trending'),
+    apiFetch<{ tag: string; count: number }[]>(`${API_ORIGIN}/api/v1/hashtags/trending`),
 };

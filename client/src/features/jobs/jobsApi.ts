@@ -4,9 +4,10 @@
 import type { IJob, IJobCard, EmploymentType, WorkType } from '@SkillSeal/shared';
 import type { IApplicationOut, IRecruiterApplication } from './types';
 
-const JOBS_BASE = '/api/v1/jobs';
-const APPS_BASE = '/api/v1/applications';
-const REC_BASE = '/api/v1/recruiter';
+import { API_ORIGIN } from '../../lib/apiBase';
+const JOBS_BASE = `${API_ORIGIN}/api/v1/jobs`;
+const APPS_BASE = `${API_ORIGIN}/api/v1/applications`;
+const REC_BASE = `${API_ORIGIN}/api/v1/recruiter`;
 
 async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {

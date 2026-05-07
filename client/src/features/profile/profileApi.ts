@@ -1,6 +1,7 @@
 import type { IUserPublic, IExperience, IEducation, ILink, ICandidateCard } from '@SkillSeal/shared';
 
-const BASE = '/api/v1/users';
+import { API_ORIGIN } from '../../lib/apiBase';
+const BASE = `${API_ORIGIN}/api/v1/users`;
 
 async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {

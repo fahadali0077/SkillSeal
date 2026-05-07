@@ -3,9 +3,10 @@
 // All connection + suggestion API calls.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CONN_BASE = '/api/v1/connections';
-const SUGG_BASE = '/api/v1/suggestions';
-const USER_BASE = '/api/v1/users';
+import { API_ORIGIN } from '../../lib/apiBase';
+const CONN_BASE = `${API_ORIGIN}/api/v1/connections`;
+const SUGG_BASE = `${API_ORIGIN}/api/v1/suggestions`;
+const USER_BASE = `${API_ORIGIN}/api/v1/users`;
 
 async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {

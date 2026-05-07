@@ -6,8 +6,10 @@ import { createServer } from 'http';
 import { initSocket } from './config/socket';
 import logger from './utils/logger';
 
-const PORT = process.env.PORT || 5000;
-
+const port = process.env.PORT || 10000;
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server is running on port ${port}`);
+});
 async function bootstrap() {
   try {
     await connectDB();

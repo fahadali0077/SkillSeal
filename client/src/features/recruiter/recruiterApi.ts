@@ -1,13 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { SkillTier } from '@SkillSeal/shared';
-import { API_ORIGIN } from '../../lib/apiBase';
+import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
 const BASE = `${API_ORIGIN}/api/v1/recruiter`;
-async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...init });
-  const json = await res.json() as { success: boolean; data: T; message: string };
-  if (!json.success) throw new Error((json as unknown as { message: string }).message);
-  return json.data;
-}
 export type IntegrityLevel = 'green' | 'yellow' | 'red';
 export interface IVerifiedSkillBadge { skillId: string; skillName: string; skillSlug: string; tier: SkillTier; compositeScore: number; issuedAt: string; status: string; }
 export interface ICandidateCard { userId: string; firstName: string; lastName: string; fullName: string; headline: string; location: { city?: string; country?: string }; profilePhoto: string; customUrl: string; openToWork: boolean; verifiedSkills: IVerifiedSkillBadge[]; behaviorIntegrity: IntegrityLevel; aiFlag: boolean; connectionDegree: '1st' | '2nd' | '3rd' | 'none'; }

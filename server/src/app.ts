@@ -26,6 +26,9 @@ import mongoose from 'mongoose';
 import { getRedis } from './config/redis';
 
 const app = express();
+// Trust Render's load-balancer so express-rate-limit can read the real client IP
+// from the X-Forwarded-For header without throwing ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+app.set('trust proxy', 1);
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {

@@ -4,21 +4,11 @@
 import type { IJob, IJobCard, EmploymentType, WorkType } from '@SkillSeal/shared';
 import type { IApplicationOut, IRecruiterApplication } from './types';
 
-import { API_ORIGIN } from '../../lib/apiBase';
+import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
 const JOBS_BASE = `${API_ORIGIN}/api/v1/jobs`;
 const APPS_BASE = `${API_ORIGIN}/api/v1/applications`;
 const REC_BASE = `${API_ORIGIN}/api/v1/recruiter`;
 
-async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...init,
-  });
-  const json = await res.json() as { success: boolean; data: T; message: string };
-  if (!json.success) throw new Error((json as unknown as { message: string }).message);
-  return json.data;
-}
 
 export interface JobSearchParams {
   keyword?: string;

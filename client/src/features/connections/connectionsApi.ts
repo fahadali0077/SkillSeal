@@ -3,21 +3,11 @@
 // All connection + suggestion API calls.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { API_ORIGIN } from '../../lib/apiBase';
+import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
 const CONN_BASE = `${API_ORIGIN}/api/v1/connections`;
 const SUGG_BASE = `${API_ORIGIN}/api/v1/suggestions`;
 const USER_BASE = `${API_ORIGIN}/api/v1/users`;
 
-async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...init,
-  });
-  const json = await res.json() as { success: boolean; data: T; message: string };
-  if (!json.success) throw new Error((json as unknown as { message: string }).message);
-  return json.data;
-}
 
 // ── Shapes ────────────────────────────────────────────────────────────────────
 

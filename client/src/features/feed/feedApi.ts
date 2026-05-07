@@ -1,19 +1,9 @@
-import { API_ORIGIN } from '../../lib/apiBase';
+import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
 // ─────────────────────────────────────────────────────────────────────────────
 // feedApi.ts  –  typed API calls for feed, posts, reactions, hashtags
 // ─────────────────────────────────────────────────────────────────────────────
 import type { IPost, IPostCard, IReactionSummary, PostType, ReactionType } from '@SkillSeal/shared';
 
-async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...init,
-  });
-  const json = await res.json() as { success: boolean; data: T; message: string };
-  if (!json.success) throw new Error((json as unknown as { message: string }).message);
-  return json.data;
-}
 
 export interface FeedPage {
   posts: IPostCard[];

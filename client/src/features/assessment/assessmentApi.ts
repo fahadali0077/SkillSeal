@@ -1,12 +1,6 @@
 import type { IQuestion, ISessionState, SkillTier } from '@SkillSeal/shared';
-import { API_ORIGIN } from '../../lib/apiBase';
+import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
 const SESSIONS_BASE = `${API_ORIGIN}/api/v1/sessions`, ANSWERS_BASE = `${API_ORIGIN}/api/v1/answers`, EVENTS_BASE = `${API_ORIGIN}/api/v1/events`;
-async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...init });
-  const json = await res.json() as { success: boolean; data: T; message: string };
-  if (!json.success) throw new Error((json as unknown as { message: string }).message);
-  return json.data;
-}
 export type PlanId = 'pro_monthly' | 'pro_yearly' | 'recruiter_monthly' | 'recruiter_yearly';
 export const assessmentApi = {
   startSession: (skillId: string, tier: SkillTier) => apiFetch<{ sessionId: string; firstQuestion: IQuestion; sessionState: ISessionState }>(`${SESSIONS_BASE}/start`, { method: 'POST', body: JSON.stringify({ skillId, tier }) }),

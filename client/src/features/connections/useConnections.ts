@@ -1,7 +1,6 @@
-import { API_ORIGIN } from '../../lib/apiBase';
+import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 const BASE=`${API_ORIGIN}/api/v1/connections`;
-async function apiFetch<T>(url:string,init:RequestInit={}):Promise<T>{const res=await fetch(url,{headers:{'Content-Type':'application/json'},credentials:'include',...init});const json=await res.json() as{success:boolean;data:T};if(!json.success)throw new Error('API error');return json.data;}
 export const connKeys={pending:()=>['connections','pending'] as const,connections:()=>['connections','list'] as const,suggestions:()=>['suggestions'] as const,sent:()=>['connections','sent'] as const};
 export function usePendingRequests(){return useQuery({queryKey:connKeys.pending(),queryFn:()=>apiFetch<{_id:string;requesterId:{_id:string;fullName:string;profilePhoto:string;headline:string;customUrl:string}}[]>(`${BASE}/requests/pending`),staleTime:30_000});}
 export function useConnections(search?:string){return useQuery({queryKey:[...connKeys.connections(),search],queryFn:()=>apiFetch<{_id:string;firstName:string;lastName:string;profilePhoto:string;headline:string;customUrl:string}[]>(`${BASE}?${search?`search=${encodeURIComponent(search)}`:''}`),staleTime:60_000});}

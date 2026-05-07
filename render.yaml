@@ -16,7 +16,7 @@ services:
     # 3. Build shared types first, then compile server TypeScript
     buildCommand: >
       npm cache clean --force &&
-      npm install --workspace=shared --workspace=server &&
+      npm install --include=dev --workspace=shared --workspace=server &&
       npm run --workspace=shared build &&
       npm run --workspace=server build
 

@@ -3,18 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    // "client",
     "server",
     "shared"
   ],
   "scripts": {
-    // "dev:client": "npm run dev --workspace=client",
     "dev:server": "npm run dev --workspace=server",
-    "dev": "concurrently -n client,server -c cyan,yellow \"npm run dev:client\" \"npm run dev:server\"",
+    "dev": "npm run dev:server",
     "build:shared": "npm run build --workspace=shared",
     "build:server": "npm run build --workspace=server",
-    // "build:client": "npm run build --workspace=client",
-    "build": "npm run build:shared && npm run build:server && npm run build:client"
+    "build": "npm run build:shared && npm run build:server"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

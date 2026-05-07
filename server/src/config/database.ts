@@ -11,7 +11,7 @@ export async function connectDB(): Promise<void> {
 
   await mongoose.connect(uri, {
     maxPoolSize: 10,
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 15000, // 15s — Atlas can be slow on first connect
     socketTimeoutMS: 45000,
   });
 }

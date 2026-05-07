@@ -47,10 +47,12 @@ export type Env = z.infer<typeof EnvSchema>;
 function validateEnv(): Env {
   const result = EnvSchema.safeParse(process.env);
   if (!result.success) {
-    console.error('\n❌ Environment validation failed:\n');
+    // process.stdout.write is synchronous — guaranteed to flush before process.exit
+    process.stdout.write('\n[env] ❌ Environment validation failed:\n');
     result.error.errors.forEach(e =>
-      console.error(`  • ${e.path.join('.')}: ${e.message}`)
+      process.stdout.write(`[env]   • ${e.path.join('.')}: ${e.message}\n`)
     );
+    process.stdout.write('[env] Fix the above variables in the Render dashboard → Environment tab\n\n');
     process.exit(1);
   }
   return result.data;

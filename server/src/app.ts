@@ -37,6 +37,7 @@ app.use(helmet({
       fontSrc: ["'self'", 'data:'],
       frameSrc: ["'none'"],
       objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
     },
   },
   crossOriginResourcePolicy: { policy: 'cross-origin' },

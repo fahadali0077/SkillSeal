@@ -6,7 +6,8 @@ import { createServer } from 'http';
 import { initSocket } from './config/socket';
 import logger from './utils/logger';
 
-const PORT = process.env.PORT || 5000;
+const port = Number(process.env.PORT) || 5000;
+
 
 async function bootstrap() {
   try {

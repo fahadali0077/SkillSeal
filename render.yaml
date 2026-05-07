@@ -1,0 +1,52 @@
+# render.yaml — Render deployment for SkillSeal API server
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: skillseal-api
+    runtime: node
+    region: oregon
+    plan: starter
+
+    rootDir: .
+
+    # ── Build ──────────────────────────────────────────────────────────────────
+    # IMPORTANT: Render sets NODE_ENV=production automatically, which makes
+    # `npm install` skip devDependencies. We need --include=dev so that
+    # @types/* packages and typescript itself are installed for the tsc build.
+    # After compilation, only dist/ is used at runtime — devDeps don't ship.
+    buildCommand: >
+      npm cache clean --force &&
+      npm install --include=dev --workspace=shared --workspace=server &&
+      npm run --workspace=shared build &&
+      npm run --workspace=server build
+
+    # ── Start ──────────────────────────────────────────────────────────────────
+    startCommand: node server/dist/index.js
+
+    # ── Health check ───────────────────────────────────────────────────────────
+    healthCheckPath: /health
+
+    autoDeploy: true
+
+    # ── Environment variables ──────────────────────────────────────────────────
+    # Set values in Render dashboard → Environment tab
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: CLIENT_URL
+        sync: false

@@ -6,14 +6,15 @@ services:
     name: skillseal-api
     runtime: node
     region: oregon
-    plan: free
+    plan: starter
 
     rootDir: .
 
     # ── Build ──────────────────────────────────────────────────────────────────
-    # 1. Clear Render's stale npm cache (prevents EINTEGRITY hash mismatches)
-    # 2. Install only server + shared workspaces — client is built on Vercel
-    # 3. Build shared types first, then compile server TypeScript
+    # IMPORTANT: Render sets NODE_ENV=production automatically, which makes
+    # `npm install` skip devDependencies. We need --include=dev so that
+    # @types/* packages and typescript itself are installed for the tsc build.
+    # After compilation, only dist/ is used at runtime — devDeps don't ship.
     buildCommand: >
       npm cache clean --force &&
       npm install --include=dev --workspace=shared --workspace=server &&

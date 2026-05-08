@@ -20,13 +20,14 @@ import verifyRouter from './routes/verify.routes';
 import companiesRouter from './routes/companies.routes';
 import notificationsRouter from './routes/notifications.routes';
 import privacyRouter from './routes/privacy.routes';
-import skillsRouter from './routes/skills.routes';
 import recruiterDashRouter from './routes/recruiter.routes';
 import { errorHandler } from './middleware/error.middleware';
 import mongoose from 'mongoose';
 import { getRedis } from './config/redis';
 
 const app = express();
+// Trust Render's load-balancer so express-rate-limit can read the real client IP
+// from the X-Forwarded-For header without throwing ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
 app.set('trust proxy', 1);
 app.use(helmet({
   contentSecurityPolicy: {
@@ -94,7 +95,6 @@ app.use('/api/v1/verify', verifyRouter);
 app.use('/api/v1/companies', companiesRouter);
 app.use('/api/v1/notifications', notificationsRouter);
 app.use('/api/v1/privacy', privacyRouter);
-app.use('/api/v1/skills', skillsRouter);
 
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
 app.use(errorHandler);

@@ -1,6 +1,8 @@
 /**
- * Seed script — run once to populate the Skills collection.
- * Usage: npx ts-node -r tsconfig-paths/register src/scripts/seedSkills.ts
+ * Seed script — runs automatically during `npm run build:prod`.
+ * Safe to re-run: skips skills that already exist (upsert by slug).
+ * After running, the build:prod command deletes dist/scripts so it
+ * doesn't ship with the production bundle.
  */
 import mongoose from 'mongoose';
 import { Skill } from '../models/skill.model';
@@ -20,22 +22,31 @@ const SKILLS = [
 
 async function main() {
   const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error('MONGODB_URI env var is not set');
+  if (!uri) {
+    console.warn('[seed] MONGODB_URI not set — skipping skill seed.');
+    process.exit(0);
+  }
+
   await mongoose.connect(uri);
-  console.log('Connected to MongoDB');
+  console.log('[seed] Connected to MongoDB');
 
   for (const skill of SKILLS) {
-    const existing = await Skill.findOne({ slug: skill.slug });
-    if (existing) {
-      console.log(`  ⏭  Skipped (exists): ${skill.name}`);
-    } else {
-      await Skill.create(skill);
-      console.log(`  ✅ Created: ${skill.name}`);
-    }
+    await Skill.updateOne(
+      { slug: skill.slug },
+      { $setOnInsert: skill },
+      { upsert: true }
+    );
+    console.log(`[seed] Upserted: ${skill.name}`);
   }
 
   await mongoose.disconnect();
-  console.log('\nDone. Skills are seeded.');
+  console.log('[seed] Done.');
+  process.exit(0);
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+main().catch(err => {
+  console.error('[seed] Error:', err.message);
+  // Exit 0 so a seed failure does NOT break the whole Render deploy
+  process.exit(0);
+});
+

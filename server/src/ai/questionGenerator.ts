@@ -194,7 +194,7 @@ async function attemptGeneration(input: GenerateQuestionInput): Promise<IQuestio
   // ── Gemini call ────────────────────────────────────────────────────────────
   const genai = getGemini();
   const model = genai.getGenerativeModel({
-    model: 'gemini-1.5-pro',
+    model: 'gemini-2.0-flash',
     systemInstruction: system,
     generationConfig: {
       temperature: 0.8,
@@ -203,7 +203,13 @@ async function attemptGeneration(input: GenerateQuestionInput): Promise<IQuestio
     },
   });
 
-  const result = await model.generateContent(user);
+  let result;
+  try {
+    result = await model.generateContent(user);
+  } catch (geminiErr) {
+    const msg = geminiErr instanceof Error ? geminiErr.message : String(geminiErr);
+    throw new Error(`Gemini API error: ${msg}`);
+  }
   const rawText = result.response.text();
 
   if (!rawText) {

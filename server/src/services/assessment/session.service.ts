@@ -50,12 +50,26 @@ export async function startSession(input: { userId: string; skillId: string; tie
   const state: ServerSessionState = { sessionId, userId, skillId, skillSlug: skill.slug, declaredTier: tier, currentTier: tier, questionIndex: 0, consecutiveCorrect: 0, consecutiveIncorrect: 0, runningConceptScore: 0, runningSpeedScore: 0, strikeCount: 0, questionHistory: [], questionStartTime: Date.now(), isTerminated: false, terminationReason: '', tierStepsUp: 0, tierStepsDown: 0, answers: [] };
   await saveSession(state);
   await setActiveSession(userId, sessionId);
-  const { clientQuestion: fq, storedAnswer: fa, conceptId } = await buildQuestion(state);
-  await setAnswer(sessionId, fq._id, fa);
+
+  let clientQuestion: IQuestion, storedAnswer: StoredAnswer, conceptId: string;
+  try {
+    const built = await buildQuestion(state);
+    clientQuestion = built.clientQuestion;
+    storedAnswer = built.storedAnswer;
+    conceptId = built.conceptId;
+  } catch (err) {
+    // Clean up the session we just created so the user can retry
+    await Session.findByIdAndDelete(sessionId);
+    await clearActiveSession(userId);
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new AppError(`Failed to generate first question: ${msg}`, 502, true);
+  }
+
+  await setAnswer(sessionId, clientQuestion._id, storedAnswer);
   await updateSession(sessionId, { questionHistory: [conceptId], questionStartTime: Date.now() });
-  const sessionState: ISessionState = { sessionId, skillId, skillName: skill.name, declaredTier: tier, status: 'active', startTime: dbSession.createdAt.toISOString(), currentQuestionIndex: 0, totalQuestions: TOTAL_QUESTIONS, timeRemainingMs: fq.timeLimitMs, strikeCount: 0, maxStrikes: 3, answeredCount: 0, timeoutCount: 0 };
+  const sessionState: ISessionState = { sessionId, skillId, skillName: skill.name, declaredTier: tier, status: 'active', startTime: dbSession.createdAt.toISOString(), currentQuestionIndex: 0, totalQuestions: TOTAL_QUESTIONS, timeRemainingMs: clientQuestion.timeLimitMs, strikeCount: 0, maxStrikes: 3, answeredCount: 0, timeoutCount: 0 };
   logger.info(`[session] Started: ${sessionId}`);
-  return { sessionId, firstQuestion: fq, sessionState };
+  return { sessionId, firstQuestion: clientQuestion, sessionState };
 }
 
 export async function submitAnswer(input: { sessionId: string; questionId: string; selectedOption: string | null; textAnswer: string; timeTakenMs: number; isTimeout: boolean }) {

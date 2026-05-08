@@ -12,8 +12,17 @@ import type { SkillTier } from '@SkillSeal/shared';
 const router = Router();
 router.use(authenticate);
 function handle(err: unknown, res: Response) {
-  if (err instanceof AppError) { const code = err.statusCode === 404 ? ApiErrorCode.NOT_FOUND : err.statusCode === 409 ? ApiErrorCode.CONFLICT : err.statusCode === 429 ? ApiErrorCode.RATE_LIMIT_EXCEEDED : ApiErrorCode.INTERNAL_ERROR; sendError(res, err.message, err.statusCode, code); }
-  else sendError(res, 'Unexpected error', 500, ApiErrorCode.INTERNAL_ERROR);
+  if (err instanceof AppError) {
+    const code = err.statusCode === 404 ? ApiErrorCode.NOT_FOUND
+      : err.statusCode === 409 ? ApiErrorCode.CONFLICT
+      : err.statusCode === 429 ? ApiErrorCode.RATE_LIMIT_EXCEEDED
+      : ApiErrorCode.INTERNAL_ERROR;
+    sendError(res, err.message, err.statusCode, code);
+  } else {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('[assessment route] Unhandled error:', err);
+    sendError(res, `Session error: ${message}`, 500, ApiErrorCode.INTERNAL_ERROR);
+  }
 }
 router.post('/start', async (req: AuthRequest, res: Response) => {
   try { const { skillId, tier } = req.body as { skillId?: string; tier?: string }; if (!skillId || !tier) { sendError(res, 'skillId and tier required.', 400, ApiErrorCode.VALIDATION_ERROR); return; } const r = await startSession({ userId: req.user!.userId, skillId, tier: tier as SkillTier }); sendSuccess(res, r, 'Session started', 201); } catch (err) { handle(err, res); }

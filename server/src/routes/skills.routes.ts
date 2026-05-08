@@ -1,5 +1,5 @@
 import { Router, type Response } from 'express';
-import { Skill } from '../models/skill.model';
+import { Skill } from '../models/Skill.model';
 import { sendSuccess, sendError } from '../utils/response';
 import { ApiErrorCode } from '@SkillSeal/shared';
 

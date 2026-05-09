@@ -3,7 +3,7 @@
 // Core AI question generation service for SkillSeal skill verification engine.
 //
 // • Selects the correct prompt template for skill × tier × questionType
-// • Calls Gemini 1.5 Pro (temp 0.8, max_tokens 600, JSON mode)
+// • Calls Groq llama-3.3-70b-versatile (temp 0.8, max_tokens 600, JSON mode)
 // • Validates & parses the JSON response
 // • Returns IQuestionMutation (server-only — never expose in HTTP responses)
 // • Retries exactly once on failure
@@ -12,7 +12,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import type { IQuestion, IQuestionMutation, QuestionType, SkillTier } from '@SkillSeal/shared';
-import { getGemini } from '../config/gemini';
+import { getGroq } from '../config/gemini';
 import logger from '../utils/logger';
 import { getTemplate, interpolateTemplate } from './promptTemplates';
 import { pickConcept, type SupportedSkill } from './conceptLibrary';
@@ -191,40 +191,39 @@ async function attemptGeneration(input: GenerateQuestionInput): Promise<IQuestio
     sessionHistory: sessionHistory.length > 0 ? sessionHistory.join(', ') : 'none',
   });
 
-  // ── Gemini call (15s timeout — Render free tier drops at 30s) ─────────────
-  const genai = getGemini();
-  const model = genai.getGenerativeModel({
-    model: 'gemini-2.0-flash',
-    systemInstruction: system,
-    generationConfig: {
-      temperature: 0.8,
-      maxOutputTokens: 600,
-      responseMimeType: 'application/json',
-    },
-  });
-
-  let result;
+  // ── Groq call (15s timeout) ───────────────────────────────────────────────
+  const groq = getGroq();
+  let rawText: string;
   try {
-    result = await model.generateContent(
-      user,
-      { timeout: 15_000 } as Parameters<typeof model.generateContent>[1],
+    const chatCompletion = await groq.chat.completions.create(
+      {
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: user },
+        ],
+        temperature: 0.8,
+        max_tokens: 600,
+        response_format: { type: 'json_object' },
+      },
+      { timeout: 15_000 },
     );
-  } catch (geminiErr) {
-    const msg = geminiErr instanceof Error ? geminiErr.message : String(geminiErr);
-    process.stdout.write(`[gemini] \u274c generateContent failed: ${msg}\n`);
-    throw new Error(`Gemini API error: ${msg}`);
+    rawText = chatCompletion.choices[0]?.message?.content ?? '';
+  } catch (groqErr) {
+    const msg = groqErr instanceof Error ? groqErr.message : String(groqErr);
+    process.stdout.write(`[groq] ❌ chat.completions.create failed: ${msg}\n`);
+    throw new Error(`Groq API error: ${msg}`);
   }
-  const rawText = result.response.text();
 
   if (!rawText) {
-    throw new Error('Gemini returned an empty response');
+    throw new Error('Groq returned an empty response');
   }
 
   return parseModelOutput(rawText, questionType, skillId, tier);
 }
 
 /**
- * Generates a single assessment question using Gemini 1.5 Pro.
+ * Generates a single assessment question using Groq llama-3.3-70b-versatile.
  * Retries exactly once on failure.
  */
 export async function generateQuestion(input: GenerateQuestionInput): Promise<IQuestionMutation> {
@@ -252,7 +251,7 @@ export async function generateQuestion(input: GenerateQuestionInput): Promise<IQ
       lastError = err;
       const elapsed = Math.round(performance.now() - start);
       const errMsg = err instanceof Error ? err.message : String(err);
-      process.stdout.write(`[gemini] attempt ${attempt} failed after ${elapsed}ms: ${errMsg}\n`);
+      process.stdout.write(`[groq] attempt ${attempt} failed after ${elapsed}ms: ${errMsg}\n`);
       logger.warn(`[questionGenerator] Attempt ${attempt} failed after ${elapsed}ms: ${errMsg}`);
       if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500));
     }
@@ -264,9 +263,9 @@ export async function generateQuestion(input: GenerateQuestionInput): Promise<IQ
     `${input.skill}/${input.tier}/${input.questionType}`
   );
   process.stdout.write(
-    `[gemini] ALL ATTEMPTS FAILED after ${elapsed}ms ` +
+    `[groq] ALL ATTEMPTS FAILED after ${elapsed}ms ` +
     `skill=${input.skill} tier=${input.tier} type=${input.questionType}\n` +
-    `[gemini] last error: ${lastError instanceof Error ? lastError.message : String(lastError)}\n`
+    `[groq] last error: ${lastError instanceof Error ? lastError.message : String(lastError)}\n`
   );
   throw new Error(
     `Question generation failed after 2 attempts: ` +

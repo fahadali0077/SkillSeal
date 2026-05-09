@@ -1,4 +1,4 @@
-import { getGemini } from '../../config/gemini';
+import { getGroq } from '../../config/gemini';
 import logger from '../../utils/logger';
 
 export interface MicroTheoryEvaluation {
@@ -45,23 +45,28 @@ export async function evaluateMicroTheory(
   let conceptScore = 0;
 
   try {
-    // ── Gemini call ──────────────────────────────────────────────────────────
-    const genai = getGemini();
-    const model = genai.getGenerativeModel({
-      model: 'gemini-1.5-pro',
-      systemInstruction:
-        'Score 0-100: accuracy(60%), completeness(30%), clarity(10%). ' +
-        'Return JSON only: {"score":number,"reason":string}',
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 150,
-        responseMimeType: 'application/json',
-      },
+    // ── Groq call ─────────────────────────────────────────────────────────────
+    const groq = getGroq();
+    const chatCompletion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Score 0-100: accuracy(60%), completeness(30%), clarity(10%). ' +
+            'Return JSON only: {"score":number,"reason":string}',
+        },
+        {
+          role: 'user',
+          content: `Question: ${questionText}\nRubric: ${rubric.join(', ')}\nAnswer: "${answer}"`,
+        },
+      ],
+      temperature: 0.2,
+      max_tokens: 150,
+      response_format: { type: 'json_object' },
     });
 
-    const prompt = `Question: ${questionText}\nRubric: ${rubric.join(', ')}\nAnswer: "${answer}"`;
-    const result = await model.generateContent(prompt);
-    const rawText = result.response.text();
+    const rawText = chatCompletion.choices[0]?.message?.content ?? '';
     const parsed = JSON.parse(rawText) as { score?: number };
     conceptScore = Math.max(0, Math.min(1, (parsed.score ?? 0) / 100));
   } catch (err) {

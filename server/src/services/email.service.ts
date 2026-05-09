@@ -12,7 +12,9 @@ const SMTP_HOST = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10);
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@skillseal.io';
+// FROM_EMAIL must be a sender (or domain) verified in Brevo. Defaults to the
+// production domain — override via env if you've verified a different sender.
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@skillseal.tech';
 const FROM_NAME = 'SkillSeal';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
@@ -40,20 +42,32 @@ interface SendEmailOptions {
 }
 
 async function sendEmail(opts: SendEmailOptions): Promise<void> {
-  const isDev = !SMTP_USER || !SMTP_PASS || process.env.NODE_ENV === 'development';
-
-  if (isDev) {
-    logger.info(`[email] DEV MODE – would send to ${opts.to}: ${opts.subject}`);
+  // Only fall back to console-logging when SMTP credentials are missing.
+  // Previously this also skipped sending whenever NODE_ENV !== 'production',
+  // which silently swallowed every email even with valid Brevo credentials.
+  const hasSmtp = !!SMTP_USER && !!SMTP_PASS;
+  if (!hasSmtp) {
+    logger.warn(
+      `[email] SMTP credentials missing – skipping send to ${opts.to}: ${opts.subject}`,
+    );
     return;
   }
 
-  await getTransporter().sendMail({
-    from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
-    to: opts.to,
-    subject: opts.subject,
-    text: opts.text,
-    html: opts.html,
-  });
+  try {
+    const info = await getTransporter().sendMail({
+      from: `"${FROM_NAME}" <${FROM_EMAIL}>`,
+      to: opts.to,
+      subject: opts.subject,
+      text: opts.text,
+      html: opts.html,
+    });
+    logger.info(`[email] Sent to ${opts.to} (id=${info.messageId})`);
+  } catch (err) {
+    // Surface the underlying SMTP error (auth failure, unverified sender, etc.)
+    // so problems are visible in logs instead of silently swallowed upstream.
+    logger.error(`[email] Failed to send to ${opts.to} (${opts.subject}):`, err);
+    throw err;
+  }
 }
 
 // ── Email templates ───────────────────────────────────────────────────────────

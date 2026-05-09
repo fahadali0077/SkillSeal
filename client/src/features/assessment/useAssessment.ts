@@ -24,7 +24,24 @@ export const useAssessmentStore = create<AssessmentState>()((set, get) => ({
       set({ status: 'active', sessionId, skillId, skillName, tier, currentQuestion: firstQuestion, sessionState, timeRemainingMs: firstQuestion.timeLimitMs, questionStartedAt: now });
       startTimer(firstQuestion.timeLimitMs, () => get().submitAnswer(null, '', true));
       emit(SOCKET_EVENTS.JOIN_ROOM, `session:${sessionId}`);
-    } catch (err) { set({ status: 'error', error: err instanceof Error ? err.message : 'Failed' }); }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed';
+      // 409 means a previous session is still active — abandon it and retry once
+      if (msg.includes('409') || msg.toLowerCase().includes('active session')) {
+        try {
+          await assessmentApi.abandonSession();
+          const { sessionId, firstQuestion, sessionState } = await assessmentApi.startSession(skillId, tier);
+          const now = Date.now();
+          set({ status: 'active', sessionId, skillId, skillName, tier, currentQuestion: firstQuestion, sessionState, timeRemainingMs: firstQuestion.timeLimitMs, questionStartedAt: now });
+          startTimer(firstQuestion.timeLimitMs, () => get().submitAnswer(null, '', true));
+          emit(SOCKET_EVENTS.JOIN_ROOM, `session:${sessionId}`);
+        } catch (retryErr) {
+          set({ status: 'error', error: retryErr instanceof Error ? retryErr.message : 'Failed to start session' });
+        }
+      } else {
+        set({ status: 'error', error: msg });
+      }
+    }
   },
   submitAnswer: async (selectedOption, textAnswer, isTimeout = false) => {
     if (isSubmittingRef.current) return;

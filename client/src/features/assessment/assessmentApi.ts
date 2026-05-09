@@ -5,6 +5,7 @@ export type PlanId = 'pro_monthly' | 'pro_yearly' | 'recruiter_monthly' | 'recru
 export interface ISkillOption { _id: string; name: string; slug: string; category: string; icon: string; availableTiers: string[]; }
 export const assessmentApi = {
   fetchSkills: () => apiFetch<ISkillOption[]>(SKILLS_BASE),
+  abandonSession: () => apiFetch<Record<string, never>>(`${SESSIONS_BASE}/abandon`, { method: 'POST', body: JSON.stringify({}) }),
   startSession: (skillId: string, tier: SkillTier) => apiFetch<{ sessionId: string; firstQuestion: IQuestion; sessionState: ISessionState }>(`${SESSIONS_BASE}/start`, { method: 'POST', body: JSON.stringify({ skillId, tier }) }),
   submitAnswer: (sessionId: string, questionId: string, selectedOption: string | null, textAnswer: string, timeTaken: number, isTimeout: boolean, submittedAt: string) => apiFetch<{ accepted: boolean; isCorrect: boolean | null; conceptScore: number; sessionComplete: boolean; sessionState: ISessionState; nextQuestion: IQuestion | null; result?: unknown }>(`${ANSWERS_BASE}/submit`, { method: 'POST', body: JSON.stringify({ sessionId, questionId, selectedOption, textAnswer, timeTaken, isTimeout, submittedAt }) }),
   logEvent: (sessionId: string, eventType: string, questionId: string | null, timeOnQuestion: number, tabHiddenDurationMs?: number) => apiFetch<{ strikeCount: number; action: string }>(`${EVENTS_BASE}/log`, { method: 'POST', body: JSON.stringify({ sessionId, eventType, questionId, timeOnQuestion, tabHiddenDurationMs }) }),

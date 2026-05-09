@@ -4,8 +4,8 @@ import type { IQuestion } from '@SkillSeal/shared';
 interface Props { question: IQuestion; onSubmit: (s: string) => void; isSubmitting: boolean; }
 function QText({ text }: { text: string }) {
   const parts = text.split(/(```[\s\S]*?```|`[^`]+`)/g);
-  return <div className="text-[17px] leading-relaxed text-gray-900 space-y-3">{parts.map((p, i) => {
-    if (p.startsWith('```')) { const code = p.slice(3).replace(/^[a-z]*\n/, '').replace(/```$/, ''); return <pre key={i} className="bg-gray-900 text-green-400 rounded-xl p-4 font-mono text-[13px] overflow-x-auto"><code>{code}</code></pre>; }
+  return <div className="text-[17px] leading-relaxed text-gray-900 space-y-3 text-left">{parts.map((p, i) => {
+    if (p.startsWith('```')) { const code = p.slice(3).replace(/^[a-z]*\n/, '').replace(/```$/, ''); return <pre key={i} className="bg-gray-900 text-green-400 rounded-xl p-4 font-mono text-[13px] overflow-x-auto text-left"><code>{code}</code></pre>; }
     if (p.startsWith('`')) return <code key={i} className="bg-gray-100 text-red-700 px-1.5 py-0.5 rounded font-mono text-[14px]">{p.slice(1, -1)}</code>;
     return <span key={i}>{p}</span>;
   })}</div>;
@@ -17,7 +17,7 @@ export default function MCQQuestion({ question, onSubmit, isSubmitting }: Props)
   const handle = (letter: string) => { if (isSubmitting || selected) return; setSelected(letter); setTimeout(() => onSubmit(letter), 150); };
   return (
     <div className="w-full max-w-[680px] mx-auto">
-      <div className="mb-8 text-center"><QText text={question.text} /></div>
+      <div className="mb-8"><QText text={question.text} /></div>
       <div className="space-y-3" role="radiogroup">
         {LABELS.slice(0, opts.length).map((letter, idx) => {
           const isSel = selected === letter;

@@ -12,7 +12,7 @@ function requireRedis(_req: Request, res: Response, next: NextFunction): void {
   }
   next();
 }
-import { startSession, submitAnswer, recordStrike, getSessionState } from '../services/assessment/session.service';
+import { startSession, submitAnswer, recordStrike, getSessionState, abandonSession } from '../services/assessment/session.service';
 import { computeCompositeScore } from '../services/assessment/scoring.service';
 import { Session } from '../models/Session.model';
 import type { ISessionDocument } from '../models/Session.model';
@@ -34,6 +34,9 @@ function handle(err: unknown, res: Response) {
     sendError(res, `Session error: ${message}`, 500, ApiErrorCode.INTERNAL_ERROR);
   }
 }
+router.post('/abandon', async (req: AuthRequest, res: Response) => {
+  try { await abandonSession(req.user!.userId); sendSuccess(res, {}, 'Session abandoned'); } catch (err) { handle(err, res); }
+});
 router.post('/start', async (req: AuthRequest, res: Response) => {
   try { const { skillId, tier } = req.body as { skillId?: string; tier?: string }; if (!skillId || !tier) { sendError(res, 'skillId and tier required.', 400, ApiErrorCode.VALIDATION_ERROR); return; } const r = await startSession({ userId: req.user!.userId, skillId, tier: tier as SkillTier }); sendSuccess(res, r, 'Session started', 201); } catch (err) { handle(err, res); }
 });

@@ -122,6 +122,15 @@ function buildClientState(state: ServerSessionState, nq: IQuestion | null): ISes
   return { sessionId: state.sessionId, skillId: state.skillId, skillName: state.skillSlug, declaredTier: state.declaredTier as SkillTier, status: state.isTerminated ? 'terminated' : 'active', startTime: new Date().toISOString(), currentQuestionIndex: state.questionIndex, totalQuestions: TOTAL_QUESTIONS, timeRemainingMs: nq?.timeLimitMs ?? 0, strikeCount: state.strikeCount, maxStrikes: 3, answeredCount: state.answers.length, timeoutCount: state.answers.filter(a => a.isTimeout).length };
 }
 
+export async function abandonSession(userId: string): Promise<void> {
+  const existing = await getActiveSession(userId);
+  if (existing) {
+    await updateSession(existing, { isTerminated: true, terminationReason: 'user_abandoned' });
+    await Session.findByIdAndUpdate(existing, { status: 'terminated', terminationReason: 'user_abandoned' });
+    await clearActiveSession(userId);
+  }
+}
+
 export async function getSessionState(sessionId: string, userId: string) {
   const state = await getSession(sessionId);
   if (!state || state.userId !== userId) return null;

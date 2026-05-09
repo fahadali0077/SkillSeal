@@ -10,7 +10,7 @@ interface SEOProps {
 }
 
 const SITE_NAME = 'SkillSeal';
-const BASE_URL = 'https://skillseal.com';
+const BASE_URL = 'https://skillseal.tech';
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.png`;
 const DEFAULT_DESCRIPTION =
   'SkillSeal verifies candidate skills through AI-powered contextual assessments. Recruiters hire with confidence. Candidates prove their expertise with a Seal.';
@@ -37,8 +37,8 @@ export function useSEO({
         const attr = selector.startsWith('meta[name')
           ? 'name'
           : selector.startsWith('meta[property')
-          ? 'property'
-          : 'name';
+            ? 'property'
+            : 'name';
         const value = selector.match(/["']([^"']+)["']/)?.[1] ?? '';
         el.setAttribute(attr, value);
         document.head.appendChild(el);

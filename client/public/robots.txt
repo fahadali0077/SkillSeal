@@ -18,4 +18,4 @@ Disallow: /register
 Disallow: /forgot-password
 Disallow: /reset-password
 
-Sitemap: https://skillseal.com/sitemap.xml
+Sitemap: https://skillseal.tech/sitemap.xml

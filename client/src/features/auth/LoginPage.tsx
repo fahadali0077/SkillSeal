@@ -12,6 +12,7 @@ import { loginSchema, type LoginFormValues } from './authSchemas';
 import { useAuthStore, homeRouteForRole } from './useAuth';
 import { ApiRequestError } from './authApi';
 import { useSEO } from '../../lib/useSEO';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   useSEO({ title: 'Log In', description: 'Log in to SkillSeal to verify your skills or access your recruiter dashboard.', canonical: '/login' });
@@ -31,15 +32,17 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setServerError(null);
+    const toastId = toast.loading('Signing you in…');
     try {
       const { role } = await login(data.email, data.password);
+      toast.success('Welcome back!', { id: toastId });
       navigate(homeRouteForRole(role), { replace: true });
     } catch (err) {
-      if (err instanceof ApiRequestError) {
-        setServerError(err.message);
-      } else {
-        setServerError('An unexpected error occurred. Please try again.');
-      }
+      const msg = err instanceof ApiRequestError
+        ? err.message
+        : 'An unexpected error occurred. Please try again.';
+      toast.error(msg, { id: toastId });
+      setServerError(msg);
     }
   };
 

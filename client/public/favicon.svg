@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Blue rounded-square background -->
+  <rect width="64" height="64" rx="14" fill="#0a66c2"/>
+
+  <!-- Shield body -->
+  <path
+    d="M32 10 L48 17 L48 31 C48 40.5 40.5 48.5 32 52 C23.5 48.5 16 40.5 16 31 L16 17 Z"
+    fill="white"
+    fill-opacity="0.15"
+    stroke="white"
+    stroke-width="2.5"
+    stroke-linejoin="round"
+  />
+
+  <!-- Checkmark inside shield -->
+  <path
+    d="M23 32 L29 38 L41 26"
+    stroke="white"
+    stroke-width="3.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

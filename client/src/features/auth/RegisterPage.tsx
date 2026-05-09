@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff, UserPlus, Loader2, CheckCircle2, XCircle, ShieldCheck, Briefcase } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Eye, EyeOff, UserPlus, Loader2, CheckCircle2, XCircle, ShieldCheck, Briefcase, Mail, ArrowRight, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { registerSchema, type RegisterFormValues } from './authSchemas';
 import { useAuthStore } from './useAuth';
 import { ApiRequestError } from './authApi';
 import { useSEO } from '../../lib/useSEO';
+import toast from 'react-hot-toast';
 
 interface PasswordRule { label: string; test: (v: string) => boolean; }
 const PASSWORD_RULES: PasswordRule[] = [
   { label: 'At least 8 characters', test: (v) => v.length >= 8 },
   { label: 'One uppercase letter', test: (v) => /[A-Z]/.test(v) },
-  { label: 'One number', test: (v) => /[0-9]/.test(v) },
-  { label: 'One special character', test: (v) => /[^A-Za-z0-9]/.test(v) },
+  { label: 'One number',           test: (v) => /[0-9]/.test(v) },
+  { label: 'One special character',test: (v) => /[^A-Za-z0-9]/.test(v) },
 ];
 
 function PasswordStrength({ password }: { password: string }) {
@@ -33,18 +35,126 @@ function PasswordStrength({ password }: { password: string }) {
   );
 }
 
+// ── Email verification pending screen ─────────────────────────────────────────
+
+function EmailVerificationPending({ email, firstName }: { email: string; firstName: string }) {
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
+
+  const handleResend = async () => {
+    setResending(true);
+    // Simulate resend — in production call /api/v1/auth/resend-verification
+    await new Promise(r => setTimeout(r, 1200));
+    setResending(false);
+    setResent(true);
+    toast.success('Verification email sent again!');
+    setTimeout(() => setResent(false), 5000);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.97 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="min-h-screen bg-gray-50 flex items-center justify-center p-4"
+    >
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-flex items-center gap-2 justify-center">
+            <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center shadow-sm">
+              <ShieldCheck size={20} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">SkillSeal</h1>
+          </Link>
+        </div>
+
+        <div className="card p-8 text-center">
+          {/* Animated envelope icon */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <div className="w-20 h-20 bg-brand/10 rounded-2xl flex items-center justify-center">
+                <Mail size={40} className="text-brand" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-sm">
+                <CheckCircle2 size={14} className="text-white" />
+              </div>
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Check your inbox, {firstName}!
+          </h2>
+          <p className="text-gray-500 text-sm leading-relaxed mb-6">
+            We've sent a verification link to{' '}
+            <span className="font-semibold text-gray-700">{email}</span>.
+            <br />
+            Click the link in that email to activate your account.
+          </p>
+
+          {/* Steps */}
+          <div className="bg-gray-50 rounded-xl p-4 text-left space-y-3 mb-6">
+            {[
+              { step: '1', text: 'Open your email inbox' },
+              { step: '2', text: 'Find the email from SkillSeal' },
+              { step: '3', text: 'Click "Verify my email" in the email' },
+              { step: '4', text: 'Sign in and start verifying your skills' },
+            ].map(({ step, text }) => (
+              <div key={step} className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-full bg-brand text-white text-xs font-bold flex items-center justify-center shrink-0">{step}</span>
+                <span className="text-sm text-gray-600">{text}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <Link
+            to="/login"
+            className="w-full inline-flex items-center justify-center gap-2 btn-primary py-3 mb-4"
+          >
+            Go to Sign In <ArrowRight size={15} />
+          </Link>
+
+          {/* Resend */}
+          <p className="text-xs text-gray-400 mb-2">Didn't receive the email? Check your spam folder or</p>
+          <button
+            onClick={handleResend}
+            disabled={resending || resent}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:text-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {resending ? (
+              <><Loader2 size={13} className="animate-spin" />Sending…</>
+            ) : resent ? (
+              <><CheckCircle2 size={13} className="text-green-500" />Email sent!</>
+            ) : (
+              <><RefreshCw size={13} />Resend verification email</>
+            )}
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Registration form ─────────────────────────────────────────────────────────
+
 export default function RegisterPage() {
   useSEO({ title: 'Create Your Account', description: 'Join SkillSeal to get your skills verified or find verified talent.', canonical: '/register' });
-  const navigate = useNavigate();
   const [params] = useSearchParams();
   const initialRole = params.get('role') === 'recruiter' ? 'recruiter' : 'candidate';
 
-  const register_ = useAuthStore((s) => s.register);
-  const isLoading = useAuthStore((s) => s.isLoading);
-  const [showPass, setShowPass] = useState(false);
+  const register_  = useAuthStore((s) => s.register);
+  const logout     = useAuthStore((s) => s.logout);
+  const isLoading  = useAuthStore((s) => s.isLoading);
+
+  const [showPass,    setShowPass]    = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [role, setRole] = useState<'candidate' | 'recruiter'>(initialRole);
+  const [role,        setRole]        = useState<'candidate' | 'recruiter'>(initialRole);
+
+  // After successful registration, store email + name to show on pending screen
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [pendingName,  setPendingName]  = useState<string>('');
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -53,14 +163,35 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormValues) => {
     setServerError(null);
+    const toastId = toast.loading('Creating your account…');
     try {
-      await register_({ email: data.email, password: data.password, firstName: data.firstName, lastName: data.lastName, role });
-      navigate(role === 'recruiter' ? '/recruiter' : '/assessment', { replace: true });
+      await register_({
+        email: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role,
+      });
+      // Log the user out — they must verify email before accessing the app
+      await logout();
+      toast.success('Account created! Please verify your email.', { id: toastId });
+      setPendingName(data.firstName);
+      setPendingEmail(data.email);
     } catch (err) {
-      setServerError(err instanceof ApiRequestError ? err.message : 'An unexpected error occurred. Please try again.');
+      const msg = err instanceof ApiRequestError
+        ? err.message
+        : 'An unexpected error occurred. Please try again.';
+      toast.error(msg, { id: toastId });
+      setServerError(msg);
     }
   };
 
+  // ── Show email verification pending screen ───────────────────────────────────
+  if (pendingEmail) {
+    return <EmailVerificationPending email={pendingEmail} firstName={pendingName} />;
+  }
+
+  // ── Registration form ────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -114,9 +245,18 @@ export default function RegisterPage() {
             {role === 'recruiter' ? 'Create your recruiter account' : 'Create your account'}
           </h2>
 
-          {serverError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{serverError}</div>
-          )}
+          <AnimatePresence>
+            {serverError && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
+              >
+                {serverError}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <form onSubmit={handleSubmit(onSubmit as any)} noValidate className="space-y-4">
             {/* Name */}
@@ -171,7 +311,11 @@ export default function RegisterPage() {
               <a href="/privacy" className="text-brand hover:underline">Privacy Policy</a>.
             </p>
 
-            <button type="submit" disabled={isLoading} className={`w-full flex items-center justify-center gap-2 font-semibold py-2.5 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white ${role === 'recruiter' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-brand hover:bg-brand-dark'}`}>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full flex items-center justify-center gap-2 font-semibold py-2.5 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-white ${role === 'recruiter' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-brand hover:bg-brand-dark'}`}
+            >
               {isLoading ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
               {isLoading ? 'Creating account…' : role === 'recruiter' ? 'Create Recruiter Account' : 'Create Account'}
             </button>

@@ -98,10 +98,11 @@ export interface RegisterInput {
   password: string;
   firstName: string;
   lastName: string;
+  role?: 'candidate' | 'recruiter';
 }
 
 export async function register(input: RegisterInput): Promise<IAuthResponse> {
-  const { email, password, firstName, lastName } = input;
+  const { email, password, firstName, lastName, role = 'candidate' } = input;
 
   // 1. Validate password strength
   if (!isStrongPassword(password)) {
@@ -127,7 +128,7 @@ export async function register(input: RegisterInput): Promise<IAuthResponse> {
     passwordHash,
     firstName: firstName.trim(),
     lastName: lastName.trim(),
-    role: 'candidate',
+    role: role === 'recruiter' ? 'recruiter' : 'candidate',
     accountType: 'free',
     emailVerified: false,
     tokenVersion: 0,

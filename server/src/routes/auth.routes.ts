@@ -102,6 +102,7 @@ router.post(
       const result = await register(req.body as {
         email: string; password: string;
         firstName: string; lastName: string;
+        role?: 'candidate' | 'recruiter';
       });
 
       setRefreshCookie(res, result.accessToken); // temporary — real refresh issued on login

@@ -6,9 +6,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router-dom';
+import { ShieldCheck as ShieldIcon } from 'lucide-react';
 import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import { loginSchema, type LoginFormValues } from './authSchemas';
-import { useAuthStore } from './useAuth';
+import { useAuthStore, homeRouteForRole } from './useAuth';
 import { ApiRequestError } from './authApi';
 import { useSEO } from '../../lib/useSEO';
 
@@ -31,8 +32,8 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setServerError(null);
     try {
-      await login(data.email, data.password);
-      navigate('/feed', { replace: true });
+      const { role } = await login(data.email, data.password);
+      navigate(homeRouteForRole(role), { replace: true });
     } catch (err) {
       if (err instanceof ApiRequestError) {
         setServerError(err.message);
@@ -47,7 +48,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-brand">SkillSeal</h1>
+          <Link to="/" className="inline-flex items-center gap-2 justify-center">
+            <div className="w-9 h-9 bg-brand rounded-xl flex items-center justify-center shadow-sm">
+              <ShieldIcon size={20} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">SkillSeal</h1>
+          </Link>
           <p className="text-gray-500 mt-1 text-sm">Verified Skills for Proven Hiring</p>
         </div>
 

@@ -1,16 +1,36 @@
 import { API_ORIGIN } from '../../lib/apiBase';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-export interface AuthUser { _id: string; firstName: string; email: string; accountType: string; }
-interface AuthState { user: AuthUser | null; accessToken: string | null; isLoading: boolean; setAuth: (user: AuthUser, token: string) => void; logout: () => Promise<void>; login: (email: string, password: string) => Promise<void>; register: (data: { firstName: string; lastName: string; email: string; password: string }) => Promise<void>; }
+
+export interface AuthUser {
+  _id: string;
+  firstName: string;
+  email: string;
+  accountType: string;
+  role: 'candidate' | 'recruiter' | 'company_admin' | 'platform_admin';
+}
+
+interface AuthState {
+  user: AuthUser | null;
+  accessToken: string | null;
+  isLoading: boolean;
+  setAuth: (user: AuthUser, token: string) => void;
+  logout: () => Promise<void>;
+  login: (email: string, password: string) => Promise<{ role: string }>;
+  register: (data: { firstName: string; lastName: string; email: string; password: string; role?: 'candidate' | 'recruiter' }) => Promise<{ role: string }>;
+}
+
 export const useAuthStore = create<AuthState>()(persist(
   (set) => ({
     user: null, accessToken: null, isLoading: false,
+
     setAuth: (user: AuthUser, accessToken: string) => set({ user, accessToken }),
+
     logout: async () => {
       await fetch(`${API_ORIGIN}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
       set({ user: null, accessToken: null });
     },
+
     login: async (email: string, password: string) => {
       set({ isLoading: true });
       try {
@@ -22,9 +42,11 @@ export const useAuthStore = create<AuthState>()(persist(
         const data = await r.json();
         if (!r.ok) throw new Error(data.message ?? 'Login failed');
         set({ user: data.data.user, accessToken: data.data.token, isLoading: false });
+        return { role: data.data.user.role ?? 'candidate' };
       } catch (e) { set({ isLoading: false }); throw e; }
     },
-    register: async (payload: { firstName: string; lastName: string; email: string; password: string }) => {
+
+    register: async (payload) => {
       set({ isLoading: true });
       try {
         const r = await fetch(`${API_ORIGIN}/api/v1/auth/register`, {
@@ -35,9 +57,17 @@ export const useAuthStore = create<AuthState>()(persist(
         const data = await r.json();
         if (!r.ok) throw new Error(data.message ?? 'Registration failed');
         set({ user: data.data.user, accessToken: data.data.token, isLoading: false });
+        return { role: data.data.user.role ?? 'candidate' };
       } catch (e) { set({ isLoading: false }); throw e; }
     },
   }),
   { name: 'SkillSeal-auth', partialize: (s) => ({ user: s.user, accessToken: s.accessToken }) }
 ));
+
 export const useIsAuthenticated = () => useAuthStore(s => !!s.user && !!s.accessToken);
+export const useUserRole = () => useAuthStore(s => s.user?.role ?? 'candidate');
+
+/** Returns the home route for the current user based on their role */
+export function homeRouteForRole(role: string): string {
+  return role === 'recruiter' || role === 'company_admin' ? '/recruiter' : '/assessment';
+}

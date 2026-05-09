@@ -144,7 +144,6 @@ export default function RegisterPage() {
   const initialRole = params.get('role') === 'recruiter' ? 'recruiter' : 'candidate';
 
   const register_  = useAuthStore((s) => s.register);
-  const logout     = useAuthStore((s) => s.logout);
   const isLoading  = useAuthStore((s) => s.isLoading);
 
   const [showPass,    setShowPass]    = useState(false);
@@ -172,8 +171,8 @@ export default function RegisterPage() {
         lastName: data.lastName,
         role,
       });
-      // Log the user out — they must verify email before accessing the app
-      await logout();
+      // No need to log out — register() no longer authenticates the session.
+      // The user must verify their email and then sign in.
       toast.success('Account created! Please verify your email.', { id: toastId });
       setPendingName(data.firstName);
       setPendingEmail(data.email);

@@ -58,7 +58,8 @@ export interface RegisterInput {
 
 export interface RegisterResponse {
   user: IUserPrivate;
-  token: string;
+  // No token — registration is a pre-verification step. The user must
+  // verify their email and then call /login to receive an access token.
 }
 
 export interface LoginInput {

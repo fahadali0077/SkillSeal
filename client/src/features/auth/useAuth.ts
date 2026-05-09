@@ -17,7 +17,7 @@ interface AuthState {
   setAuth: (user: AuthUser, token: string) => void;
   logout: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ role: string }>;
-  register: (data: { firstName: string; lastName: string; email: string; password: string; role?: 'candidate' | 'recruiter' }) => Promise<{ role: string }>;
+  register: (data: { firstName: string; lastName: string; email: string; password: string; role?: 'candidate' | 'recruiter' }) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(persist(
@@ -56,8 +56,11 @@ export const useAuthStore = create<AuthState>()(persist(
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.message ?? 'Registration failed');
-        set({ user: data.data.user, accessToken: data.data.token, isLoading: false });
-        return { role: data.data.user.role ?? 'candidate' };
+        // Deliberately do NOT set user/accessToken in the store — the account
+        // must be email-verified before the user can sign in. Storing auth
+        // state here would trigger GuestRoute to redirect away from the
+        // verification-pending screen.
+        set({ isLoading: false });
       } catch (e) { set({ isLoading: false }); throw e; }
     },
   }),

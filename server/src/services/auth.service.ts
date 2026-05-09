@@ -4,13 +4,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import bcrypt from 'bcryptjs';
-import type { IUserPublic, IUserPrivate, IAuthResponse } from '@SkillSeal/shared';
-import { ApiErrorCode } from '@SkillSeal/shared';
+import type { IUserPublic, IUserPrivate } from '@SkillSeal/shared';
 import { User } from '../models/User.model';
 import type { IUserDocument } from '../models/User.model';
 import { getRedis } from '../config/redis';
 import {
-  signTokenPair,
   signRefreshToken,
   signAccessToken,
   signEmailVerifyToken,
@@ -101,7 +99,17 @@ export interface RegisterInput {
   role?: 'candidate' | 'recruiter';
 }
 
-export async function register(input: RegisterInput): Promise<IAuthResponse> {
+export interface RegisterResult {
+  user: IUserPrivate;
+}
+
+/**
+ * Create a new user account in an *unverified* state. No access or refresh
+ * tokens are issued here — the user must verify their email and then log in
+ * before they can access the application. This prevents bypassing the email
+ * verification step.
+ */
+export async function register(input: RegisterInput): Promise<RegisterResult> {
   const { email, password, firstName, lastName, role = 'candidate' } = input;
 
   // 1. Validate password strength
@@ -122,7 +130,7 @@ export async function register(input: RegisterInput): Promise<IAuthResponse> {
   // 3. Hash password
   const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
 
-  // 4. Create user
+  // 4. Create user (unverified)
   const user = await User.create({
     email: email.toLowerCase(),
     passwordHash,
@@ -134,26 +142,15 @@ export async function register(input: RegisterInput): Promise<IAuthResponse> {
     tokenVersion: 0,
   });
 
-  // 5. Generate tokens
-  const tokenPayload = {
-    userId: user._id.toString(),
-    email: user.email,
-    role: user.role,
-    tokenVersion: user.tokenVersion,
-  };
-  const { accessToken, refreshToken } = signTokenPair(tokenPayload);
+  // 5. Generate verification token + send email (non-blocking)
   const verifyToken = signEmailVerifyToken(user._id.toString());
-
-  // 6. Send verification email (non-blocking — don't fail registration if email fails)
   sendVerificationEmail({ to: user.email, firstName: user.firstName, token: verifyToken })
     .catch((err) => logger.error('[auth] Failed to send verification email:', err));
 
-  logger.info(`[auth] Registered user: ${user.email}`);
+  logger.info(`[auth] Registered user (pending verification): ${user.email}`);
 
-  return {
-    user: toPrivateUser(user),
-    accessToken,
-  };
+  // NOTE: deliberately no access/refresh tokens — user must verify email first.
+  return { user: toPrivateUser(user) };
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────

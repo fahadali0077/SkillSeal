@@ -105,11 +105,14 @@ router.post(
         role?: 'candidate' | 'recruiter';
       });
 
-      setRefreshCookie(res, result.accessToken); // temporary — real refresh issued on login
-      sendSuccess(res, {
-        user: result.user,
-        token: result.accessToken,
-      }, 'Registration successful. Please verify your email.', 201);
+      // Deliberately no refresh cookie and no access token — the user must
+      // verify their email and log in before they can access the app.
+      sendSuccess(
+        res,
+        { user: result.user },
+        'Registration successful. Please check your email to verify your account before logging in.',
+        201,
+      );
     } catch (err) {
       handleAuthError(err, res);
     }

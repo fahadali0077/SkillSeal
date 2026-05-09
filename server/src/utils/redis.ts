@@ -49,6 +49,16 @@ export async function getAnswer(sid: string, qid: string): Promise<StoredAnswer 
   try { const r = await getRedis().get(redisKeys.answer(sid, qid)); return r ? JSON.parse(r) : null; }
   catch { return null; }
 }
+export async function consumeAnswer(sid: string, qid: string): Promise<StoredAnswer | null> {
+  try {
+    const key = redisKeys.answer(sid, qid);
+    const r = await getRedis().get(key);
+    if (!r) return null;
+    await getRedis().del(key); // atomic delete — prevents duplicate submission on retry
+    return JSON.parse(r);
+  }
+  catch { return null; }
+}
 export async function setActiveSession(uid: string, sid: string): Promise<void> {
   await getRedis().set(redisKeys.activeSession(uid), sid, 'EX', SESSION_TTL);
 }

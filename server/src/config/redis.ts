@@ -38,13 +38,6 @@ export function getRedis(): Redis {
 export async function disconnectRedis(): Promise<void> {
   if (redisClient) {
     await redisClient.quit();
-    logger.info('Redis connection closed');
-  }
-}
-
-export async function disconnectRedis(): Promise<void> {
-  if (redisClient) {
-    await redisClient.quit();
     redisClient = null;
     logger.info('Redis connection closed');
   }

@@ -53,7 +53,7 @@ export default function App(){
             <Route path="/companies/:slug" element={<CompanyPage/>}/>
             <Route path="/notifications" element={<div className="max-w-2xl mx-auto px-4 py-6 card"><div className="px-4 py-3 border-b"><h1 className="font-bold text-gray-900">Notifications</h1></div><NotificationList/></div>}/>
             <Route path="/assessment" element={<AssessmentLanding/>}/>
-            <Route path="/assessment/active" element={<div/>}/>
+            <Route path="/assessment/active" element={<IsolationMode/>}/>
             <Route path="/recruiter" element={<RecruiterDashboard/>}/>
             <Route path="/recruiter/candidates/:userId" element={<FullCandidateView/>}/>
             <Route path="/billing" element={<BillingSettings/>}/>

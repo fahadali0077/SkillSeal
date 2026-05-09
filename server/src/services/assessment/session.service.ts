@@ -62,7 +62,7 @@ export async function startSession(input: { userId: string; skillId: string; tie
     await Session.findByIdAndDelete(sessionId);
     await clearActiveSession(userId);
     const msg = err instanceof Error ? err.message : String(err);
-    throw new AppError(`Failed to generate first question: ${msg}`, 502, true);
+    throw new AppError(`Failed to generate first question: ${msg}`, 503, true);
   }
 
   await setAnswer(sessionId, clientQuestion._id, storedAnswer);

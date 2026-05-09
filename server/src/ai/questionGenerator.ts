@@ -191,7 +191,7 @@ async function attemptGeneration(input: GenerateQuestionInput): Promise<IQuestio
     sessionHistory: sessionHistory.length > 0 ? sessionHistory.join(', ') : 'none',
   });
 
-  // ── Gemini call ────────────────────────────────────────────────────────────
+  // ── Gemini call (15s timeout — Render free tier drops at 30s) ─────────────
   const genai = getGemini();
   const model = genai.getGenerativeModel({
     model: 'gemini-2.0-flash',
@@ -205,9 +205,13 @@ async function attemptGeneration(input: GenerateQuestionInput): Promise<IQuestio
 
   let result;
   try {
-    result = await model.generateContent(user);
+    result = await model.generateContent(
+      user,
+      { timeout: 15_000 } as Parameters<typeof model.generateContent>[1],
+    );
   } catch (geminiErr) {
     const msg = geminiErr instanceof Error ? geminiErr.message : String(geminiErr);
+    process.stdout.write(`[gemini] \u274c generateContent failed: ${msg}\n`);
     throw new Error(`Gemini API error: ${msg}`);
   }
   const rawText = result.response.text();
@@ -247,10 +251,9 @@ export async function generateQuestion(input: GenerateQuestionInput): Promise<IQ
     } catch (err) {
       lastError = err;
       const elapsed = Math.round(performance.now() - start);
-      logger.warn(
-        `[questionGenerator] Attempt ${attempt} failed after ${elapsed}ms: ` +
-        `${err instanceof Error ? err.message : String(err)}`
-      );
+      const errMsg = err instanceof Error ? err.message : String(err);
+      process.stdout.write(`[gemini] attempt ${attempt} failed after ${elapsed}ms: ${errMsg}\n`);
+      logger.warn(`[questionGenerator] Attempt ${attempt} failed after ${elapsed}ms: ${errMsg}`);
       if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500));
     }
   }
@@ -259,6 +262,11 @@ export async function generateQuestion(input: GenerateQuestionInput): Promise<IQ
   logger.error(
     `[questionGenerator] All attempts failed after ${elapsed}ms for ` +
     `${input.skill}/${input.tier}/${input.questionType}`
+  );
+  process.stdout.write(
+    `[gemini] ALL ATTEMPTS FAILED after ${elapsed}ms ` +
+    `skill=${input.skill} tier=${input.tier} type=${input.questionType}\n` +
+    `[gemini] last error: ${lastError instanceof Error ? lastError.message : String(lastError)}\n`
   );
   throw new Error(
     `Question generation failed after 2 attempts: ` +

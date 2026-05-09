@@ -37,8 +37,15 @@ async function bootstrap() {
     process.stdout.write('[boot] MongoDB OK\n');
 
     process.stdout.write('[boot] Connecting to Redis...\n');
-    await connectRedis();
-    process.stdout.write('[boot] Redis OK\n');
+    try {
+      await connectRedis();
+      process.stdout.write('[boot] Redis OK\n');
+    } catch (redisErr: unknown) {
+      const msg = redisErr instanceof Error ? redisErr.message : String(redisErr);
+      process.stdout.write(`[boot] ⚠️  Redis unavailable: ${msg}\n`);
+      process.stdout.write('[boot] Server will start without Redis — assessment/session routes will return 503 until Redis is reachable.\n');
+      process.stdout.write('[boot] Fix: set REDIS_URL in the Render dashboard → Environment tab (use Upstash or Render Redis add-on).\n');
+    }
 
     const httpServer = createServer(app);
     initSocket(httpServer);

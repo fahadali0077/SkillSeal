@@ -1,8 +1,17 @@
-import { Router, Response } from 'express';
+import { Router, Response, Request, NextFunction } from 'express';
 import { ApiErrorCode } from '@SkillSeal/shared';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
 import { sendSuccess, sendError } from '../utils/response';
 import { AppError } from '../middleware/error.middleware';
+import { isRedisReady } from '../config/redis';
+
+function requireRedis(_req: Request, res: Response, next: NextFunction): void {
+  if (!isRedisReady()) {
+    sendError(res, 'Assessment service unavailable: Redis is not configured. Contact support.', 503, ApiErrorCode.INTERNAL_ERROR);
+    return;
+  }
+  next();
+}
 import { startSession, submitAnswer, recordStrike, getSessionState } from '../services/assessment/session.service';
 import { computeCompositeScore } from '../services/assessment/scoring.service';
 import { Session } from '../models/Session.model';
@@ -11,6 +20,7 @@ import mongoose from 'mongoose';
 import type { SkillTier } from '@SkillSeal/shared';
 const router = Router();
 router.use(authenticate);
+router.use(requireRedis);
 function handle(err: unknown, res: Response) {
   if (err instanceof AppError) {
     const code = err.statusCode === 404 ? ApiErrorCode.NOT_FOUND

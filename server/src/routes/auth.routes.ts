@@ -12,6 +12,7 @@ import {
   refreshTokens,
   logout,
   verifyEmail,
+  resendVerification,
   forgotPassword,
   resetPassword,
   REFRESH_COOKIE_KEY,
@@ -204,6 +205,25 @@ router.post(
     } catch (err) {
       handleAuthError(err, res);
     }
+  },
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /auth/resend-verification
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.post(
+  '/resend-verification',
+  [body('email').isEmail().normalizeEmail().withMessage('Valid email required')],
+  validate,
+  async (req: Request, res: Response): Promise<void> => {
+    // Always 200 — never reveal whether the email exists or is already verified.
+    await resendVerification((req.body as { email: string }).email).catch(() => {/* swallow */});
+    sendSuccess(
+      res,
+      null,
+      'If an unverified account with that email exists, a new verification link has been sent.',
+    );
   },
 );
 

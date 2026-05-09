@@ -103,6 +103,12 @@ export const authApi = {
       body: JSON.stringify({ token }),
     }),
 
+  resendVerification: (email: string) =>
+    authFetch<null>('/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
   forgotPassword: (email: string) =>
     authFetch<null>('/forgot-password', {
       method: 'POST',

@@ -1,6 +1,19 @@
 import { API_ORIGIN } from '../../lib/apiBase';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { ApiRequestError } from './authApi';
+
+/** Parse a non-OK fetch response into a typed ApiRequestError so callers can
+ *  branch on `err.code` (e.g. EMAIL_NOT_VERIFIED) and show targeted UI. */
+async function asApiError(r: Response, fallbackMsg: string): Promise<ApiRequestError> {
+  let body: { message?: string; code?: string } = {};
+  try { body = await r.json(); } catch { /* non-JSON body */ }
+  return new ApiRequestError(
+    body.message ?? fallbackMsg,
+    body.code ?? 'INTERNAL_ERROR',
+    r.status,
+  );
+}
 
 export interface AuthUser {
   _id: string;
@@ -39,8 +52,8 @@ export const useAuthStore = create<AuthState>()(persist(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
         });
+        if (!r.ok) throw await asApiError(r, 'Login failed');
         const data = await r.json();
-        if (!r.ok) throw new Error(data.message ?? 'Login failed');
         set({ user: data.data.user, accessToken: data.data.token, isLoading: false });
         return { role: data.data.user.role ?? 'candidate' };
       } catch (e) { set({ isLoading: false }); throw e; }
@@ -54,8 +67,7 @@ export const useAuthStore = create<AuthState>()(persist(
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.message ?? 'Registration failed');
+        if (!r.ok) throw await asApiError(r, 'Registration failed');
         // Deliberately do NOT set user/accessToken in the store — the account
         // must be email-verified before the user can sign in. Storing auth
         // state here would trigger GuestRoute to redirect away from the

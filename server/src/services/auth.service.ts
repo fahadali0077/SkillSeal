@@ -291,6 +291,31 @@ export async function verifyEmail(token: string): Promise<void> {
   logger.info(`[auth] Email verified: ${user.email}`);
 }
 
+// ── Resend verification email ─────────────────────────────────────────────────
+
+/**
+ * Send a fresh verification email to an unverified account. Always resolves
+ * silently (no error) when the email isn't found or is already verified —
+ * this prevents account enumeration via the resend endpoint.
+ */
+export async function resendVerification(email: string): Promise<void> {
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) {
+    logger.info(`[auth] Resend verification: email not found (${email}) — silently ignored`);
+    return;
+  }
+  if (user.emailVerified) {
+    logger.info(`[auth] Resend verification: ${user.email} already verified — silently ignored`);
+    return;
+  }
+
+  const verifyToken = signEmailVerifyToken(user._id.toString());
+  sendVerificationEmail({ to: user.email, firstName: user.firstName, token: verifyToken })
+    .catch((err) => logger.error('[auth] Failed to resend verification email:', err));
+
+  logger.info(`[auth] Resent verification email: ${user.email}`);
+}
+
 // ── Forgot password ───────────────────────────────────────────────────────────
 
 export async function forgotPassword(email: string): Promise<void> {

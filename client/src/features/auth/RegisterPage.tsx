@@ -6,7 +6,7 @@ import { Eye, EyeOff, UserPlus, Loader2, CheckCircle2, XCircle, ShieldCheck, Bri
 import { motion, AnimatePresence } from 'framer-motion';
 import { registerSchema, type RegisterFormValues } from './authSchemas';
 import { useAuthStore } from './useAuth';
-import { ApiRequestError } from './authApi';
+import { ApiRequestError, authApi } from './authApi';
 import { useSEO } from '../../lib/useSEO';
 import toast from 'react-hot-toast';
 
@@ -42,13 +42,18 @@ function EmailVerificationPending({ email, firstName }: { email: string; firstNa
   const [resent, setResent] = useState(false);
 
   const handleResend = async () => {
+    if (resending || resent) return;
     setResending(true);
-    // Simulate resend — in production call /api/v1/auth/resend-verification
-    await new Promise(r => setTimeout(r, 1200));
-    setResending(false);
-    setResent(true);
-    toast.success('Verification email sent again!');
-    setTimeout(() => setResent(false), 5000);
+    try {
+      await authApi.resendVerification(email);
+      setResent(true);
+      toast.success('Verification email sent again!');
+      setTimeout(() => setResent(false), 5000);
+    } catch {
+      toast.error("Couldn't resend right now. Please try again in a minute.");
+    } finally {
+      setResending(false);
+    }
   };
 
   return (

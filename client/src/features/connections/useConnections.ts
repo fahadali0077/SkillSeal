@@ -25,7 +25,7 @@ export function usePendingRequests() {
 export function useConnections(search?: string) {
   return useQuery({
     queryKey: [...connKeys.connections(), search],
-    queryFn: () => apiFetch<{ _id: string; firstName: string; lastName: string; profilePhoto: string; headline: string; customUrl: string }[]>(
+    queryFn: () => apiFetch<{ connections: { _id: string; firstName: string; lastName: string; profilePhoto: string; headline: string; customUrl: string }[]; total: number }>(
       `${BASE}?${search ? `search=${encodeURIComponent(search)}` : ''}`,
     ),
     staleTime: 60_000,

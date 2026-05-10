@@ -121,6 +121,7 @@ export interface IUserPublic {
   followerCount: number;
   followingCount: number;
   connectionStatus: ConnectionStatus; // relative to the requesting user
+  connectionId?: string;        // the Connection doc _id — set when status is pending or accepted
   createdAt: string;
   updatedAt: string;
 }

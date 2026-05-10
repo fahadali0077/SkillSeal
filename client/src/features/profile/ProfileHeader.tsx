@@ -1,8 +1,10 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Camera, MapPin, Link2, UserCheck, UserPlus, Edit2, Loader2, Briefcase } from 'lucide-react';
+import { Camera, MapPin, Link2, Edit2, Loader2, Briefcase, MessageSquare, Share2 } from 'lucide-react';
 import type { IUserPublic } from '@SkillSeal/shared';
 import { useUploadPhoto } from './useProfile';
+import ConnectionButton from '../connections/ConnectionButton';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -12,9 +14,9 @@ interface Props {
 }
 
 export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef    = useRef<HTMLInputElement>(null);
   const uploadPhoto = useUploadPhoto(profile._id);
-  const [connecting, setConnecting] = useState(false);
+  const navigate    = useNavigate();
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -22,6 +24,16 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
     if (file.size > 5 * 1024 * 1024) { toast.error('Max file size is 5 MB'); return; }
     await uploadPhoto.mutateAsync(file);
     toast.success('Photo updated!');
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      await navigator.share({ title: profile.fullName, url }).catch(() => null);
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success('Profile link copied!');
+    }
   };
 
   return (
@@ -33,17 +45,18 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
         )}
       </div>
 
-      {/* Avatar row */}
+      {/* Avatar + CTAs row */}
       <div className="px-5 pb-5">
         <div className="flex items-end justify-between -mt-12 mb-3">
+
           {/* Avatar */}
           <motion.div className="relative" whileHover={{ scale: isOwner ? 1.03 : 1 }}>
             <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-200 overflow-hidden shadow">
               {profile.profilePhoto
                 ? <img src={profile.profilePhoto} alt={profile.fullName} className="w-full h-full object-cover" />
                 : <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400">
-                  {profile.firstName[0]}{profile.lastName[0]}
-                </div>
+                    {profile.firstName[0]}{profile.lastName[0]}
+                  </div>
               }
             </div>
             {isOwner && (
@@ -66,31 +79,39 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
           </motion.div>
 
           {/* CTAs */}
-          <div className="flex gap-2 pb-1">
+          <div className="flex gap-2 pb-1 flex-wrap justify-end">
             {isOwner ? (
-              <button onClick={onEdit} className="btn-secondary flex items-center gap-1.5 text-sm">
-                <Edit2 size={14} /> Edit profile
-              </button>
+              <>
+                <button onClick={onEdit} className="btn-secondary flex items-center gap-1.5 text-sm">
+                  <Edit2 size={14} /> Edit profile
+                </button>
+                <button onClick={handleShare} className="btn-secondary flex items-center gap-1.5 text-sm">
+                  <Share2 size={14} /> Share
+                </button>
+              </>
             ) : (
               <>
-                {profile.connectionStatus === 'accepted' ? (
-                  <button className="btn-secondary flex items-center gap-1.5 text-sm">
-                    <UserCheck size={14} /> Connected
-                  </button>
-                ) : profile.connectionStatus === 'pending' ? (
-                  <button className="btn-secondary text-sm opacity-60" disabled>
-                    Pending…
-                  </button>
-                ) : (
+                {/* Full connection button — handles Connect/Pending/Connected+dropdown/Remove */}
+                <ConnectionButton
+                  targetUserId={profile._id}
+                  connectionStatus={profile.connectionStatus}
+                  connectionId={profile.connectionId}
+                />
+
+                {/* Message — only visible when connected */}
+                {profile.connectionStatus === 'accepted' && (
                   <button
-                    className="btn-primary flex items-center gap-1.5 text-sm"
-                    onClick={() => setConnecting(true)}
-                    disabled={connecting}
+                    onClick={() => navigate(`/messages?userId=${profile._id}`)}
+                    className="btn-secondary flex items-center gap-1.5 text-sm"
                   >
-                    {connecting ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
-                    Connect
+                    <MessageSquare size={14} /> Message
                   </button>
                 )}
+
+                {/* Share profile */}
+                <button onClick={handleShare} className="btn-secondary flex items-center gap-1.5 text-sm">
+                  <Share2 size={14} /> Share
+                </button>
               </>
             )}
           </div>
@@ -117,7 +138,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
           )}
 
           <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
-            {(profile.location.city || profile.location.country) && (
+            {(profile.location?.city || profile.location?.country) && (
               <span className="flex items-center gap-1">
                 <MapPin size={13} />
                 {[profile.location.city, profile.location.country].filter(Boolean).join(', ')}
@@ -126,8 +147,8 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
             <span className="text-brand">{profile.connectionCount} connections</span>
           </div>
 
-          {/* Links row */}
-          {profile.links.length > 0 && (
+          {/* Links */}
+          {profile.links?.length > 0 && (
             <div className="flex flex-wrap gap-3 mt-3">
               {profile.links.map((lk, i) => (
                 <a key={i} href={lk.url} target="_blank" rel="noopener noreferrer"
@@ -138,7 +159,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
             </div>
           )}
 
-          {/* Summary preview */}
+          {/* Summary */}
           {profile.summary && (
             <p className="mt-3 text-sm text-gray-600 line-clamp-3">{profile.summary}</p>
           )}

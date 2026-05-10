@@ -39,8 +39,8 @@ function generateCustomUrl(firstName: string, lastName: string): string {
 async function resolveConnectionStatus(
   viewerId: string | undefined,
   targetId: string,
-): Promise<'accepted' | 'pending' | 'none'> {
-  if (!viewerId || viewerId === targetId) return 'none';
+): Promise<{ status: 'accepted' | 'pending' | 'none'; connectionId?: string }> {
+  if (!viewerId || viewerId === targetId) return { status: 'none' };
 
   const conn = await Connection.findOne({
     $or: [
@@ -49,10 +49,11 @@ async function resolveConnectionStatus(
     ],
   }).lean();
 
-  if (!conn) return 'none';
-  if (conn.status === 'accepted') return 'accepted';
-  if (conn.status === 'pending') return 'pending';
-  return 'none';
+  if (!conn) return { status: 'none' };
+  const connectionId = (conn._id as { toString(): string }).toString();
+  if (conn.status === 'accepted') return { status: 'accepted', connectionId };
+  if (conn.status === 'pending')  return { status: 'pending',  connectionId };
+  return { status: 'none' };
 }
 
 /** Map a Mongoose user doc → IUserPublic (safe for API) */
@@ -60,7 +61,7 @@ async function toPublicUser(
   doc: IUserDocument,
   viewerId?: string,
 ): Promise<IUserPublic> {
-  const connStatus = await resolveConnectionStatus(viewerId, doc._id.toString());
+  const { status: connStatus, connectionId: connId } = await resolveConnectionStatus(viewerId, doc._id.toString());
 
   return {
     _id: doc._id.toString(),
@@ -123,6 +124,7 @@ async function toPublicUser(
     followerCount: doc.followers?.length ?? 0,
     followingCount: doc.following?.length ?? 0,
     connectionStatus: connStatus,
+    connectionId: connId,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };

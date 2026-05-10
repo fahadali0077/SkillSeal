@@ -93,8 +93,23 @@ export async function submitAnswer(input: { sessionId: string; questionId: strin
   }
   state.answers.push({ questionId, questionType: stored.questionType, isCorrect, timeTakenMs, conceptScore, aiScore, isTimeout });
   state.runningConceptScore += conceptScore; state.runningSpeedScore += speedPct; state.questionIndex += 1;
+
+  // ── CRITICAL: persist answers + questionIndex to Redis BEFORE calling
+  // adjustDifficulty.  adjustDifficulty calls updateSession which reads the
+  // current Redis state and merges only tier/streak fields via spread operator
+  // ({ ...existing, ...updates }).  If we haven't saved the incremented
+  // questionIndex yet, updateSession reads the OLD index from Redis and
+  // Object.assign below overwrites our in-memory increment — meaning
+  // questionIndex never advances and the session loops forever.
+  await updateSession(sessionId, {
+    answers:              state.answers,
+    questionIndex:        state.questionIndex,
+    runningConceptScore:  state.runningConceptScore,
+    runningSpeedScore:    state.runningSpeedScore,
+  });
+
   if (isCorrect !== null) { const { updatedState } = await adjustDifficulty(state, isCorrect); Object.assign(state, updatedState); }
-  else { await updateSession(sessionId, { answers: state.answers, questionIndex: state.questionIndex }); }
+
   const isComplete = state.questionIndex >= TOTAL_QUESTIONS;
   if (isComplete) {
     const { issueCertificate } = await import('./certificate.service');

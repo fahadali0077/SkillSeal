@@ -20,6 +20,7 @@ export default function IsolationMode() {
   const result = useSessionResult();
   const skillName = useAssessmentStore(s => s.skillName);
   const tier = useAssessmentStore(s => s.tier);
+  const sessionState = useAssessmentStore(s => s.sessionState);
   const sessionId_c = useAssessmentStore(s => s.sessionId);
   const handleAntiCheatEvent = useAssessmentStore(s => s.handleAntiCheatEvent);
   const submitAnswer = useAssessmentStore(s => s.submitAnswer);
@@ -61,6 +62,14 @@ export default function IsolationMode() {
       <div className="shrink-0 border-b border-gray-100 bg-white px-6 py-3 flex items-center gap-4">
         <div className="flex items-center gap-2"><ShieldCheck size={16} className="text-brand" /><span className="text-sm font-medium text-gray-600">{skillName ?? 'Assessment'}{tier && <span className="text-gray-400 ml-1 capitalize">| {tier} Level</span>}</span></div>
         <div className="flex-1" />
+        {/* Question counter */}
+        {sessionState && (
+          <div className="flex items-center gap-1.5 text-sm font-medium text-gray-500">
+            <span className="text-brand font-bold">{sessionState.currentQuestionIndex + 1}</span>
+            <span className="text-gray-300">/</span>
+            <span>{sessionState.totalQuestions}</span>
+          </div>
+        )}
         {strikeCount > 0 && <div className="flex items-center gap-1.5">{[0, 1, 2].map(i => <div key={i} className={`w-2.5 h-2.5 rounded-full transition-colors ${i < strikeCount ? 'bg-red-500' : 'bg-gray-200'}`} />)}</div>}
         <div className="w-48"><TimerBar timeLimitMs={currentQuestion?.timeLimitMs ?? 60000} timeRemainingMs={timeRemainingMs} /></div>
       </div>

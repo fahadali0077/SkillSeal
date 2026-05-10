@@ -14,7 +14,7 @@ export const connKeys = {
 export function usePendingRequests() {
   return useQuery({
     queryKey: connKeys.pending(),
-    queryFn: () => apiFetch<{ _id: string; requesterId: { _id: string; fullName: string; profilePhoto: string; headline: string; customUrl: string } }[]>(
+    queryFn: () => apiFetch<{ connectionId: string; user: { _id: string; fullName: string; firstName: string; lastName: string; profilePhoto: string; headline: string; customUrl: string }; note: string; createdAt: string }[]>(
       `${BASE}/pending`,                              // was: /requests/pending ❌
     ),
     staleTime: 30_000,

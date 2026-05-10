@@ -5,6 +5,7 @@ import RegisterPage from './features/auth/RegisterPage';
 import ForgotPasswordPage from './features/auth/ForgotPasswordPage';
 import ResetPasswordPage from './features/auth/ResetPasswordPage';
 import PublicVerifyPage from './pages/PublicVerifyPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import LandingPage from './pages/LandingPage';
 import PricingPage from './features/billing/PricingPage';
 import Layout from './lib/Layout';
@@ -67,6 +68,7 @@ export default function App() {
 
         {/* Public pages */}
         <Route path="/verify/:certificateId" element={<PublicVerifyPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/billing/success" element={<ProtectedRoute><BillingSuccessPage /></ProtectedRoute>} />
 

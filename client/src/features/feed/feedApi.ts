@@ -1,9 +1,10 @@
 import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
 // ─────────────────────────────────────────────────────────────────────────────
 // feedApi.ts  –  typed API calls for feed, posts, reactions, hashtags
+// All URLs must be absolute (prefixed with API_ORIGIN) so requests go to the
+// Render backend in production, not to the Vercel frontend host.
 // ─────────────────────────────────────────────────────────────────────────────
 import type { IPost, IPostCard, IReactionSummary, PostType, ReactionType } from '@SkillSeal/shared';
-
 
 export interface FeedPage {
   posts: IPostCard[];
@@ -35,42 +36,44 @@ export interface CommentOut {
 export const feedApi = {
   // Feed
   getFeed: (page: number) =>
-    apiFetch<FeedPage>(`/api/v1/feed?page=${page}&limit=20`),
+    apiFetch<FeedPage>(`${API_ORIGIN}/api/v1/feed?page=${page}&limit=20`),
 
   // Posts
   createPost: (data: CreatePostInput) =>
     apiFetch<IPost>(`${API_ORIGIN}/api/v1/posts`, { method: 'POST', body: JSON.stringify(data) }),
 
   getPost: (id: string) =>
-    apiFetch<IPost>(`/api/v1/posts/${id}`),
+    apiFetch<IPost>(`${API_ORIGIN}/api/v1/posts/${id}`),
 
   deletePost: (id: string) =>
-    apiFetch<null>(`/api/v1/posts/${id}`, { method: 'DELETE' }),
+    apiFetch<null>(`${API_ORIGIN}/api/v1/posts/${id}`, { method: 'DELETE' }),
 
   // Reactions
   react: (postId: string, reaction: ReactionType) =>
-    apiFetch<IReactionSummary>(`/api/v1/posts/${postId}/like`, {
+    apiFetch<IReactionSummary>(`${API_ORIGIN}/api/v1/posts/${postId}/like`, {
       method: 'POST', body: JSON.stringify({ reaction }),
     }),
 
   unreact: (postId: string) =>
-    apiFetch<IReactionSummary>(`/api/v1/posts/${postId}/like`, { method: 'DELETE' }),
+    apiFetch<IReactionSummary>(`${API_ORIGIN}/api/v1/posts/${postId}/like`, { method: 'DELETE' }),
 
   // Comments
   addComment: (postId: string, content: string, parentCommentId?: string) =>
-    apiFetch<CommentOut>(`/api/v1/posts/${postId}/comments`, {
+    apiFetch<CommentOut>(`${API_ORIGIN}/api/v1/posts/${postId}/comments`, {
       method: 'POST', body: JSON.stringify({ content, parentCommentId }),
     }),
 
   // Repost
   repost: (postId: string, commentary?: string) =>
-    apiFetch<IPost>(`/api/v1/posts/${postId}/repost`, {
+    apiFetch<IPost>(`${API_ORIGIN}/api/v1/posts/${postId}/repost`, {
       method: 'POST', body: JSON.stringify({ commentary }),
     }),
 
   // Hashtags
   getHashtagPosts: (tag: string, page: number) =>
-    apiFetch<{ posts: IPostCard[]; total: number }>(`/api/v1/hashtags/${encodeURIComponent(tag)}/posts?page=${page}&limit=20`),
+    apiFetch<{ posts: IPostCard[]; total: number }>(
+      `${API_ORIGIN}/api/v1/hashtags/${encodeURIComponent(tag)}/posts?page=${page}&limit=20`,
+    ),
 
   getTrending: () =>
     apiFetch<{ tag: string; count: number }[]>(`${API_ORIGIN}/api/v1/hashtags/trending`),

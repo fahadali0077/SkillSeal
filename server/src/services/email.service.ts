@@ -8,7 +8,11 @@
 import nodemailer from 'nodemailer';
 import logger from '../utils/logger';
 
-const SMTP_HOST = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+// smtp.brevo.com  → standard authenticated SMTP (API-key auth, no IP allowlist needed)
+// smtp-relay.brevo.com → dedicated relay that requires your server IP to be
+//   whitelisted inside Brevo → use that only if you have a static IP.
+//   Render's IPs are dynamic, so the relay always ETIMEDOUT on CONN.
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.brevo.com';
 const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587', 10);
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';

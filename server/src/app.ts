@@ -32,7 +32,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      connectSrc: ["'self'", process.env.CLIENT_URL || 'http://localhost:5173'],
+      connectSrc: [
+        "'self'",
+        'https://skillseal.tech',
+        'https://www.skillseal.tech',
+        process.env.CLIENT_URL || 'http://localhost:5173',
+      ],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
@@ -46,6 +51,11 @@ app.use(helmet({
 }));
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  // Explicitly cover both www and non-www regardless of CLIENT_URL value.
+  // The 403 on login was caused by the browser sending origin
+  // "https://www.skillseal.tech" while CLIENT_URL was set without "www".
+  'https://skillseal.tech',
+  'https://www.skillseal.tech',
   'http://localhost:5173',
   'http://localhost:5174',
 ].filter(Boolean) as string[];
@@ -95,6 +105,11 @@ app.use('/api/v1/companies', companiesRouter);
 app.use('/api/v1/notifications', notificationsRouter);
 app.use('/api/v1/privacy', privacyRouter);
 app.use('/api/v1/skills', skillsRouter);
+
+// Root path — redirect uptime monitors / health checkers to /health.
+// Without this, any checker hitting "/" gets a 404 and reports the
+// service as down even when it is fully operational.
+app.get('/', (_req, res) => res.redirect(301, '/health'));
 
 app.use((_req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
 app.use(errorHandler);

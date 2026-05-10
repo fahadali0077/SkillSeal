@@ -268,4 +268,47 @@ router.post(
   },
 );
 
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /auth/_debug/email   ⚠️  TEMPORARY DIAGNOSTIC — REMOVE BEFORE LAUNCH
+// Synchronously sends a test email and returns the exact SMTP result/error
+// in the HTTP response. Lets us debug Brevo without reading server logs.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { sendVerificationEmail } from '../services/email.service';
+
+router.post(
+  '/_debug/email',
+  [body('to').isEmail().normalizeEmail().withMessage('Valid recipient email required')],
+  validate,
+  async (req: Request, res: Response): Promise<void> => {
+    const { to } = req.body as { to: string };
+    const env = {
+      SMTP_HOST: process.env.SMTP_HOST,
+      SMTP_PORT: process.env.SMTP_PORT,
+      SMTP_USER_set: !!process.env.SMTP_USER,
+      SMTP_PASS_set: !!process.env.SMTP_PASS,
+      FROM_EMAIL: process.env.FROM_EMAIL,
+      NODE_ENV: process.env.NODE_ENV,
+    };
+    try {
+      await sendVerificationEmail({ to, firstName: 'Debug', token: 'debug-token-' + Date.now() });
+      res.status(200).json({ success: true, message: 'Email send completed without throwing.', env });
+    } catch (err) {
+      const e = err as { code?: string; response?: string; responseCode?: number; command?: string; message?: string; stack?: string };
+      res.status(500).json({
+        success: false,
+        message: 'Email send threw an error.',
+        env,
+        error: {
+          message: e.message,
+          code: e.code,
+          responseCode: e.responseCode,
+          response: e.response,
+          command: e.command,
+        },
+      });
+    }
+  },
+);
+
 export default router;

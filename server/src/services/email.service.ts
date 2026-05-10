@@ -42,14 +42,14 @@ interface SendEmailOptions {
 }
 
 async function sendEmail(opts: SendEmailOptions): Promise<void> {
-  // Only fall back to console-logging when SMTP credentials are missing.
-  // Previously this also skipped sending whenever NODE_ENV !== 'production',
-  // which silently swallowed every email even with valid Brevo credentials.
+  // Diagnostic logging via console.* — bypasses Winston entirely so we see
+  // the line in Render's Logs tab even if the Winston pipeline is misconfigured.
+  console.log(`[email] >>> ATTEMPT to=${opts.to} subj="${opts.subject}" host=${SMTP_HOST}:${SMTP_PORT} user=${SMTP_USER ? SMTP_USER.slice(0, 8) + '…' : '<MISSING>'} from=${FROM_EMAIL}`);
+
   const hasSmtp = !!SMTP_USER && !!SMTP_PASS;
   if (!hasSmtp) {
-    logger.warn(
-      `[email] SMTP credentials missing – skipping send to ${opts.to}: ${opts.subject}`,
-    );
+    console.warn(`[email] >>> SKIP — SMTP credentials missing`);
+    logger.warn(`[email] SMTP credentials missing – skipping send to ${opts.to}`);
     return;
   }
 
@@ -61,10 +61,12 @@ async function sendEmail(opts: SendEmailOptions): Promise<void> {
       text: opts.text,
       html: opts.html,
     });
+    console.log(`[email] >>> SUCCESS to=${opts.to} id=${info.messageId} response=${info.response}`);
     logger.info(`[email] Sent to ${opts.to} (id=${info.messageId})`);
   } catch (err) {
-    // Surface the underlying SMTP error (auth failure, unverified sender, etc.)
-    // so problems are visible in logs instead of silently swallowed upstream.
+    // Surface the full SMTP error so problems are visible — not just swallowed.
+    const e = err as { code?: string; response?: string; responseCode?: number; command?: string; message?: string };
+    console.error(`[email] >>> FAILURE to=${opts.to} code=${e.code} responseCode=${e.responseCode} command=${e.command} message="${e.message}" response="${e.response}"`);
     logger.error(`[email] Failed to send to ${opts.to} (${opts.subject}):`, err);
     throw err;
   }

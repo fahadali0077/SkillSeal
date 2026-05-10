@@ -9,7 +9,7 @@ npm run test:coverage     # with coverage report
 npm run test:ci           # CI mode (forceExit, runInBand)
 ```
 
-### Test files
+### Test file
 | File | What it tests |
 |---|---|
 | `auth.test.ts` | Register (201/409/400), login (200/401/403), refresh, logout, brute-force 429 |

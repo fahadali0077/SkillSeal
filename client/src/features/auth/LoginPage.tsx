@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ShieldCheck as ShieldIcon, Mail, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react';
 import { loginSchema, type LoginFormValues } from './authSchemas';
@@ -117,6 +117,7 @@ function LoginErrorBanner({ error }: { error: LoginErrorState }) {
 export default function LoginPage() {
   useSEO({ title: 'Log In', description: 'Log in to SkillSeal to verify your skills or access your recruiter dashboard.', canonical: '/login' });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const login = useAuthStore((s) => s.login);
   const isLoading = useAuthStore((s) => s.isLoading);
   const [showPass, setShowPass] = useState(false);
@@ -136,7 +137,8 @@ export default function LoginPage() {
     try {
       const { role } = await login(data.email, data.password);
       toast.success('Welcome back!', { id: toastId });
-      navigate(homeRouteForRole(role), { replace: true });
+      const redirect = searchParams.get('redirect');
+      navigate(redirect ?? homeRouteForRole(role), { replace: true });
     } catch (err) {
       // Pull the typed code out of ApiRequestError so we can branch the UI.
       const isApi = err instanceof ApiRequestError;

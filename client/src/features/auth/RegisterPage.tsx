@@ -114,7 +114,7 @@ function EmailVerificationPending({ email, firstName }: { email: string; firstNa
 
           {/* CTA */}
           <Link
-            to="/login"
+            to={redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : "/login"}
             className="w-full inline-flex items-center justify-center gap-2 btn-primary py-3 mb-4"
           >
             Go to Sign In <ArrowRight size={15} />
@@ -147,6 +147,7 @@ export default function RegisterPage() {
   useSEO({ title: 'Create Your Account', description: 'Join SkillSeal to get your skills verified or find verified talent.', canonical: '/register' });
   const [params] = useSearchParams();
   const initialRole = params.get('role') === 'recruiter' ? 'recruiter' : 'candidate';
+  const redirectParam = params.get('redirect') ?? '';
 
   const register_  = useAuthStore((s) => s.register);
   const isLoading  = useAuthStore((s) => s.isLoading);

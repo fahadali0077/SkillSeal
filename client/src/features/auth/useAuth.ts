@@ -84,5 +84,5 @@ export const useUserRole = () => useAuthStore(s => s.user?.role ?? 'candidate');
 
 /** Returns the home route for the current user based on their role */
 export function homeRouteForRole(role: string): string {
-  return role === 'recruiter' || role === 'company_admin' ? '/recruiter' : '/assessment';
+  return role === 'recruiter' || role === 'company_admin' ? '/recruiter' : '/feed';
 }

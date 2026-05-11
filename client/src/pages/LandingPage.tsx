@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useIsAuthenticated } from '../features/auth/useAuth';
 import { motion } from 'framer-motion';
 import {
   ShieldCheck, ArrowRight, CheckCircle2, Star,
@@ -107,7 +108,7 @@ function Hero() {
         {/* CTAs */}
         <motion.div {...fadeUp(0.3)} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
-            to="/register?role=candidate"
+            to="/register?role=candidate&redirect=/assessment"
             className="flex items-center gap-2 bg-brand hover:bg-brand-dark text-white font-semibold px-8 py-4 rounded-xl transition-all shadow-lg shadow-brand/30 text-base"
           >
             <ShieldCheck size={18} /> Verify My Skills
@@ -187,7 +188,7 @@ function HowItWorks() {
         </div>
 
         <motion.div {...fadeUp(0.4)} className="mt-12 text-center">
-          <Link to="/register?role=candidate" className="btn-primary inline-flex items-center gap-2 px-6 py-3">
+          <Link to="/register?role=candidate&redirect=/assessment" className="btn-primary inline-flex items-center gap-2 px-6 py-3">
             Start Verifying <ChevronRight size={16} />
           </Link>
         </motion.div>
@@ -237,7 +238,7 @@ function SkillsSection() {
                 </div>
 
                 <Link
-                  to={`/register?role=candidate`}
+                  to={`/register?role=candidate&redirect=/assessment`}
                   className="w-full flex items-center justify-center gap-2 bg-brand text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-brand-dark transition-colors"
                 >
                   Verify {skill.name} <ArrowRight size={14} />
@@ -368,7 +369,7 @@ function CTASection() {
                 </li>
               ))}
             </ul>
-            <Link to="/register?role=candidate" className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-semibold py-3.5 rounded-xl transition-colors">
+            <Link to="/register?role=candidate&redirect=/assessment" className="w-full flex items-center justify-center gap-2 bg-brand hover:bg-brand-dark text-white font-semibold py-3.5 rounded-xl transition-colors">
               Verify My Skills <ArrowRight size={16} />
             </Link>
           </motion.div>

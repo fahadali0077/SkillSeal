@@ -40,6 +40,8 @@ function PasswordStrength({ password }: { password: string }) {
 function EmailVerificationPending({ email, firstName }: { email: string; firstName: string }) {
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+  const [params] = useSearchParams();
+  const redirectParam = params.get('redirect') ?? '';
 
   const handleResend = async () => {
     if (resending || resent) return;
@@ -147,7 +149,6 @@ export default function RegisterPage() {
   useSEO({ title: 'Create Your Account', description: 'Join SkillSeal to get your skills verified or find verified talent.', canonical: '/register' });
   const [params] = useSearchParams();
   const initialRole = params.get('role') === 'recruiter' ? 'recruiter' : 'candidate';
-  const redirectParam = params.get('redirect') ?? '';
 
   const register_  = useAuthStore((s) => s.register);
   const isLoading  = useAuthStore((s) => s.isLoading);

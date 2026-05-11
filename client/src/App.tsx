@@ -8,6 +8,8 @@ import PublicVerifyPage from './pages/PublicVerifyPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import LandingPage from './pages/LandingPage';
 import PricingPage from './features/billing/PricingPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 import Layout from './lib/Layout';
 import FeedPage from './features/feed/FeedPage';
 import HashtagFeed from './features/feed/HashtagFeed';
@@ -70,6 +72,8 @@ export default function App() {
         <Route path="/verify/:certificateId" element={<PublicVerifyPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="/billing/success" element={<ProtectedRoute><BillingSuccessPage /></ProtectedRoute>} />
 
         {/* Authenticated app */}

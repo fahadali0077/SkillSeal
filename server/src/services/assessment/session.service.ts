@@ -25,7 +25,7 @@ const TIMERS: Record<string, number> = { mcq: 60, scenario: 120, 'micro-theory':
 // Supported skills must have a matching entry in conceptLibrary.ts.
 // Any slug not in this list gets an explicit error instead of silently
 // serving React questions (which was the root cause of question mixing).
-const SUPPORTED_SKILLS: SupportedSkill[] = ['react', 'nodejs', 'mongodb'];
+const SUPPORTED_SKILLS: SupportedSkill[] = ['react', 'nodejs', 'mongodb', 'typescript', 'python', 'postgresql', 'docker', 'graphql'];
 
 function toSkill(slug: string): SupportedSkill {
   if (SUPPORTED_SKILLS.includes(slug as SupportedSkill)) {

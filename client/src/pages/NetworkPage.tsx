@@ -1,3 +1,4 @@
+import { useSEO } from '../lib/useSEO';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Clock, UserCheck, Sparkles } from 'lucide-react';
@@ -7,6 +8,7 @@ import PeopleYouMayKnow from '../features/connections/PeopleYouMayKnow';
 import { usePendingRequests } from '../features/connections/useConnections';
 type Tab = 'suggestions' | 'pending' | 'connections';
 export default function NetworkPage() {
+  useSEO({ title: 'My Network', description: 'Manage your professional connections on SkillSeal.', canonical: '/network' });
   const [tab, setTab] = useState<Tab>('suggestions'); const { data: pending = [] } = usePendingRequests();
   const TABS = [{ id: 'suggestions' as Tab, label: 'Grow your network', icon: <Sparkles size={16} /> }, { id: 'pending' as Tab, label: 'Invitations', icon: <Clock size={16} />, badge: pending.length }, { id: 'connections' as Tab, label: 'Connections', icon: <UserCheck size={16} /> }];
   return (<div className="max-w-4xl mx-auto px-4 py-6">

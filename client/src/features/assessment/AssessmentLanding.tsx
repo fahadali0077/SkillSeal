@@ -1,3 +1,4 @@
+import { useSEO } from '../../lib/useSEO';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +10,7 @@ const TIERS: [{ value: SkillTier; label: string; description: string; time: stri
 const RULES = [{ icon: <Monitor size={15} />, text: 'Stay on this tab throughout' }, { icon: <Eye size={15} />, text: 'No copy-pasting — clipboard is monitored' }, { icon: <Wifi size={15} />, text: 'Ensure stable internet connection' }, { icon: <AlertTriangle size={15} />, text: '3 violations will terminate your session' }];
 const Q_DIST = [{ type: 'Multiple Choice', count: 14, time: '60s each', icon: '📝' }, { type: 'Scenario-based', count: 4, time: '120s each', icon: '🔍' }, { type: 'Written theory', count: 2, time: '150s each', icon: '✍️' }];
 export default function AssessmentLanding() {
+  useSEO({ title: 'Verify Your Skills', description: 'Take an AI-powered skill assessment and earn your SkillSeal badge.', canonical: '/assessment' });
   const navigate = useNavigate(); const [params] = useSearchParams();
   const preSkillId = params.get('skillId'); const preTier = params.get('tier') as SkillTier | null;
   const [skills, setSkills] = useState<ISkillOption[]>([]);

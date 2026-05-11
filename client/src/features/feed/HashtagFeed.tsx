@@ -1,3 +1,4 @@
+import { useSEO } from '../../lib/useSEO';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Hash, ArrowLeft, Loader2 } from 'lucide-react';
@@ -6,6 +7,7 @@ import PostCard from './PostCard';
 
 export default function HashtagFeed() {
   const { tag = '' } = useParams<{ tag: string }>();
+  useSEO({ title: tag ? `#${tag}` : 'Hashtag Feed', canonical: `/hashtag/${tag}` });
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useHashtagFeed(tag);
 
   const allPosts = data?.pages.flatMap((p) => p.posts) ?? [];

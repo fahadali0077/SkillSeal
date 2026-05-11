@@ -1,3 +1,4 @@
+import { useSEO } from '../../lib/useSEO';
 // ─────────────────────────────────────────────────────────────────────────────
 // ResetPasswordPage.tsx
 // ─────────────────────────────────────────────────────────────────────────────
@@ -11,6 +12,7 @@ import { resetPasswordSchema, type ResetPasswordFormValues } from './authSchemas
 import { useResetPasswordMutation, ApiRequestError } from './authApi';
 
 export default function ResetPasswordPage() {
+  useSEO({ title: 'Set New Password', canonical: '/reset-password' });
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const token = params.get('token') ?? '';

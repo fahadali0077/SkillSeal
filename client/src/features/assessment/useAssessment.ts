@@ -61,12 +61,20 @@ export const useAssessmentStore = create<AssessmentState>()((set, get) => ({
     const now = Date.now(); if (now - lastEventTimeRef.current < EVENT_DEBOUNCE_MS) return;
     lastEventTimeRef.current = now;
     const timeOnQuestion = Math.max(0, now - questionStartedAt);
-    if (eventType !== 'window-focus') set({ strikeCount: get().strikeCount + 1 });
     try {
       const r = await assessmentApi.logEvent(sessionId, eventType, questionId, timeOnQuestion, tabHiddenMs);
+      // Trust server strike count only — no optimistic local increment.
+      // Pre-incrementing caused the UI to show 3 strikes before the server
+      // confirmed termination, making StrikeWarning disappear prematurely.
       set({ strikeCount: r.strikeCount, lastStrikeAction: r.action });
-      if (r.action === 'terminate') { stopTimer(); set({ status: 'terminated', isTerminated: true, currentQuestion: null }); }
-    } catch { }
+      if (r.action === 'terminate') {
+        stopTimer();
+        set({ status: 'terminated', isTerminated: true, currentQuestion: null });
+      }
+    } catch (err) {
+      // Log silently — don't crash the session on a network blip
+      console.warn('[assessment] logEvent error:', err);
+    }
   },
   resetAssessment: () => { stopTimer(); isSubmittingRef.current = false; timeoutFiredRef.current = false; set({ status: 'idle', sessionId: null, skillId: null, skillName: null, tier: null, currentQuestion: null, sessionState: null, result: null, error: null, timeRemainingMs: 0, questionStartedAt: 0, strikeCount: 0, lastStrikeAction: null, isTerminated: false }); },
 }));

@@ -27,9 +27,15 @@ function toSkill(slug: string): SupportedSkill { return (['react', 'nodejs', 'mo
 async function buildQuestion(state: ServerSessionState) {
   const qt = qType(state.questionIndex);
   const skill = toSkill(state.skillSlug);
-  const conceptEntry = pickConcept(skill, state.currentTier as SkillTier, state.questionHistory, Date.now() + state.questionIndex);
+  // Use questionIndex as the deterministic seed so concepts cycle sequentially
+  // through the pool. Date.now() caused two close-in-time calls to pick the
+  // same concept (same modulo result), producing repeated/mixed questions.
+  const conceptEntry = pickConcept(skill, state.currentTier as SkillTier, state.questionHistory, state.questionIndex);
   const seed = `${state.sessionId}-${state.questionIndex}-${Date.now()}`;
-  const q = await generateQuestion({ skill, tier: state.currentTier as SkillTier, questionType: qt, concept: conceptEntry.label, mutationSeed: seed, sessionHistory: state.questionHistory, skillId: state.skillId });
+  // Pass human-readable concept labels (not raw id slugs) so the AI
+  // understands which topics have already been covered.
+  const conceptLabels = state.questionHistory.map((_id, idx) => `Q${idx + 1}:${_id}`);
+  const q = await generateQuestion({ skill, tier: state.currentTier as SkillTier, questionType: qt, concept: conceptEntry.label, mutationSeed: seed, sessionHistory: conceptLabels, skillId: state.skillId });
   const client: IQuestion = { _id: q._id!, questionType: q.questionType, difficulty: q.difficulty, tier: q.tier, skillId: q.skillId, text: q.text, options: q.options, timeLimitMs: TIMERS[qt] * 1000, pointValue: q.pointValue, hint: q.hint };
   const stored: StoredAnswer = { correctAnswer: q.correctAnswer ?? "", questionType: q.questionType, concept: conceptEntry.id, difficulty: q.difficulty, aiEvalCriteria: q.aiEvalCriteria };
   return { clientQuestion: client, storedAnswer: stored, conceptId: conceptEntry.id };

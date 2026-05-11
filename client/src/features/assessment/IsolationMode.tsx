@@ -10,6 +10,8 @@ import SessionTerminated from './SessionTerminated';
 import SessionComplete from './SessionComplete';
 import { useAssessmentStore, useTimeRemaining, useStrikeCount, useSessionResult, useAssessmentStatus, useCurrentQuestion, timerIntervalRef } from './useAssessment';
 import { on, SOCKET_EVENTS } from '../../lib/socketClient';
+import { API_ORIGIN } from '../../lib/apiBase';
+import { useAuthStore } from '../auth/useAuth';
 function stopTimer_() { if (timerIntervalRef.current !== null) { clearInterval(timerIntervalRef.current); timerIntervalRef.current = null; } }
 const STRIKE_COOLDOWN_MS = 2000;
 export default function IsolationMode() {
@@ -45,8 +47,31 @@ export default function IsolationMode() {
   }, [isActiveSession, fireStrike]);
   useEffect(() => {
     if (!isActiveSession) return;
-    const handle = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = 'Assessment in progress.'; return e.returnValue; };
-    window.addEventListener('beforeunload', handle); return () => window.removeEventListener('beforeunload', handle);
+    const handle = (e: BeforeUnloadEvent) => {
+      // Show browser "leave page?" dialog
+      e.preventDefault();
+      e.returnValue = 'Your assessment is in progress. Leaving will terminate your session.';
+
+      // Fire-and-forget abandon call using keepalive so it completes even as
+      // the page unloads. The auth token is read from the Zustand store.
+      const token = useAuthStore.getState().accessToken;
+      const sessionId = useAssessmentStore.getState().sessionId;
+      if (sessionId && token) {
+        fetch(`${API_ORIGIN}/api/v1/sessions/abandon`, {
+          method: 'POST',
+          keepalive: true,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+        }).catch(() => null); // best-effort
+      }
+
+      return e.returnValue;
+    };
+    window.addEventListener('beforeunload', handle);
+    return () => window.removeEventListener('beforeunload', handle);
   }, [isActiveSession]);
   useEffect(() => {
     const off = on<{ action: string }>(SOCKET_EVENTS.SESSION_ACTION, ({ action }) => {

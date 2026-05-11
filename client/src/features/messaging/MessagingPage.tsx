@@ -1,3 +1,4 @@
+import { useSEO } from '../../lib/useSEO';
 // ─────────────────────────────────────────────────────────────────────────────
 // MessagingPage.tsx
 // Split view: thread list left, active thread right.
@@ -16,6 +17,7 @@ import type { IThreadSummary } from './messagingApi';
 type Tab = 'messages' | 'requests';
 
 export default function MessagingPage() {
+  useSEO({ title: 'Messages', description: 'Your SkillSeal messages.', canonical: '/messages' });
   // Register socket event listeners for this page
   useSocketEvents();
 

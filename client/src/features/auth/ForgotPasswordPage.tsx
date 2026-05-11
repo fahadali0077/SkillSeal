@@ -1,3 +1,4 @@
+import { useSEO } from '../../lib/useSEO';
 // ─────────────────────────────────────────────────────────────────────────────
 // ForgotPasswordPage.tsx
 // ─────────────────────────────────────────────────────────────────────────────
@@ -11,6 +12,7 @@ import { forgotPasswordSchema, type ForgotPasswordFormValues } from './authSchem
 import { useForgotPasswordMutation } from './authApi';
 
 export default function ForgotPasswordPage() {
+  useSEO({ title: 'Reset Password', canonical: '/forgot-password' });
   const [submitted, setSubmitted] = useState(false);
   const mutation = useForgotPasswordMutation();
 

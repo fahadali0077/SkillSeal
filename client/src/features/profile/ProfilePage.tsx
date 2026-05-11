@@ -9,6 +9,7 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2, AlertCircle } from 'lucide-react';
 
+import { useSEO } from '../../lib/useSEO';
 import { useProfile }          from './useProfile';
 import { useAuthStore }        from '../auth/useAuth';
 import ProfileHeader           from './ProfileHeader';
@@ -52,6 +53,7 @@ export default function ProfilePage() {
   }
 
   const isOwner = currentUser?._id === profile._id;
+  useSEO({ title: profile.fullName, description: profile.headline || `${profile.fullName}'s profile on SkillSeal.`, canonical: `/profile/${profile.customUrl || profile._id}` });
 
   return (
     <>

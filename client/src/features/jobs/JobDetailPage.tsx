@@ -1,3 +1,4 @@
+import { useSEO } from '../../lib/useSEO';
 // ─────────────────────────────────────────────────────────────────────────────
 // JobDetailPage.tsx
 // ─────────────────────────────────────────────────────────────────────────────
@@ -18,6 +19,7 @@ const TIER_COLORS: Record<string, string> = {
 };
 
 export default function JobDetailPage() {
+  useSEO({ title: 'Job Details', canonical: '/jobs' });
   const { id = '' } = useParams<{ id: string }>();
   const { data: job, isLoading } = useJobDetail(id);
   const [applyOpen, setApplyOpen] = useState(false);

@@ -1,3 +1,4 @@
+import { useSEO } from '../../lib/useSEO';
 import {useState} from 'react';
 import {motion,AnimatePresence} from 'framer-motion';
 import {Users,Columns,Bookmark,ClipboardList,Briefcase} from 'lucide-react';

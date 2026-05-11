@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // FeedPage.tsx  –  main activity feed with infinite scroll
 // ─────────────────────────────────────────────────────────────────────────────
+import { useSEO } from '../../lib/useSEO';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PenLine, Loader2, RefreshCw, Rss } from 'lucide-react';
@@ -12,6 +13,7 @@ import PeopleYouMayKnow from '../connections/PeopleYouMayKnow';
 import { useAuthStore } from '../auth/useAuth';
 
 export default function FeedPage() {
+  useSEO({ title: 'Feed', description: 'Your personalized SkillSeal activity feed.', canonical: '/feed' });
   const [createOpen, setCreateOpen] = useState(false);
   const user = useAuthStore((s) => s.user);
   const loaderRef = useRef<HTMLDivElement>(null);

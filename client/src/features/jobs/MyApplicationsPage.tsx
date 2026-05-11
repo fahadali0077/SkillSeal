@@ -1,3 +1,4 @@
+import { useSEO } from '../../lib/useSEO';
 // ─────────────────────────────────────────────────────────────────────────────
 // MyApplicationsPage.tsx  –  candidate's applications grouped by status
 // ─────────────────────────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ function AppCard({ app }: { app: IApplicationOut }) {
 }
 
 export default function MyApplicationsPage() {
+  useSEO({ title: 'My Applications', description: 'Track your job applications on SkillSeal.', canonical: '/applications' });
   const [activeTab, setActiveTab] = useState('all');
   const { data: apps = [], isLoading } = useMyApplications();
 

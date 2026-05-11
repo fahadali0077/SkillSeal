@@ -22,7 +22,21 @@ const COOLDOWN_FAIL = 14 * 24 * 3600;
 const Q_PATTERN: Array<'mcq' | 'scenario' | 'micro-theory'> = ['mcq', 'mcq', 'mcq', 'scenario', 'mcq', 'mcq', 'mcq', 'scenario', 'micro-theory', 'mcq'];
 function qType(i: number): 'mcq' | 'scenario' | 'micro-theory' { return Q_PATTERN[i % Q_PATTERN.length]; }
 const TIMERS: Record<string, number> = { mcq: 60, scenario: 120, 'micro-theory': 150 };
-function toSkill(slug: string): SupportedSkill { return (['react', 'nodejs', 'mongodb'].includes(slug) ? slug : 'react') as SupportedSkill; }
+// Supported skills must have a matching entry in conceptLibrary.ts.
+// Any slug not in this list gets an explicit error instead of silently
+// serving React questions (which was the root cause of question mixing).
+const SUPPORTED_SKILLS: SupportedSkill[] = ['react', 'nodejs', 'mongodb'];
+
+function toSkill(slug: string): SupportedSkill {
+  if (SUPPORTED_SKILLS.includes(slug as SupportedSkill)) {
+    return slug as SupportedSkill;
+  }
+  throw new AppError(
+    `Skill "${slug}" does not have an assessment available yet. Please choose React, Node.js, or MongoDB.`,
+    400,
+    true,
+  );
+}
 
 async function buildQuestion(state: ServerSessionState) {
   const qt = qType(state.questionIndex);

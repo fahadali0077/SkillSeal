@@ -294,52 +294,6 @@ export const MONGODB_CONCEPTS: ConceptLibrary = {
 // Registry — used by questionGenerator to look up the right library
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type SupportedSkill = 'react' | 'nodejs' | 'mongodb' | 'typescript' | 'python' | 'postgresql' | 'docker' | 'graphql';
-
-export const CONCEPT_REGISTRY: Record<SupportedSkill, ConceptLibrary> = {
-  react: REACT_CONCEPTS,
-  nodejs: NODEJS_CONCEPTS,
-  mongodb: MONGODB_CONCEPTS,
-};
-
-/**
- * Returns concepts for a given skill + tier, excluding any already covered
- * in the current session (by concept id).
- */
-export function getAvailableConcepts(
-  skill: SupportedSkill,
-  tier: SkillTier,
-  usedConceptIds: string[] = []
-): ConceptEntry[] {
-  const library = CONCEPT_REGISTRY[skill];
-  if (!library) return [];
-  const tierConcepts = library[tier] ?? [];
-  const used = new Set(usedConceptIds);
-  return tierConcepts.filter((c) => !used.has(c.id));
-}
-
-/**
- * Picks a pseudo-random concept from the available pool.
- * Falls back to the full tier list if all concepts are exhausted.
- */
-export function pickConcept(
-  skill: SupportedSkill,
-  tier: SkillTier,
-  usedConceptIds: string[] = [],
-  seed: number = Date.now()
-): ConceptEntry {
-  let pool = getAvailableConcepts(skill, tier, usedConceptIds);
-  // Fallback: allow repeats if all concepts have been used
-  if (pool.length === 0) {
-    pool = CONCEPT_REGISTRY[skill]?.[tier] ?? [];
-  }
-  const index = seed % pool.length;
-  return pool[index];
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TypeScript
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const TYPESCRIPT_CONCEPTS: ConceptLibrary = {
   beginner: [
@@ -572,3 +526,54 @@ export const GRAPHQL_CONCEPTS: ConceptLibrary = {
   ],
 };
 
+export type SupportedSkill = 'react' | 'nodejs' | 'mongodb' | 'typescript' | 'python' | 'postgresql' | 'docker' | 'graphql';
+
+export const CONCEPT_REGISTRY: Record<SupportedSkill, ConceptLibrary> = {
+  react:      REACT_CONCEPTS,
+  nodejs:     NODEJS_CONCEPTS,
+  mongodb:    MONGODB_CONCEPTS,
+  typescript: TYPESCRIPT_CONCEPTS,
+  python:     PYTHON_CONCEPTS,
+  postgresql: POSTGRESQL_CONCEPTS,
+  docker:     DOCKER_CONCEPTS,
+  graphql:    GRAPHQL_CONCEPTS,
+};
+
+/**
+ * Returns concepts for a given skill + tier, excluding any already covered
+ * in the current session (by concept id).
+ */
+export function getAvailableConcepts(
+  skill: SupportedSkill,
+  tier: SkillTier,
+  usedConceptIds: string[] = []
+): ConceptEntry[] {
+  const library = CONCEPT_REGISTRY[skill];
+  if (!library) return [];
+  const tierConcepts = library[tier] ?? [];
+  const used = new Set(usedConceptIds);
+  return tierConcepts.filter((c) => !used.has(c.id));
+}
+
+/**
+ * Picks a pseudo-random concept from the available pool.
+ * Falls back to the full tier list if all concepts are exhausted.
+ */
+export function pickConcept(
+  skill: SupportedSkill,
+  tier: SkillTier,
+  usedConceptIds: string[] = [],
+  seed: number = Date.now()
+): ConceptEntry {
+  let pool = getAvailableConcepts(skill, tier, usedConceptIds);
+  // Fallback: allow repeats if all concepts have been used
+  if (pool.length === 0) {
+    pool = CONCEPT_REGISTRY[skill]?.[tier] ?? [];
+  }
+  const index = seed % pool.length;
+  return pool[index];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TypeScript
+// ─────────────────────────────────────────────────────────────────────────────

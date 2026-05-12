@@ -28,12 +28,29 @@ const fadeIn = {
 };
 
 export default function ProfilePage() {
+  // ── ALL hooks must be called unconditionally and in the same order on
+  // every render. useSEO is first because the old build had it AFTER the
+  // early returns, so React's fiber had 4 hook slots; the fix adds slot 5.
+  // Putting it first guarantees a stable order regardless of loading state.
+  // profile is undefined on first render — optional chaining handles that.
   const { username }  = useParams<{ username: string }>();
-  const currentUser   = useAuthStore((s) => s.user);
-  const [editOpen, setEditOpen] = useState(false);
 
-  // `username` may be a customUrl slug or a MongoDB _id
+  // Slot 1 — must stay before any early return
+  const currentUser   = useAuthStore((s) => s.user);
+  // Slot 2
+  const [editOpen, setEditOpen] = useState(false);
+  // Slot 3 — data fetch
   const { data: profile, isLoading, isError } = useProfile(username ?? '');
+  // Slot 4 — SEO (useEffect internally). Must be here, not after early returns.
+  useSEO({
+    title:       profile?.fullName ?? 'Profile',
+    description: profile
+      ? (profile.headline || `${profile.fullName}'s profile on SkillSeal.`)
+      : 'View this professional profile on SkillSeal.',
+    canonical:   profile
+      ? `/profile/${profile.customUrl || profile._id}`
+      : '/profile',
+  });
 
   if (isLoading) {
     return (
@@ -53,7 +70,6 @@ export default function ProfilePage() {
   }
 
   const isOwner = currentUser?._id === profile._id;
-  useSEO({ title: profile.fullName, description: profile.headline || `${profile.fullName}'s profile on SkillSeal.`, canonical: `/profile/${profile.customUrl || profile._id}` });
 
   return (
     <>

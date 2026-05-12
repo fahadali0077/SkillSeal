@@ -92,8 +92,11 @@ export function useDeclineRequest() {
 export function useRemoveConnection() {
   const qc = useQueryClient();
   return useMutation({
+    // Use /with/:userId so the backend finds the connection doc by user pair.
+    // The ConnectionsList only has UserMini._id (the connected user's id),
+    // not the Connection document's _id — so /connections/:connectionId fails.
     mutationFn: (userId: string) =>
-      apiFetch<null>(`${BASE}/${userId}`, { method: 'DELETE' }),
+      apiFetch<null>(`${BASE}/with/${userId}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: connKeys.connections() }),
   });
 }

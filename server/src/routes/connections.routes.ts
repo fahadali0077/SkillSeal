@@ -7,7 +7,7 @@ import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
 import { sendSuccess, sendError } from '../utils/response';
 import { AppError } from '../middleware/error.middleware';
 import {
-  sendRequest, acceptRequest, declineRequest, removeConnection,
+  sendRequest, acceptRequest, declineRequest, removeConnection, removeConnectionByUserId,
   blockUser, unblockUser, followUser, unfollowUser,
   listConnections, getPendingRequests, getSentRequests,
 } from '../services/connections.service';
@@ -89,6 +89,19 @@ router.put('/:id/decline', async (req: AuthRequest, res: Response) => {
     await declineRequest(req.params['id']!, req.user!.userId);
     sendSuccess(res, null, 'Request declined');
   } catch (err) { handleError(err, res); }
+});
+
+// ── DELETE /connections/with/:userId ─────────────────────────────────────────
+// Removes a connection by the OTHER user's ID (no connection doc ID needed).
+// ConnectionsList only has UserMini objects (user _ids), not connection doc ids.
+router.delete('/with/:userId', async (req: AuthRequest, res: Response) => {
+  try {
+    await removeConnectionByUserId(req.user!.userId, req.params['userId']!);
+    sendSuccess(res, null, 'Connection removed');
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Failed to remove connection';
+    sendError(res, msg, err instanceof AppError ? err.statusCode : 500);
+  }
 });
 
 // ── DELETE /connections/:id ───────────────────────────────────────────────────

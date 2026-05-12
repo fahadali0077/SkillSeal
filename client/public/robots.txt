@@ -1,21 +1,31 @@
+# SkillSeal robots.txt
+# Allow Google to index all public-facing pages including login/register
+# so they can appear as sitelinks in search results.
+
 User-agent: *
 Allow: /
-Allow: /pricing
-Allow: /verify/
-Allow: /jobs
 
-# Block private/app routes from crawling
+# Public pages — fully crawlable
+Allow: /pricing
+Allow: /jobs
+Allow: /login
+Allow: /register
+Allow: /privacy
+Allow: /terms
+Allow: /verify/
+
+# App-interior pages — no value to crawl (require login)
 Disallow: /feed
 Disallow: /messages
 Disallow: /notifications
-Disallow: /profile
 Disallow: /network
 Disallow: /assessment
 Disallow: /recruiter
 Disallow: /billing
-Disallow: /login
-Disallow: /register
-Disallow: /forgot-password
+Disallow: /applications
+Disallow: /profile/
 Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /verify-email
 
-Sitemap: https://skillseal.tech/sitemap.xml
+Sitemap: https://www.skillseal.tech/sitemap.xml

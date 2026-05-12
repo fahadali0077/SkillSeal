@@ -256,6 +256,18 @@ export async function removeConnection(connectionId: string, actorId: string): P
   logger.info(`[connections] Removed: ${connectionId} by actor=${actorId}`);
 }
 
+/** Remove a connection by the OTHER user's userId (no connection doc ID needed). */
+export async function removeConnectionByUserId(actorId: string, targetUserId: string): Promise<void> {
+  const conn = await Connection.findOne({
+    $or: [
+      { requesterId: actorId,    recipientId: targetUserId },
+      { requesterId: targetUserId, recipientId: actorId    },
+    ],
+  });
+  if (!conn) throw new AppError('Connection not found.', 404, true);
+  await conn.deleteOne();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. Block user
 // ─────────────────────────────────────────────────────────────────────────────

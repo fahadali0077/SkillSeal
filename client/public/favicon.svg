@@ -1,23 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Blue rounded-square background -->
-  <rect width="64" height="64" rx="14" fill="#0a66c2"/>
-
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Blue rounded-square background — matches SkillSeal brand color -->
+  <rect width="512" height="512" rx="112" fill="#0a66c2"/>
   <!-- Shield body -->
   <path
-    d="M32 10 L48 17 L48 31 C48 40.5 40.5 48.5 32 52 C23.5 48.5 16 40.5 16 31 L16 17 Z"
-    fill="white"
-    fill-opacity="0.15"
+    d="M256 80 L384 136 L384 248
+       C384 324 328 388 256 416
+       C184 388 128 324 128 248
+       L128 136 Z"
+    fill="rgba(255,255,255,0.15)"
     stroke="white"
-    stroke-width="2.5"
+    stroke-width="20"
     stroke-linejoin="round"
   />
-
   <!-- Checkmark inside shield -->
   <path
-    d="M23 32 L29 38 L41 26"
+    d="M184 256 L232 304 L328 208"
     stroke="white"
-    stroke-width="3.5"
+    stroke-width="32"
     stroke-linecap="round"
     stroke-linejoin="round"
+    fill="none"
   />
 </svg>

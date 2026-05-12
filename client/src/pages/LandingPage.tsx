@@ -158,15 +158,16 @@ function Hero() {
 
         {/* Headline */}
         <motion.h1 {...fadeUp(0.1)} className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-white leading-tight tracking-tight">
-          Prove Your Skills.<br />
+          Verify Your Skills.
+          <br />
           <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
             Get Hired Faster.
           </span>
         </motion.h1>
 
         <motion.p {...fadeUp(0.2)} className="mt-5 sm:mt-6 text-base sm:text-xl text-blue-100/80 max-w-2xl mx-auto leading-relaxed px-2">
-          SkillSeal verifies your technical skills through adaptive AI assessments.
-          Earn a verified badge that recruiters can trust — not just a self-reported claim.
+          SkillSeal lets you verify your skills online through AI-powered adaptive assessments.
+          Earn a verified badge that proves your expertise — not a self-reported claim recruiters have to guess at.
         </motion.p>
 
         {/* CTAs */}
@@ -226,8 +227,8 @@ function HowItWorks() {
     <section id="how-it-works" className="py-16 sm:py-24 bg-white scroll-mt-20">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <motion.div {...fadeUp()} className="text-center mb-10 sm:mb-16">
-          <span className="text-xs font-bold tracking-widest text-brand uppercase">How it works</span>
-          <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-gray-900">Three steps to a verified profile</h2>
+          <span className="text-xs font-bold tracking-widest text-brand uppercase">How to verify your skills</span>
+          <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-gray-900">Verify your skills in three steps</h2>
           <p className="mt-3 sm:mt-4 text-gray-500 text-base sm:text-lg max-w-xl mx-auto">
             The whole process takes under 40 minutes. Your certificate is permanent and publicly verifiable.
           </p>
@@ -267,8 +268,8 @@ function SkillsSection() {
     <section id="skills" className="py-16 sm:py-24 bg-gray-50 scroll-mt-20">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <motion.div {...fadeUp()} className="text-center mb-10 sm:mb-14">
-          <span className="text-xs font-bold tracking-widest text-brand uppercase">Available skills</span>
-          <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-gray-900">Verify what the market demands</h2>
+          <span className="text-xs font-bold tracking-widest text-brand uppercase">Skills you can verify</span>
+          <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-gray-900">Verify the skills the market demands</h2>
           <p className="mt-3 sm:mt-4 text-gray-500 text-base sm:text-lg max-w-xl mx-auto">
             More skills added every quarter. Each skill has multiple difficulty tiers.
           </p>

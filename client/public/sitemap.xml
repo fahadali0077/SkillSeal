@@ -4,39 +4,68 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 
+  <!-- Homepage — primary landing page -->
   <url>
-    <loc>https://skillseal.tech/</loc>
-    <lastmod>2026-05-05</lastmod>
+    <loc>https://www.skillseal.tech/</loc>
+    <lastmod>2026-05-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
+  <!-- Pricing — high commercial intent -->
   <url>
-    <loc>https://skillseal.tech/pricing</loc>
-    <lastmod>2026-05-05</lastmod>
+    <loc>https://www.skillseal.tech/pricing</loc>
+    <lastmod>2026-05-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
+  <!-- Jobs board — fresh content, important for recruiters -->
   <url>
-    <loc>https://skillseal.tech/jobs</loc>
-    <lastmod>2026-05-05</lastmod>
+    <loc>https://www.skillseal.tech/jobs</loc>
+    <lastmod>2026-05-12</lastmod>
     <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Register — candidate CTA (sitelink candidate) -->
+  <url>
+    <loc>https://www.skillseal.tech/register</loc>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>yearly</changefreq>
     <priority>0.8</priority>
   </url>
 
+  <!-- Register as recruiter — recruiter CTA (sitelink candidate) -->
   <url>
-    <loc>https://skillseal.tech/login</loc>
-    <lastmod>2026-05-05</lastmod>
+    <loc>https://www.skillseal.tech/register?role=recruiter</loc>
+    <lastmod>2026-05-12</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <priority>0.7</priority>
   </url>
 
+  <!-- Login — sitelink candidate -->
   <url>
-    <loc>https://skillseal.tech/register</loc>
-    <lastmod>2026-05-05</lastmod>
+    <loc>https://www.skillseal.tech/login</loc>
+    <lastmod>2026-05-12</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://www.skillseal.tech/privacy</loc>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Terms of Service -->
+  <url>
+    <loc>https://www.skillseal.tech/terms</loc>
+    <lastmod>2026-05-12</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 
 </urlset>

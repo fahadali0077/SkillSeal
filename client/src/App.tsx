@@ -14,6 +14,16 @@ import Layout from './lib/Layout';
 import FeedPage from './features/feed/FeedPage';
 import HashtagFeed from './features/feed/HashtagFeed';
 import ProfilePage from './features/profile/ProfilePage';
+import { useParams as useProfileParams } from 'react-router-dom';
+
+// Forces a fresh ProfilePage fiber on every username change.
+// Without this, React Router reuses the same fiber between /profile/A and
+// /profile/B, which causes React error #310 when the hook count changed
+// between code deployments.
+function ProfilePageWithKey() {
+  const { username } = useProfileParams<{ username: string }>();
+  return <ProfilePage key={username ?? '_'} />;
+}
 import NetworkPage from './pages/NetworkPage';
 import MessagingPage from './features/messaging/MessagingPage';
 import JobSearchPage from './features/jobs/JobSearchPage';
@@ -81,7 +91,7 @@ export default function App() {
           <Layout>
             <Routes>
               <Route path="/feed" element={<FeedPage />} />
-              <Route path="/profile/:username" element={<ProfilePage />} />
+              <Route path="/profile/:username" element={<ProfilePageWithKey />} />
               <Route path="/network" element={<NetworkPage />} />
               <Route path="/hashtag/:tag" element={<HashtagFeed />} />
               <Route path="/messages" element={<MessagingPage />} />

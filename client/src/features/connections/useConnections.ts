@@ -10,98 +10,107 @@ export const connKeys = {
   sent:        () => ['connections', 'sent']    as const,
 };
 
-// GET /connections/pending
+// ── Queries ───────────────────────────────────────────────────────────────────
+
 export function usePendingRequests() {
   return useQuery({
     queryKey: connKeys.pending(),
-    queryFn: () => apiFetch<{ connectionId: string; user: { _id: string; fullName: string; firstName: string; lastName: string; profilePhoto: string; headline: string; customUrl: string }; note: string; createdAt: string }[]>(
-      `${BASE}/pending`,                              // was: /requests/pending ❌
-    ),
+    queryFn: () => apiFetch<{
+      connectionId: string;
+      user: { _id: string; fullName: string; firstName: string; lastName: string;
+               profilePhoto: string; headline: string; customUrl: string };
+      note: string; createdAt: string;
+    }[]>(`${BASE}/pending`),
     staleTime: 30_000,
   });
 }
 
-// GET /connections
 export function useConnections(search?: string) {
   return useQuery({
     queryKey: [...connKeys.connections(), search],
-    queryFn: () => apiFetch<{ connections: { _id: string; firstName: string; lastName: string; profilePhoto: string; headline: string; customUrl: string }[]; total: number }>(
-      `${BASE}?${search ? `search=${encodeURIComponent(search)}` : ''}`,
-    ),
+    queryFn: () => apiFetch<{
+      connections: { _id: string; firstName: string; lastName: string;
+                     profilePhoto: string; headline: string; customUrl: string }[];
+      total: number;
+    }>(`${BASE}?${search ? `search=${encodeURIComponent(search)}` : ''}`),
     staleTime: 60_000,
   });
 }
 
-// GET /api/v1/suggestions/people
 export function useSuggestions() {
   return useQuery({
     queryKey: connKeys.suggestions(),
-    queryFn: () => apiFetch<{ userId: string; firstName: string; lastName: string; profilePhoto: string; headline: string; customUrl: string; mutualConnections: number }[]>(
-      `${API_ORIGIN}/api/v1/suggestions/people`,
-    ),
+    queryFn: () => apiFetch<{
+      userId: string; firstName: string; lastName: string;
+      profilePhoto: string; headline: string; customUrl: string;
+      mutualConnections: number;
+    }[]>(`${API_ORIGIN}/api/v1/suggestions/people`),
     staleTime: 5 * 60_000,
   });
 }
 
-// POST /connections/request  (no 's')
+// ── Mutations — every mutation invalidates ['profile'] so that the
+// ConnectionButton on profile pages reflects the new status immediately.
+// Without this, the profile cache keeps connectionStatus:'none' and
+// the button always shows "Connect" even after connecting. ────────────────────
+
 export function useSendRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ recipientId, note }: { recipientId: string; note?: string }) =>
       apiFetch<{ connectionId: string }>(
-        `${BASE}/request`,                            // was: /requests ❌
+        `${BASE}/request`,
         { method: 'POST', body: JSON.stringify({ recipientId, note }) },
       ),
     onSuccess: () => {
+      // Bust ALL profile caches so connectionStatus switches to 'pending'
+      qc.invalidateQueries({ queryKey: ['profile'] });
       qc.invalidateQueries({ queryKey: connKeys.sent() });
       qc.invalidateQueries({ queryKey: connKeys.suggestions() });
     },
   });
 }
 
-// PUT /connections/:id/accept
 export function useAcceptRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (requestId: string) =>
-      apiFetch<null>(
-        `${BASE}/${requestId}/accept`,                // was: /requests/:id/accept POST ❌
-        { method: 'PUT' },
-      ),
+      apiFetch<null>(`${BASE}/${requestId}/accept`, { method: 'PUT' }),
     onSuccess: () => {
+      // Bust ALL profile caches so connectionStatus switches to 'accepted'
+      qc.invalidateQueries({ queryKey: ['profile'] });
       qc.invalidateQueries({ queryKey: connKeys.pending() });
       qc.invalidateQueries({ queryKey: connKeys.connections() });
     },
   });
 }
 
-// PUT /connections/:id/decline
 export function useDeclineRequest() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (requestId: string) =>
-      apiFetch<null>(
-        `${BASE}/${requestId}/decline`,               // was: /requests/:id/ignore POST ❌
-        { method: 'PUT' },
-      ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: connKeys.pending() }),
+      apiFetch<null>(`${BASE}/${requestId}/decline`, { method: 'PUT' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile'] });
+      qc.invalidateQueries({ queryKey: connKeys.pending() });
+    },
   });
 }
 
-// DELETE /connections/:id
 export function useRemoveConnection() {
   const qc = useQueryClient();
   return useMutation({
-    // Use /with/:userId so the backend finds the connection doc by user pair.
-    // The ConnectionsList only has UserMini._id (the connected user's id),
-    // not the Connection document's _id — so /connections/:connectionId fails.
+    // /with/:userId resolves the connection by user pair — no connection _id needed.
     mutationFn: (userId: string) =>
       apiFetch<null>(`${BASE}/with/${userId}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: connKeys.connections() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile'] });
+      qc.invalidateQueries({ queryKey: connKeys.connections() });
+      qc.invalidateQueries({ queryKey: connKeys.suggestions() });
+    },
   });
 }
 
-// POST /suggestions/users/:id/block
 export function useBlockUser() {
   const qc = useQueryClient();
   return useMutation({
@@ -122,7 +131,9 @@ export function useFollowUser() {
   return useMutation({
     mutationFn: (userId: string) =>
       apiFetch<null>(`${API_ORIGIN}/api/v1/users/${userId}/follow`, { method: 'POST' }),
-    onSuccess: (_, userId) => { qc.invalidateQueries({ queryKey: ['profile', userId] }); },
+    onSuccess: (_, userId) => {
+      qc.invalidateQueries({ queryKey: ['profile', userId] });
+    },
   });
 }
 
@@ -131,6 +142,8 @@ export function useUnfollowUser() {
   return useMutation({
     mutationFn: (userId: string) =>
       apiFetch<null>(`${API_ORIGIN}/api/v1/users/${userId}/follow`, { method: 'DELETE' }),
-    onSuccess: (_, userId) => { qc.invalidateQueries({ queryKey: ['profile', userId] }); },
+    onSuccess: (_, userId) => {
+      qc.invalidateQueries({ queryKey: ['profile', userId] });
+    },
   });
 }

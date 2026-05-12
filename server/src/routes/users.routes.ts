@@ -14,6 +14,7 @@ import {
   addEducation, updateEducation, deleteEducation,
   addSkill, removeSkill, uploadProfilePhoto,
 } from '../services/users.service';
+import { getConnectionDegree } from '../services/connections.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -160,6 +161,14 @@ router.post(
 );
 
 // ── Profile completeness ──────────────────────────────────────────────────────
+// ── GET /users/:id/connection-degree ──────────────────────────────────────
+router.get('/:id/connection-degree', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const degree = await getConnectionDegree(req.user!.userId, req.params['id']!);
+    sendSuccess(res, { degree }, 'Degree resolved');
+  } catch (err) { handleError(err, res); }
+});
+
 router.get('/:id/completeness', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     if (req.user!.userId !== req.params['id']) { sendError(res, 'Forbidden', 403, ApiErrorCode.FORBIDDEN); return; }

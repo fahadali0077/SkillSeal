@@ -43,7 +43,7 @@ export function useSuggestions() {
     queryFn: () => apiFetch<{
       userId: string; firstName: string; lastName: string;
       profilePhoto: string; headline: string; customUrl: string;
-      mutualConnections: number;
+      mutualCount: number;  // server returns mutualCount not mutualConnections
     }[]>(`${API_ORIGIN}/api/v1/suggestions/people`),
     staleTime: 5 * 60_000,
   });
@@ -120,8 +120,18 @@ export function useBlockUser() {
   });
 }
 
-export function getConnectionDegree(_: string, __: string): Promise<'1st' | '2nd' | '3rd' | 'none'> {
-  return Promise.resolve('none');
+export async function getConnectionDegree(
+  viewerId: string,
+  targetId: string,
+): Promise<'1st' | '2nd' | '3rd' | 'none'> {
+  try {
+    const result = await apiFetch<{ degree: '1st' | '2nd' | '3rd' | 'none' }>(
+      `${API_ORIGIN}/api/v1/users/${targetId}/connection-degree`,
+    );
+    return result.degree;
+  } catch {
+    return 'none';
+  }
 }
 
 // ── Follow / Unfollow ─────────────────────────────────────────────────────────

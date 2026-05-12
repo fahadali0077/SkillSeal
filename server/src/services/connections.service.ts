@@ -11,7 +11,7 @@ import { Connection }      from '../models/Connection.model';
 import type { IConnectionDocument } from '../models/Connection.model';
 import { AppError }        from '../middleware/error.middleware';
 import { getRedis }        from '../config/redis';
-import { getIO, SOCKET_EVENTS } from '../config/socket';
+import { createNotification } from './notifications.service';
 import logger              from '../utils/logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,15 +40,6 @@ async function assertNotBlocked(senderId: string, recipientId: string) {
   const recipientBlocked = recipient.blockedUsers?.some((id) => id.toString() === senderId);
   if (senderBlocked || recipientBlocked) {
     throw new AppError('Connection request cannot be sent.', 403, true);
-  }
-}
-
-/** Emit a real-time notification to a user's socket room */
-function emitNotification(userId: string, payload: Record<string, unknown>) {
-  try {
-    getIO().to(`user:${userId}`).emit(SOCKET_EVENTS.NOTIFICATION, payload);
-  } catch {
-    // Socket not yet initialised during tests – silently ignore
   }
 }
 
@@ -142,11 +133,21 @@ export async function sendRequest(
     throw new AppError('Weekly connection request limit reached. Try again next week.', 429, true);
   }
 
-  const conn = await Connection.create({
+  // Re-use a declined/withdrawn doc instead of creating a new one —
+  // avoids raw duplicate-key errors from the unique (requesterId, recipientId) index.
+  const conn = await Connection.findOneAndUpdate(
+    {
+      requesterId: new Types.ObjectId(senderId),
+      recipientId: new Types.ObjectId(recipientId),
+      status: { $in: ['declined', 'withdrawn'] },
+    },
+    { status: 'pending', note: note ? note.slice(0, NOTE_MAX) : '', respondedAt: null },
+    { new: true },
+  ) ?? await Connection.create({
     requesterId: new Types.ObjectId(senderId),
     recipientId: new Types.ObjectId(recipientId),
-    status: 'pending',
-    note:   note ? note.slice(0, NOTE_MAX) : '',
+    status:      'pending',
+    note:        note ? note.slice(0, NOTE_MAX) : '',
   });
 
   // Increment weekly counter; set TTL to next Sunday midnight if not set
@@ -155,11 +156,10 @@ export async function sendRequest(
   pipe.expireat(wKey, nextSundayMidnightUnix());
   await pipe.exec();
 
-  emitNotification(recipientId, {
-    type:      'connection_request',
-    senderId,
+  await createNotification(recipientId, 'connection_request', {
+    fromUser:     { _id: senderId },
     connectionId: conn._id.toString(),
-    message:   'sent you a connection request',
+    message:      'sent you a connection request',
   });
 
   logger.info(`[connections] Request sent: ${senderId} → ${recipientId}`);
@@ -197,9 +197,8 @@ export async function acceptRequest(connectionId: string, recipientId: string): 
     User.findByIdAndUpdate(uid, { $addToSet: { connections: new Types.ObjectId(rid) } }),
   ]);
 
-  emitNotification(rid, {
-    type:         'connection_accepted',
-    senderId:     uid,
+  await createNotification(rid, 'connection_accepted', {
+    fromUser:     { _id: uid },
     connectionId,
     message:      'accepted your connection request',
   });
@@ -260,12 +259,24 @@ export async function removeConnection(connectionId: string, actorId: string): P
 export async function removeConnectionByUserId(actorId: string, targetUserId: string): Promise<void> {
   const conn = await Connection.findOne({
     $or: [
-      { requesterId: actorId,    recipientId: targetUserId },
-      { requesterId: targetUserId, recipientId: actorId    },
+      { requesterId: actorId,      recipientId: targetUserId },
+      { requesterId: targetUserId, recipientId: actorId      },
     ],
   });
   if (!conn) throw new AppError('Connection not found.', 404, true);
-  await conn.deleteOne();
+
+  const rid = conn.requesterId.toString();
+  const uid = conn.recipientId.toString();
+
+  await Promise.all([
+    // Remove from both users' connections arrays
+    User.findByIdAndUpdate(rid, { $pull: { connections: new Types.ObjectId(uid) } }),
+    User.findByIdAndUpdate(uid, { $pull: { connections: new Types.ObjectId(rid) } }),
+    conn.deleteOne(),
+  ]);
+
+  await bustSuggestions(rid, uid);
+  logger.info(`[connections] Removed: ${rid} ↔ ${uid}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

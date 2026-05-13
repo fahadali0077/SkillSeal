@@ -52,7 +52,14 @@ async function resolveConnectionStatus(
   if (!conn) return { status: 'none' };
   const connectionId = (conn._id as { toString(): string }).toString();
   if (conn.status === 'accepted') return { status: 'accepted', connectionId };
-  if (conn.status === 'pending')  return { status: 'pending',  connectionId };
+  if (conn.status === 'pending') {
+    // Only expose connectionId when the viewer is the RECIPIENT so that
+    // ConnectionButton shows Accept/Decline. When the viewer is the requester
+    // (outgoing request) connectionId must be absent so the button shows
+    // Pending/Withdraw instead.
+    const isRecipient = (conn.recipientId as { toString(): string }).toString() === viewerId;
+    return { status: 'pending', ...(isRecipient ? { connectionId } : {}) };
+  }
   return { status: 'none' };
 }
 

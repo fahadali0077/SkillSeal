@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSuggestions, useSendRequest } from './useConnections';
 import { connKeys } from './useConnections';
 import { Link } from 'react-router-dom';
-import { UserPlus, Clock, Loader2 } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 
 export default function PeopleYouMayKnow() {
   const { data: suggestions = [], isLoading } = useSuggestions();

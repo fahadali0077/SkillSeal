@@ -141,8 +141,10 @@ export function useFollowUser() {
   return useMutation({
     mutationFn: (userId: string) =>
       apiFetch<null>(`${API_ORIGIN}/api/v1/users/${userId}/follow`, { method: 'POST' }),
-    onSuccess: (_, userId) => {
-      qc.invalidateQueries({ queryKey: ['profile', userId] });
+    onSuccess: () => {
+      // Invalidate all profile queries by prefix — the profile is keyed by
+      // customUrl, not userId, so ['profile', userId] would never match.
+      qc.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 }
@@ -152,8 +154,8 @@ export function useUnfollowUser() {
   return useMutation({
     mutationFn: (userId: string) =>
       apiFetch<null>(`${API_ORIGIN}/api/v1/users/${userId}/follow`, { method: 'DELETE' }),
-    onSuccess: (_, userId) => {
-      qc.invalidateQueries({ queryKey: ['profile', userId] });
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 }

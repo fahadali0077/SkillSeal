@@ -1,8 +1,8 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Camera, MapPin, Link2, Edit2, Loader2, Briefcase, MessageSquare, Share2 } from 'lucide-react';
-import type { IUserPublic } from '@SkillSeal/shared';
+import type { IUserPublic, ConnectionStatus } from '@SkillSeal/shared';
 import { useUploadPhoto } from './useProfile';
 import ConnectionButton from '../connections/ConnectionButton';
 import toast from 'react-hot-toast';
@@ -17,6 +17,11 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
   const inputRef    = useRef<HTMLInputElement>(null);
   const uploadPhoto = useUploadPhoto(profile._id);
   const navigate    = useNavigate();
+
+  // Lifted status so the Message button reacts to ConnectionButton changes
+  // without waiting for a full profile cache refetch.
+  const [liveStatus, setLiveStatus] = useState<ConnectionStatus>(profile.connectionStatus);
+  useEffect(() => { setLiveStatus(profile.connectionStatus); }, [profile.connectionStatus]);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -96,10 +101,11 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
                   targetUserId={profile._id}
                   connectionStatus={profile.connectionStatus}
                   connectionId={profile.connectionId}
+                  onStatusChange={setLiveStatus}
                 />
 
                 {/* Message — only visible when connected */}
-                {profile.connectionStatus === 'accepted' && (
+                {liveStatus === 'accepted' && (
                   <button
                     onClick={() => navigate(`/messages?userId=${profile._id}`)}
                     className="btn-secondary flex items-center gap-1.5 text-sm"

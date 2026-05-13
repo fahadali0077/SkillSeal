@@ -156,8 +156,17 @@ export async function sendRequest(
   pipe.expireat(wKey, nextSundayMidnightUnix());
   await pipe.exec();
 
+  const sender = await User.findById(senderId)
+    .select('firstName lastName profilePhoto customUrl')
+    .lean<IUserDocument>();
+
   await createNotification(recipientId, 'connection_request', {
-    fromUser:     { _id: senderId },
+    fromUser: {
+      _id:          senderId,
+      fullName:     sender ? `${sender.firstName} ${sender.lastName}` : 'Someone',
+      profilePhoto: sender?.profilePhoto ?? '',
+      customUrl:    sender?.customUrl    ?? '',
+    },
     connectionId: conn._id.toString(),
     message:      'sent you a connection request',
   });
@@ -197,10 +206,19 @@ export async function acceptRequest(connectionId: string, recipientId: string): 
     User.findByIdAndUpdate(uid, { $addToSet: { connections: new Types.ObjectId(rid) } }),
   ]);
 
+  const acceptor = await User.findById(uid)
+    .select('firstName lastName profilePhoto customUrl')
+    .lean<IUserDocument>();
+
   await createNotification(rid, 'connection_accepted', {
-    fromUser:     { _id: uid },
+    fromUser: {
+      _id:          uid,
+      fullName:     acceptor ? `${acceptor.firstName} ${acceptor.lastName}` : 'Someone',
+      profilePhoto: acceptor?.profilePhoto ?? '',
+      customUrl:    acceptor?.customUrl    ?? '',
+    },
     connectionId,
-    message:      'accepted your connection request',
+    message: 'accepted your connection request',
   });
 
   await bustSuggestions(rid, uid);
@@ -268,12 +286,24 @@ export async function removeConnectionByUserId(actorId: string, targetUserId: st
   const rid = conn.requesterId.toString();
   const uid = conn.recipientId.toString();
 
+  // Capture state before deletion
+  const wasPending   = conn.status === 'pending';
+  const wasRequester = conn.requesterId.toString() === actorId;
+
   await Promise.all([
     // Remove from both users' connections arrays
     User.findByIdAndUpdate(rid, { $pull: { connections: new Types.ObjectId(uid) } }),
     User.findByIdAndUpdate(uid, { $pull: { connections: new Types.ObjectId(rid) } }),
     conn.deleteOne(),
   ]);
+
+  // Refund weekly limit if the requester is withdrawing their own pending request
+  if (wasPending && wasRequester) {
+    const redis = getRedis();
+    const wKey  = weeklyKey(actorId);
+    const cur   = parseInt((await redis.get(wKey)) ?? '0', 10);
+    if (cur > 0) await redis.decr(wKey);
+  }
 
   await bustSuggestions(rid, uid);
   logger.info(`[connections] Removed: ${rid} ↔ ${uid}`);

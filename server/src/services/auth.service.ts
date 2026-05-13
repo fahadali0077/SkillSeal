@@ -59,6 +59,7 @@ function toPublicUser(doc: IUserDocument): IUserPublic {
     followerCount: doc.followers?.length ?? 0,
     followingCount: doc.following?.length ?? 0,
     connectionStatus: 'none',
+    isFollowing: false,          // self-view — a user never follows themselves
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };

@@ -556,3 +556,4 @@ export async function addComment(
     logger.info(`[feed] Computed ${result.posts.length} posts for userId=${userId} page=${page}`);
     return result;
   }
+}

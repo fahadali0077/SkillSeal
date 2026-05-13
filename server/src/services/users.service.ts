@@ -39,28 +39,35 @@ function generateCustomUrl(firstName: string, lastName: string): string {
 async function resolveConnectionStatus(
   viewerId: string | undefined,
   targetId: string,
-): Promise<{ status: 'accepted' | 'pending' | 'none'; connectionId?: string }> {
-  if (!viewerId || viewerId === targetId) return { status: 'none' };
+): Promise<{ status: 'accepted' | 'pending' | 'none'; connectionId?: string; isFollowing: boolean }> {
+  if (!viewerId || viewerId === targetId) return { status: 'none', isFollowing: false };
 
-  const conn = await Connection.findOne({
-    $or: [
-      { requesterId: viewerId, recipientId: targetId },
-      { requesterId: targetId, recipientId: viewerId },
-    ],
-  }).lean();
+  const [conn, viewer] = await Promise.all([
+    Connection.findOne({
+      $or: [
+        { requesterId: viewerId, recipientId: targetId },
+        { requesterId: targetId, recipientId: viewerId },
+      ],
+    }).lean(),
+    User.findById(viewerId).select('following').lean<IUserDocument>(),
+  ]);
 
-  if (!conn) return { status: 'none' };
+  const isFollowing = viewer?.following?.some(
+    (id) => id.toString() === targetId,
+  ) ?? false;
+
+  if (!conn) return { status: 'none', isFollowing };
   const connectionId = (conn._id as { toString(): string }).toString();
-  if (conn.status === 'accepted') return { status: 'accepted', connectionId };
+  if (conn.status === 'accepted') return { status: 'accepted', connectionId, isFollowing };
   if (conn.status === 'pending') {
     // Only expose connectionId when the viewer is the RECIPIENT so that
     // ConnectionButton shows Accept/Decline. When the viewer is the requester
     // (outgoing request) connectionId must be absent so the button shows
     // Pending/Withdraw instead.
     const isRecipient = (conn.recipientId as { toString(): string }).toString() === viewerId;
-    return { status: 'pending', ...(isRecipient ? { connectionId } : {}) };
+    return { status: 'pending', ...(isRecipient ? { connectionId } : {}), isFollowing };
   }
-  return { status: 'none' };
+  return { status: 'none', isFollowing };
 }
 
 /** Map a Mongoose user doc → IUserPublic (safe for API) */
@@ -68,7 +75,8 @@ async function toPublicUser(
   doc: IUserDocument,
   viewerId?: string,
 ): Promise<IUserPublic> {
-  const { status: connStatus, connectionId: connId } = await resolveConnectionStatus(viewerId, doc._id.toString());
+  const resolvedConn = await resolveConnectionStatus(viewerId, doc._id.toString());
+  const { status: connStatus, connectionId: connId, isFollowing: connIsFollowing } = resolvedConn;
 
   return {
     _id: doc._id.toString(),
@@ -132,6 +140,7 @@ async function toPublicUser(
     followingCount: doc.followingCount ?? doc.following?.length ?? 0,
     connectionStatus: connStatus,
     connectionId: connId,
+    isFollowing: connIsFollowing,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };

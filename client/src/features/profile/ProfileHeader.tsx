@@ -14,9 +14,9 @@ interface Props {
 }
 
 export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
-  const inputRef    = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const uploadPhoto = useUploadPhoto(profile._id);
-  const navigate    = useNavigate();
+  const navigate = useNavigate();
 
   // Lifted status so the Message button reacts to ConnectionButton changes
   // without waiting for a full profile cache refetch.
@@ -60,8 +60,8 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
               {profile.profilePhoto
                 ? <img src={profile.profilePhoto} alt={profile.fullName} className="w-full h-full object-cover" />
                 : <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400">
-                    {profile.firstName[0]}{profile.lastName[0]}
-                  </div>
+                  {profile.firstName[0]}{profile.lastName[0]}
+                </div>
               }
             </div>
             {isOwner && (
@@ -101,6 +101,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
                   targetUserId={profile._id}
                   connectionStatus={profile.connectionStatus}
                   connectionId={profile.connectionId}
+                  isFollowing={profile.isFollowing}
                   onStatusChange={setLiveStatus}
                 />
 

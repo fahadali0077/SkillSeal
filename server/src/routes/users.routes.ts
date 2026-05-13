@@ -14,7 +14,7 @@ import {
   addEducation, updateEducation, deleteEducation,
   addSkill, removeSkill, uploadProfilePhoto,
 } from '../services/users.service';
-import { getConnectionDegree } from '../services/connections.service';
+import { getConnectionDegree, followUser, unfollowUser } from '../services/connections.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -174,6 +174,22 @@ router.get('/:id/completeness', authenticate, async (req: AuthRequest, res: Resp
     if (req.user!.userId !== req.params['id']) { sendError(res, 'Forbidden', 403, ApiErrorCode.FORBIDDEN); return; }
     const result = await getCompleteness(req.user!.userId);
     sendSuccess(res, result, 'Completeness score');
+  } catch (err) { handleError(err, res); }
+});
+
+// ── Follow / Unfollow ─────────────────────────────────────────────────────────
+// Client calls POST/DELETE /api/v1/users/:id/follow
+router.post('/:id/follow', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    await followUser(req.user!.userId, req.params['id']!);
+    sendSuccess(res, null, 'Now following');
+  } catch (err) { handleError(err, res); }
+});
+
+router.delete('/:id/follow', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    await unfollowUser(req.user!.userId, req.params['id']!);
+    sendSuccess(res, null, 'Unfollowed');
   } catch (err) { handleError(err, res); }
 });
 

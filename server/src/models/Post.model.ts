@@ -17,6 +17,15 @@ export interface IPollOption {
   votes: Types.ObjectId[];
 }
 
+export interface IComment {
+  _id: Types.ObjectId;
+  authorId: Types.ObjectId;
+  content: string;
+  likes: Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface IPostDocument extends Document {
   authorId: Types.ObjectId;
   type: 'text' | 'image' | 'link' | 'article' | 'poll' | 'verification_announcement';
@@ -28,7 +37,7 @@ export interface IPostDocument extends Document {
   pollDuration: number;
   tags: string[];
   likes: ILike[];
-  comments: Types.ObjectId[];
+  comments: IComment[];
   reposts: Types.ObjectId[];
   isVerificationAnnouncement: boolean;
   verificationId: Types.ObjectId | null;
@@ -67,6 +76,18 @@ const PollOptionSchema = new Schema<IPollOption>(
   { _id: true }
 );
 
+// SCHEMA BUG 5: comments field referenced a 'Comment' model that doesn't exist,
+// causing MissingSchemaError on .populate('comments'). Replaced with an
+// inline sub-schema so comments are embedded directly in the post document.
+const CommentSchema = new Schema<IComment>(
+  {
+    authorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    content:  { type: String, trim: true, maxlength: 2000, required: true },
+    likes:    [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  },
+  { timestamps: true }
+);
+
 const PostSchema = new Schema<IPostDocument>(
   {
     authorId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -83,7 +104,7 @@ const PostSchema = new Schema<IPostDocument>(
     pollDuration: { type: Number, default: 7 },  // days
     tags: [{ type: String, lowercase: true, trim: true }],
     likes: [LikeSchema],
-    comments: [{ type: Schema.Types.ObjectId, ref: 'Comment' }],
+    comments: [CommentSchema],
     reposts: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     isVerificationAnnouncement: { type: Boolean, default: false },
     verificationId: { type: Schema.Types.ObjectId, ref: 'Verification', default: null },

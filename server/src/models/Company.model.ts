@@ -14,7 +14,9 @@ export interface ICompanyDocument extends Document {
   description: string;
   specialties: string[];
   adminUsers: Types.ObjectId[];
-  followerCount: number;
+  // followerCount removed — SCHEMA BUG 7: no sync mechanism existed to keep
+  // this counter accurate. Removing it prevents showing misleading 0s everywhere.
+  // If follower counts are needed in future, add a CompanyFollower collection.
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,7 +39,7 @@ const CompanySchema = new Schema<ICompanyDocument>(
     description: { type: String, trim: true, maxlength: 5000, default: '' },
     specialties: [{ type: String, trim: true }],
     adminUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-    followerCount: { type: Number, default: 0, min: 0 },
+    // followerCount removed — see ICompanyDocument comment above.
   },
   { timestamps: true }
 );

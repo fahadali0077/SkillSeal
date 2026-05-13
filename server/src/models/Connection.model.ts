@@ -30,5 +30,9 @@ const ConnectionSchema = new Schema<IConnectionDocument>(
 // Unique compound – one connection record per pair (ordered requester → recipient)
 ConnectionSchema.index({ requesterId: 1, recipientId: 1 }, { unique: true });
 ConnectionSchema.index({ status: 1 });
+// SCHEMA BUG 3 — compound indexes covering getPendingRequests and getSentRequests
+// without these, both queries do full collection scans.
+ConnectionSchema.index({ recipientId: 1, status: 1, createdAt: -1 });
+ConnectionSchema.index({ requesterId: 1, status: 1, createdAt: -1 });
 
 export const Connection = model<IConnectionDocument>('Connection', ConnectionSchema);

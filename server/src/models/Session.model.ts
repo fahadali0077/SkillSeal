@@ -92,5 +92,15 @@ const SessionSchema = new Schema<ISessionDocument>(
 
 SessionSchema.index({ userId: 1, skillId: 1 });
 SessionSchema.index({ status: 1, createdAt: -1 });
+// SCHEMA BUG 8: auto-expire abandoned sessions (user closed tab mid-assessment).
+// MongoDB TTL + partialFilterExpression requires MongoDB 4.4+.
+// Documents with status:'active' are deleted 2 hours after createdAt.
+SessionSchema.index(
+  { createdAt: 1 },
+  {
+    expireAfterSeconds: 7200,
+    partialFilterExpression: { status: 'active' },
+  },
+);
 
 export const Session = model<ISessionDocument>('Session', SessionSchema);

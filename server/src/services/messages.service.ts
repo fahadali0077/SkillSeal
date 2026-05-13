@@ -23,7 +23,8 @@ export interface IMessageOut {
   _id:           string;
   threadId:      string;
   senderId:      string;
-  recipientId:   string;
+  // recipientId removed — SCHEMA BUG 6: no longer stored on Message documents.
+  // The recipient is whichever Thread participant is not the sender.
   content:       string;
   attachments:   { url: string; type: string; name: string; sizeBytes: number }[];
   reactions:     { userId: string; emoji: string }[];
@@ -63,7 +64,6 @@ function serializeMessage(doc: IMessageDocument): IMessageOut {
     _id:           doc._id.toString(),
     threadId:      doc.threadId.toString(),
     senderId:      doc.senderId.toString(),
-    recipientId:   doc.recipientId.toString(),
     content:       doc.isDeleted ? '[Message deleted]' : doc.content,
     attachments:   (doc.attachments ?? []).map((a) => ({
       url: a.url, type: a.type, name: a.name, sizeBytes: a.sizeBytes,
@@ -182,13 +182,14 @@ export async function getThread(
     Message.countDocuments({ threadId: new Types.ObjectId(threadId) }),
   ]);
 
-  // Mark unread messages as read
+  // Mark unread messages as read — messages sent by the OTHER participant
+  // (senderId != userId) that haven't been read yet.
   const now = new Date();
   await Message.updateMany(
     {
-      threadId:    new Types.ObjectId(threadId),
-      recipientId: new Types.ObjectId(userId),
-      readAt:      null,
+      threadId: new Types.ObjectId(threadId),
+      senderId: { $ne: new Types.ObjectId(userId) },
+      readAt:   null,
     },
     { $set: { readAt: now } },
   );
@@ -266,7 +267,6 @@ export async function sendMessage(
   const msg = await Message.create({
     threadId:    thread._id,
     senderId:    new Types.ObjectId(senderId),
-    recipientId: new Types.ObjectId(recipientId),
     content:     content.trim(),
     attachments,
     isInMailMessage: !isConnected,
@@ -313,7 +313,7 @@ export async function markThreadRead(threadId: string, userId: string): Promise<
 
   const now = new Date();
   await Message.updateMany(
-    { threadId: new Types.ObjectId(threadId), recipientId: new Types.ObjectId(userId), readAt: null },
+    { threadId: new Types.ObjectId(threadId), senderId: { $ne: new Types.ObjectId(userId) }, readAt: null },
     { $set: { readAt: now } },
   );
 
@@ -388,13 +388,21 @@ export async function searchMessages(
 ): Promise<IMessageOut[]> {
   if (!query?.trim()) return [];
 
+  // Find all thread IDs the user participates in, then search messages within them.
+  // This replaces the previous { $or: [senderId, recipientId] } filter which
+  // relied on the now-removed recipientId field.
+  const oid = new Types.ObjectId(userId);
+  const threads = await Thread.find({
+    $or: [{ participantA: oid }, { participantB: oid }],
+  }).select('_id').lean<{ _id: Types.ObjectId }[]>();
+
+  const threadIds = threads.map((t) => t._id);
+  if (threadIds.length === 0) return [];
+
   const docs = await Message.find({
-    $or: [
-      { senderId:    new Types.ObjectId(userId) },
-      { recipientId: new Types.ObjectId(userId) },
-    ],
+    threadId:  { $in: threadIds },
     isDeleted: false,
-    $text: { $search: query },
+    $text:     { $search: query },
   })
   .sort({ score: { $meta: 'textScore' } })
   .limit(limit)

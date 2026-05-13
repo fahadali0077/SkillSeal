@@ -73,7 +73,7 @@ async function toMini(doc: IUserDocument): Promise<UserMini> {
     headline:        doc.headline ?? '',
     profilePhoto:    doc.profilePhoto ?? '',
     customUrl:       doc.customUrl ?? '',
-    connectionCount: doc.connections?.length ?? 0,
+    connectionCount: doc.connectionCount ?? doc.connections?.length ?? 0,
   };
 }
 
@@ -200,10 +200,10 @@ export async function acceptRequest(connectionId: string, recipientId: string): 
   const rid = conn.requesterId.toString();
   const uid = conn.recipientId.toString();
 
-  // Mutual array update
+  // Mutual array update + increment denormalized counters
   await Promise.all([
-    User.findByIdAndUpdate(rid, { $addToSet: { connections: new Types.ObjectId(uid) } }),
-    User.findByIdAndUpdate(uid, { $addToSet: { connections: new Types.ObjectId(rid) } }),
+    User.findByIdAndUpdate(rid, { $addToSet: { connections: new Types.ObjectId(uid) }, $inc: { connectionCount: 1 } }),
+    User.findByIdAndUpdate(uid, { $addToSet: { connections: new Types.ObjectId(rid) }, $inc: { connectionCount: 1 } }),
   ]);
 
   const acceptor = await User.findById(uid)
@@ -259,10 +259,10 @@ export async function removeConnection(connectionId: string, actorId: string): P
     conn.status = actorId === rid ? 'withdrawn' : 'declined';
     await conn.save();
   } else if (conn.status === 'accepted') {
-    // Remove from both connections[] arrays and delete record
+    // Remove from both connections[] arrays, decrement counters, and delete record
     await Promise.all([
-      User.findByIdAndUpdate(rid, { $pull: { connections: new Types.ObjectId(uid) } }),
-      User.findByIdAndUpdate(uid, { $pull: { connections: new Types.ObjectId(rid) } }),
+      User.findByIdAndUpdate(rid, { $pull: { connections: new Types.ObjectId(uid) }, $inc: { connectionCount: -1 } }),
+      User.findByIdAndUpdate(uid, { $pull: { connections: new Types.ObjectId(rid) }, $inc: { connectionCount: -1 } }),
       Connection.findByIdAndDelete(connectionId),
     ]);
     await bustSuggestions(rid, uid);
@@ -290,10 +290,14 @@ export async function removeConnectionByUserId(actorId: string, targetUserId: st
   const wasPending   = conn.status === 'pending';
   const wasRequester = conn.requesterId.toString() === actorId;
 
+  // For accepted connections, also decrement the denormalized counters.
+  // For pending withdrawals the arrays were never updated, so no decrement needed.
+  const countDelta = conn.status === 'accepted' ? { $inc: { connectionCount: -1 } } : {};
+
   await Promise.all([
     // Remove from both users' connections arrays
-    User.findByIdAndUpdate(rid, { $pull: { connections: new Types.ObjectId(uid) } }),
-    User.findByIdAndUpdate(uid, { $pull: { connections: new Types.ObjectId(rid) } }),
+    User.findByIdAndUpdate(rid, { $pull: { connections: new Types.ObjectId(uid) }, ...countDelta }),
+    User.findByIdAndUpdate(uid, { $pull: { connections: new Types.ObjectId(rid) }, ...countDelta }),
     conn.deleteOne(),
   ]);
 
@@ -332,8 +336,8 @@ export async function blockUser(blockerId: string, targetId: string): Promise<vo
 
   if (existing) {
     await Promise.all([
-      User.findByIdAndUpdate(blockerId, { $pull: { connections: new Types.ObjectId(targetId) } }),
-      User.findByIdAndUpdate(targetId,  { $pull: { connections: new Types.ObjectId(blockerId) } }),
+      User.findByIdAndUpdate(blockerId, { $pull: { connections: new Types.ObjectId(targetId) }, $inc: { connectionCount: -1 } }),
+      User.findByIdAndUpdate(targetId,  { $pull: { connections: new Types.ObjectId(blockerId) }, $inc: { connectionCount: -1 } }),
       Connection.findByIdAndDelete(existing._id),
     ]);
   } else {
@@ -369,15 +373,15 @@ export async function unblockUser(blockerId: string, targetId: string): Promise<
 export async function followUser(followerId: string, targetId: string): Promise<void> {
   await assertNotSelf(followerId, targetId);
   await Promise.all([
-    User.findByIdAndUpdate(followerId, { $addToSet: { following: new Types.ObjectId(targetId) } }),
-    User.findByIdAndUpdate(targetId,  { $addToSet: { followers: new Types.ObjectId(followerId) } }),
+    User.findByIdAndUpdate(followerId, { $addToSet: { following: new Types.ObjectId(targetId) }, $inc: { followingCount: 1 } }),
+    User.findByIdAndUpdate(targetId,  { $addToSet: { followers: new Types.ObjectId(followerId) }, $inc: { followerCount: 1 } }),
   ]);
 }
 
 export async function unfollowUser(followerId: string, targetId: string): Promise<void> {
   await Promise.all([
-    User.findByIdAndUpdate(followerId, { $pull: { following: new Types.ObjectId(targetId) } }),
-    User.findByIdAndUpdate(targetId,  { $pull: { followers: new Types.ObjectId(followerId) } }),
+    User.findByIdAndUpdate(followerId, { $pull: { following: new Types.ObjectId(targetId) }, $inc: { followingCount: -1 } }),
+    User.findByIdAndUpdate(targetId,  { $pull: { followers: new Types.ObjectId(followerId) }, $inc: { followerCount: -1 } }),
   ]);
 }
 
@@ -459,7 +463,7 @@ export async function getSentRequests(userId: string): Promise<ConnRequestItem[]
 
 function buildMini(u?: IUserDocument): UserMini {
   if (!u) return { _id: '', fullName: 'Unknown', firstName: '', lastName: '', headline: '', profilePhoto: '', customUrl: '', connectionCount: 0 };
-  return { _id: u._id.toString(), fullName: `${u.firstName} ${u.lastName}`, firstName: u.firstName, lastName: u.lastName, headline: u.headline ?? '', profilePhoto: u.profilePhoto ?? '', customUrl: u.customUrl ?? '', connectionCount: u.connections?.length ?? 0 };
+  return { _id: u._id.toString(), fullName: `${u.firstName} ${u.lastName}`, firstName: u.firstName, lastName: u.lastName, headline: u.headline ?? '', profilePhoto: u.profilePhoto ?? '', customUrl: u.customUrl ?? '', connectionCount: u.connectionCount ?? u.connections?.length ?? 0 };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

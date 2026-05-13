@@ -89,6 +89,11 @@ export interface IUserDocument extends Document {
   followers: Types.ObjectId[];
   following: Types.ObjectId[];
   blockedUsers: Types.ObjectId[];
+  // Denormalized counters — kept in sync by connections.service.ts
+  // so profile cards never need to load the full arrays just to show a count.
+  connectionCount: number;
+  followerCount:   number;
+  followingCount:  number;
   skills: {
     skillId: Types.ObjectId;
     status: 'unverified' | 'pending' | 'verified' | 'expired' | 'flagged';
@@ -169,6 +174,10 @@ const UserSchema = new Schema<IUserDocument>(
     followers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     following: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     blockedUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    // Denormalized counters — updated atomically alongside the arrays.
+    connectionCount: { type: Number, default: 0, min: 0 },
+    followerCount:   { type: Number, default: 0, min: 0 },
+    followingCount:  { type: Number, default: 0, min: 0 },
     skills: [SkillEntrySchema],
     links: [LinkSchema],
     experience: [ExperienceSchema],
@@ -200,6 +209,15 @@ const UserSchema = new Schema<IUserDocument>(
 UserSchema.index({ 'location.city': 1, 'location.country': 1 });
 UserSchema.index({ 'skills.skillId': 1, 'skills.status': 1 });
 UserSchema.index({ openToWork: 1, accountType: 1 });
+// SCHEMA BUG 1 — array field indexes for connection graph traversal and lookups
+UserSchema.index({ connections:  1 });
+UserSchema.index({ followers:    1 });
+UserSchema.index({ following:    1 });
+UserSchema.index({ blockedUsers: 1 });
+// Compound name index for listConnections search-by-name queries
+UserSchema.index({ firstName: 1, lastName: 1 });
+// customUrl already has a unique index from the field definition;
+// no additional index needed — the unique constraint covers the query planner.
 
 // ── Virtual: fullName ─────────────────────────────────────────
 

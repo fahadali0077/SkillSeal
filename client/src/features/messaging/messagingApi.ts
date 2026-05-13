@@ -12,7 +12,7 @@ export interface IMessageOut {
   _id:             string;
   threadId:        string;
   senderId:        string;
-  recipientId:     string;
+  // recipientId removed — SCHEMA BUG 6: no longer stored on Message documents.
   content:         string;
   attachments:     { url: string; type: string; name: string; sizeBytes: number }[];
   reactions:       { userId: string; emoji: string }[];

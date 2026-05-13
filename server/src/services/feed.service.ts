@@ -341,214 +341,218 @@ export async function addComment(
     // Custom field marker — stored as tag
   });
 
-  doc.comments.push(commentDoc._id as unknown as Types.ObjectId);
+  doc.comments.push({
+    authorId: new Types.ObjectId(userId),
+    content: input.content.trim(),
+    likes: [],
+  } as never);
   await doc.save();
 
+  const saved = doc.comments[doc.comments.length - 1];
   const author = await buildAuthor(userId);
   return {
-    _id: commentDoc._id.toString(),
+    _id: saved._id.toString(),
     authorId: userId,
     author,
     content: input.content.trim(),
     parentCommentId: input.parentCommentId ?? null,
-    createdAt: commentDoc.createdAt.toISOString(),
+    createdAt: saved.createdAt.toISOString(),
   };
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 7. Repost
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 7. Repost
+  // ─────────────────────────────────────────────────────────────────────────────
 
-export async function repost(
-  originalId: string,
-  userId: string,
-  commentary?: string,
-): Promise<IPost> {
-  const original = await Post.findOne({ _id: originalId, isDeleted: false });
-  if (!original) throw new AppError('Original post not found.', 404, true);
+  export async function repost(
+    originalId: string,
+    userId: string,
+    commentary?: string,
+  ): Promise<IPost> {
+    const original = await Post.findOne({ _id: originalId, isDeleted: false });
+    if (!original) throw new AppError('Original post not found.', 404, true);
 
-  const newPost = await createPost(userId, {
-    type: 'text',
-    content: commentary ?? '',
-    tags: original.tags,
-  });
+    const newPost = await createPost(userId, {
+      type: 'text',
+      content: commentary ?? '',
+      tags: original.tags,
+    });
 
-  original.reposts.push(new Types.ObjectId(userId));
-  await original.save();
+    original.reposts.push(new Types.ObjectId(userId));
+    await original.save();
 
-  return newPost;
-}
+    return newPost;
+  }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 8. Hashtag posts
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 8. Hashtag posts
+  // ─────────────────────────────────────────────────────────────────────────────
 
-export async function getHashtagPosts(
-  tag: string,
-  page = 1,
-  limit = 20,
-  viewerId?: string,
-): Promise<{ posts: IPostCard[]; total: number }> {
-  const skip = (page - 1) * limit;
-  const [docs, total] = await Promise.all([
-    Post.find({ tags: tag.toLowerCase(), isDeleted: false })
-      .sort({ createdAt: -1 })
-      .skip(skip).limit(limit),
-    Post.countDocuments({ tags: tag.toLowerCase(), isDeleted: false }),
-  ]);
+  export async function getHashtagPosts(
+    tag: string,
+    page = 1,
+    limit = 20,
+    viewerId?: string,
+  ): Promise<{ posts: IPostCard[]; total: number }> {
+    const skip = (page - 1) * limit;
+    const [docs, total] = await Promise.all([
+      Post.find({ tags: tag.toLowerCase(), isDeleted: false })
+        .sort({ createdAt: -1 })
+        .skip(skip).limit(limit),
+      Post.countDocuments({ tags: tag.toLowerCase(), isDeleted: false }),
+    ]);
 
-  const posts = await Promise.all(docs.map((d) => serializePost(d, viewerId)));
-  return { posts: posts.map(toPostCard), total };
-}
+    const posts = await Promise.all(docs.map((d) => serializePost(d, viewerId)));
+    return { posts: posts.map(toPostCard), total };
+  }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 9. Trending hashtags
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 9. Trending hashtags
+  // ─────────────────────────────────────────────────────────────────────────────
 
-export async function getTrendingHashtags(userId: string): Promise<{ tag: string; count: number }[]> {
-  const user = await User.findById(userId).select('connections following').lean<IUserDocument>();
-  if (!user) return [];
+  export async function getTrendingHashtags(userId: string): Promise<{ tag: string; count: number }[]> {
+    const user = await User.findById(userId).select('connections following').lean<IUserDocument>();
+    if (!user) return [];
 
-  const networkIds = [
-    ...new Set([
-      userId,
-      ...(user.connections ?? []).map((id) => id.toString()),
-      ...(user.following ?? []).map((id) => id.toString()),
-    ]),
-  ].map((id) => new Types.ObjectId(id));
+    const networkIds = [
+      ...new Set([
+        userId,
+        ...(user.connections ?? []).map((id) => id.toString()),
+        ...(user.following ?? []).map((id) => id.toString()),
+      ]),
+    ].map((id) => new Types.ObjectId(id));
 
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const result = await Post.aggregate<{ _id: string; count: number }>([
-    { $match: { authorId: { $in: networkIds }, isDeleted: false, createdAt: { $gte: since } } },
-    { $unwind: '$tags' },
-    { $group: { _id: '$tags', count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
-    { $limit: 5 },
-  ]);
+    const result = await Post.aggregate<{ _id: string; count: number }>([
+      { $match: { authorId: { $in: networkIds }, isDeleted: false, createdAt: { $gte: since } } },
+      { $unwind: '$tags' },
+      { $group: { _id: '$tags', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+    ]);
 
-  return result.map((r) => ({ tag: r._id, count: r.count }));
-}
+    return result.map((r) => ({ tag: r._id, count: r.count }));
+  }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FEED ALGORITHM
-// ─────────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
+  // FEED ALGORITHM
+  // ─────────────────────────────────────────────────────────────────────────────
 
-export interface FeedResult {
-  posts: IPostCard[];
-  page: number;
-  hasMore: boolean;
-  nextPage: number | null;
-}
+  export interface FeedResult {
+    posts: IPostCard[];
+    page: number;
+    hasMore: boolean;
+    nextPage: number | null;
+  }
 
-export async function getFeed(
-  userId: string,
-  page = 1,
-  limit = 20,
-): Promise<FeedResult> {
-  const redis = getRedis();
+  export async function getFeed(
+    userId: string,
+    page = 1,
+    limit = 20,
+  ): Promise<FeedResult> {
+    const redis = getRedis();
 
-  // ── 1. Check cache ────────────────────────────────────────────────────────
-  if (page === 1) {
-    const cached = await redis.get(feedKey(userId));
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached) as FeedResult;
-        logger.info(`[feed] Cache HIT for userId=${userId}`);
-        return parsed;
-      } catch { /* fall through */ }
+    // ── 1. Check cache ────────────────────────────────────────────────────────
+    if (page === 1) {
+      const cached = await redis.get(feedKey(userId));
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as FeedResult;
+          logger.info(`[feed] Cache HIT for userId=${userId}`);
+          return parsed;
+        } catch { /* fall through */ }
+      }
     }
+
+    // ── 2. Resolve network ────────────────────────────────────────────────────
+    const user = await User.findById(userId)
+      .select('connections following')
+      .lean<IUserDocument>();
+
+    if (!user) throw new AppError('User not found.', 404, true);
+
+    const connectionIds = (user.connections ?? []).map((id) => id.toString());
+    const followingIds = (user.following ?? []).map((id) => id.toString());
+    const networkIdSet = new Set([...connectionIds, ...followingIds]);
+    const networkIds = [...networkIdSet].map((id) => new Types.ObjectId(id));
+
+    if (networkIds.length === 0) {
+      return { posts: [], page, hasMore: false, nextPage: null };
+    }
+
+    // ── 3. Fetch raw candidates (72h window) ──────────────────────────────────
+    const since = new Date(Date.now() - FEED_WINDOW);
+    const candidates = await Post.find({
+      authorId: { $in: networkIds },
+      isDeleted: false,
+      createdAt: { $gte: since },
+    })
+      .sort({ createdAt: -1 })
+      .limit(500)  // fetch generous pool, then score
+      .lean<IPostDocument[]>();
+
+    // ── 4. Build author verified-skill lookup ─────────────────────────────────
+    const authorIds = [...new Set(candidates.map((p) => p.authorId.toString()))];
+    const authorDocs = await User.find({ _id: { $in: authorIds } })
+      .select('skills')
+      .lean<{ _id: Types.ObjectId; skills: { status: string }[] }[]>();
+
+    const authorVerifiedMap = new Map(
+      authorDocs.map((a) => [
+        a._id.toString(),
+        a.skills.some((s) => s.status === 'verified'),
+      ]),
+    );
+
+    // ── 5. Score each post ────────────────────────────────────────────────────
+    const now = Date.now();
+
+    const scored = candidates.map((doc) => {
+      const hoursAge = (now - doc.createdAt.getTime()) / 3_600_000;
+      const recencyScore = Math.exp(-0.5 * hoursAge);
+
+      const likeCount = doc.likes?.length ?? 0;
+      const commentCount = doc.comments?.length ?? 0;
+      const repostCount = doc.reposts?.length ?? 0;
+      const engagementScore = Math.min((likeCount + commentCount * 2 + repostCount * 3) / 100, 1);
+
+      const aid = doc.authorId.toString();
+      const isConnection = connectionIds.includes(aid);
+      const isFollowing = followingIds.includes(aid);
+      const relationshipWeight = isConnection ? 2.0 : isFollowing ? 1.0 : 0.5;
+
+      const verifiedBonus = authorVerifiedMap.get(aid) ? 1.25 : 1.0;
+      const certBonus = doc.isVerificationAnnouncement ? 1.5 : 1.0;
+
+      const finalScore = recencyScore * (engagementScore + 0.1) * relationshipWeight * verifiedBonus * certBonus;
+
+      return { doc, finalScore };
+    });
+
+    // ── 6. Sort, paginate ─────────────────────────────────────────────────────
+    scored.sort((a, b) => b.finalScore - a.finalScore);
+
+    const skip = (page - 1) * limit;
+    const paged = scored.slice(skip, skip + limit);
+    const hasMore = skip + limit < scored.length;
+
+    // ── 7. Serialize ──────────────────────────────────────────────────────────
+    const serialized = await Promise.all(
+      paged.map((item) => serializePost(item.doc as unknown as IPostDocument, userId)),
+    );
+
+    const result: FeedResult = {
+      posts: serialized.map(toPostCard),
+      page,
+      hasMore,
+      nextPage: hasMore ? page + 1 : null,
+    };
+
+    // ── 8. Cache page 1 ───────────────────────────────────────────────────────
+    if (page === 1) {
+      await redis.set(feedKey(userId), JSON.stringify(result), 'EX', FEED_TTL);
+    }
+
+    logger.info(`[feed] Computed ${result.posts.length} posts for userId=${userId} page=${page}`);
+    return result;
   }
-
-  // ── 2. Resolve network ────────────────────────────────────────────────────
-  const user = await User.findById(userId)
-    .select('connections following')
-    .lean<IUserDocument>();
-
-  if (!user) throw new AppError('User not found.', 404, true);
-
-  const connectionIds = (user.connections ?? []).map((id) => id.toString());
-  const followingIds = (user.following ?? []).map((id) => id.toString());
-  const networkIdSet = new Set([...connectionIds, ...followingIds]);
-  const networkIds = [...networkIdSet].map((id) => new Types.ObjectId(id));
-
-  if (networkIds.length === 0) {
-    return { posts: [], page, hasMore: false, nextPage: null };
-  }
-
-  // ── 3. Fetch raw candidates (72h window) ──────────────────────────────────
-  const since = new Date(Date.now() - FEED_WINDOW);
-  const candidates = await Post.find({
-    authorId: { $in: networkIds },
-    isDeleted: false,
-    createdAt: { $gte: since },
-  })
-    .sort({ createdAt: -1 })
-    .limit(500)  // fetch generous pool, then score
-    .lean<IPostDocument[]>();
-
-  // ── 4. Build author verified-skill lookup ─────────────────────────────────
-  const authorIds = [...new Set(candidates.map((p) => p.authorId.toString()))];
-  const authorDocs = await User.find({ _id: { $in: authorIds } })
-    .select('skills')
-    .lean<{ _id: Types.ObjectId; skills: { status: string }[] }[]>();
-
-  const authorVerifiedMap = new Map(
-    authorDocs.map((a) => [
-      a._id.toString(),
-      a.skills.some((s) => s.status === 'verified'),
-    ]),
-  );
-
-  // ── 5. Score each post ────────────────────────────────────────────────────
-  const now = Date.now();
-
-  const scored = candidates.map((doc) => {
-    const hoursAge = (now - doc.createdAt.getTime()) / 3_600_000;
-    const recencyScore = Math.exp(-0.5 * hoursAge);
-
-    const likeCount = doc.likes?.length ?? 0;
-    const commentCount = doc.comments?.length ?? 0;
-    const repostCount = doc.reposts?.length ?? 0;
-    const engagementScore = Math.min((likeCount + commentCount * 2 + repostCount * 3) / 100, 1);
-
-    const aid = doc.authorId.toString();
-    const isConnection = connectionIds.includes(aid);
-    const isFollowing = followingIds.includes(aid);
-    const relationshipWeight = isConnection ? 2.0 : isFollowing ? 1.0 : 0.5;
-
-    const verifiedBonus = authorVerifiedMap.get(aid) ? 1.25 : 1.0;
-    const certBonus = doc.isVerificationAnnouncement ? 1.5 : 1.0;
-
-    const finalScore = recencyScore * (engagementScore + 0.1) * relationshipWeight * verifiedBonus * certBonus;
-
-    return { doc, finalScore };
-  });
-
-  // ── 6. Sort, paginate ─────────────────────────────────────────────────────
-  scored.sort((a, b) => b.finalScore - a.finalScore);
-
-  const skip = (page - 1) * limit;
-  const paged = scored.slice(skip, skip + limit);
-  const hasMore = skip + limit < scored.length;
-
-  // ── 7. Serialize ──────────────────────────────────────────────────────────
-  const serialized = await Promise.all(
-    paged.map((item) => serializePost(item.doc as unknown as IPostDocument, userId)),
-  );
-
-  const result: FeedResult = {
-    posts: serialized.map(toPostCard),
-    page,
-    hasMore,
-    nextPage: hasMore ? page + 1 : null,
-  };
-
-  // ── 8. Cache page 1 ───────────────────────────────────────────────────────
-  if (page === 1) {
-    await redis.set(feedKey(userId), JSON.stringify(result), 'EX', FEED_TTL);
-  }
-
-  logger.info(`[feed] Computed ${result.posts.length} posts for userId=${userId} page=${page}`);
-  return result;
-}

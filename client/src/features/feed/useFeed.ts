@@ -79,11 +79,20 @@ export function useReact(postId: string) {
             ...old,
             pages: old.pages.map((page) => ({
               ...page,
-              posts: page.posts.map((p) =>
-                p._id === postId
-                  ? { ...p, reactionSummary: { ...p.reactionSummary, userReaction: reaction, total: (p.reactionSummary?.total ?? 0) + 1 } }
-                  : p,
-              ),
+              posts: page.posts.map((p) => {
+                if (p._id !== postId) return p;
+                const alreadyReacted = !!p.reactionSummary?.userReaction;
+                return {
+                  ...p,
+                  reactionSummary: {
+                    ...p.reactionSummary,
+                    userReaction: reaction,
+                    total: alreadyReacted
+                      ? (p.reactionSummary?.total ?? 0)
+                      : (p.reactionSummary?.total ?? 0) + 1,
+                  },
+                };
+              }),
             })),
           };
         },

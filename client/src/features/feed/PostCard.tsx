@@ -222,10 +222,9 @@ export default function PostCard({ post, animate = false }: Props) {
           postId={post._id}
           options={post.pollOptions}
           expiresAt={post.pollExpiresAt ?? null}
-          onVote={(optionId) => {
-            votePoll.mutate(optionId, {
-              onError: () => toast.error('Could not record vote. Please try again.'),
-            });
+          isVoting={votePoll.isPending}
+          onVote={async (optionId) => {
+            await votePoll.mutateAsync(optionId);
           }}
         />
       )}

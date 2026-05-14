@@ -114,8 +114,8 @@ async function serializePost(
     isVerificationAnnouncement: doc.isVerificationAnnouncement ?? false,
     verificationBadge: null,
     isDeleted: doc.isDeleted ?? false,
-    isRepost: false,
-    originalPostId: null,
+    isRepost: (doc as any).isRepost ?? false,
+    originalPostId: (doc as any).originalPostId?.toString() ?? null,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };
@@ -277,6 +277,7 @@ export async function upsertReaction(
   for (const l of doc.likes) {
     breakdown[l.reaction as ReactionType] = (breakdown[l.reaction as ReactionType] ?? 0) + 1;
   }
+  await bustFeedKeys([userId]);
   return { total: doc.likes.length, breakdown, userReaction: reaction as ReactionType };
 }
 
@@ -291,6 +292,7 @@ export async function removeReaction(postId: string, userId: string): Promise<IR
   for (const l of doc.likes) {
     breakdown[l.reaction as ReactionType] = (breakdown[l.reaction as ReactionType] ?? 0) + 1;
   }
+  await bustFeedKeys([userId]);
   return { total: doc.likes.length, breakdown, userReaction: null };
 }
 
@@ -336,6 +338,9 @@ export async function addComment(
     authorId: new Types.ObjectId(userId),
     content: input.content.trim(),
     likes: [],
+    parentCommentId: input.parentCommentId
+      ? new Types.ObjectId(input.parentCommentId)
+      : null,
   } as never);
   await doc.save();
 
@@ -363,16 +368,42 @@ export async function repost(
   const original = await Post.findOne({ _id: originalId, isDeleted: false });
   if (!original) throw new AppError('Original post not found.', 404, true);
 
-  const newPost = await createPost(userId, {
-    type: 'text',
-    content: commentary ?? '',
-    tags: original.tags,
+  if (original.reposts.some((id) => id.toString() === userId)) {
+    throw new AppError('You have already reposted this.', 400, true);
+  }
+
+  const autoTags = extractHashtags(commentary ?? '');
+
+  const doc = await Post.create({
+    authorId:                new Types.ObjectId(userId),
+    type:                    'text',
+    content:                 commentary ?? '',
+    imageUrls:               [],
+    linkUrl:                 '',
+    linkPreview:             {},
+    pollOptions:             [],
+    tags:                    autoTags,
+    likes:                   [],
+    comments:                [],
+    reposts:                 [],
+    isVerificationAnnouncement: false,
+    verificationId:          null,
+    isDeleted:               false,
+    isRepost:                true,
+    originalPostId:          new Types.ObjectId(originalId),
   });
 
   original.reposts.push(new Types.ObjectId(userId));
   await original.save();
 
-  return newPost;
+  const author = await User.findById(userId).select('connections followers').lean<IUserDocument>();
+  const toNotify = [
+    ...(author?.connections ?? []).map((id: any) => id.toString()),
+    ...(author?.followers  ?? []).map((id: any) => id.toString()),
+  ];
+  await bustFeedKeys([userId, ...toNotify]);
+
+  return serializePost(doc, userId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -574,6 +605,7 @@ export async function votePoll(postId: string, userId: string, optionId: string)
   option.votes.push(uid);
 
   await doc.save();
+  await bustFeedKeys([userId]);
   return serializePost(doc, userId);
 }
 

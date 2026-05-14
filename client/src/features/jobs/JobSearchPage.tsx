@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Loader2, Briefcase } from 'lucide-react';
+import { Search, Loader2, Briefcase, MapPin } from 'lucide-react';
 import { useJobSearch } from './useJobs';
 import JobCard from './JobCard';
 import JobFilters from './JobFilters';
@@ -52,7 +52,7 @@ export default function JobSearchPage() {
           />
         </div>
         <div className="relative">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+          <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             defaultValue={params.get('location') ?? ''}
             placeholder="Location"

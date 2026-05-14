@@ -5,16 +5,20 @@ import { Search, UserMinus, Loader2 } from 'lucide-react';
 
 export default function ConnectionsList() {
   const [search, setSearch] = useState('');
-
-  // Backend returns { connections: UserMini[], total: number }
-  // apiFetch unwraps the `data` envelope, so useConnections().data is that object.
   const { data, isLoading } = useConnections(search);
   const connections = data?.connections ?? [];
-
   const remove = useRemoveConnection();
 
   return (
     <div className="space-y-4">
+      {/* FIX 5 — header with total count */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-semibold text-gray-900">Your connections</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{data?.total ?? 0} people</p>
+        </div>
+      </div>
+
       <div className="relative">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <input
@@ -37,7 +41,7 @@ export default function ConnectionsList() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {connections.map(c => (
             <div key={c._id} className="card p-4 flex items-center gap-3">
-              <Link to={`/profile/${c.customUrl || c._id}`}>
+              <Link to={`/profile/${c.customUrl || c._id}`} className="shrink-0">
                 {c.profilePhoto
                   ? <img src={c.profilePhoto} alt={`${c.firstName} ${c.lastName}`} className="w-10 h-10 rounded-full object-cover" />
                   : <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand font-bold">
@@ -45,17 +49,26 @@ export default function ConnectionsList() {
                     </div>
                 }
               </Link>
+
               <div className="flex-1 min-w-0">
-                <Link to={`/profile/${c.customUrl || c._id}`} className="font-semibold text-gray-900 hover:text-brand text-sm">
+                <Link
+                  to={`/profile/${c.customUrl || c._id}`}
+                  className="font-semibold text-gray-900 hover:text-brand text-sm"
+                >
                   {c.firstName} {c.lastName}
                 </Link>
                 <p className="text-xs text-gray-500 truncate">{c.headline}</p>
               </div>
+
+              {/* FIX 5 — labelled remove button with red hover */}
               <button
                 onClick={() => remove.mutate(c._id)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-red-500"
+                disabled={remove.isPending}
+                title="Remove connection"
+                className="shrink-0 flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-red-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors border border-transparent hover:border-red-100"
               >
-                <UserMinus size={15} />
+                <UserMinus size={13} />
+                <span className="hidden sm:inline">Remove</span>
               </button>
             </div>
           ))}

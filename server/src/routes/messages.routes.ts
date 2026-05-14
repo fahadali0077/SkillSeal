@@ -8,7 +8,7 @@ import { sendSuccess, sendError } from '../utils/response';
 import { AppError } from '../middleware/error.middleware';
 import {
   listThreads, getThread, sendMessage, markThreadRead,
-  deleteMessage, listRequests, acceptRequest, ignoreRequest, searchMessages,
+  deleteMessage, listRequests, countRequests, acceptRequest, ignoreRequest, searchMessages,
 } from '../services/messages.service';
 
 const router = Router();
@@ -65,6 +65,14 @@ router.delete('/:messageId', async (req: AuthRequest, res: Response) => {
   try {
     const msg = await deleteMessage(req.params['messageId']!, req.user!.userId);
     sendSuccess(res, msg, 'Message deleted');
+  } catch (err) { handle(err, res); }
+});
+
+// GET /messages/requests/count — must be before /requests/:id routes
+router.get('/requests/count', async (req: AuthRequest, res: Response) => {
+  try {
+    const count = await countRequests(req.user!.userId);
+    sendSuccess(res, { count }, 'Request count');
   } catch (err) { handle(err, res); }
 });
 

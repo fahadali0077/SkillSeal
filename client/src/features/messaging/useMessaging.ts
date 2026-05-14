@@ -197,6 +197,16 @@ export function useMessageRequests() {
   });
 }
 
+// Fetches the request count on page load — avoids relying on the in-memory
+// socket store which starts at 0 until a socket message arrives (FIX 12).
+export function useMessageRequestCount() {
+  return useQuery({
+    queryKey: ['messageRequestCount'],
+    queryFn:  messagingApi.requestCount,
+    staleTime: 30_000,
+  });
+}
+
 export function useAcceptRequest() {
   const qc = useQueryClient();
   return useMutation({

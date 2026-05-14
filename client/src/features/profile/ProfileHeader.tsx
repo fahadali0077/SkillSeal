@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Camera, MapPin, Link2, Edit2, Loader2, Briefcase, MessageSquare, Share2 } from 'lucide-react';
 import type { IUserPublic, ConnectionStatus } from '@SkillSeal/shared';
@@ -14,9 +14,9 @@ interface Props {
 }
 
 export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef    = useRef<HTMLInputElement>(null);
   const uploadPhoto = useUploadPhoto(profile._id);
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
 
   // Lifted status so the Message button reacts to ConnectionButton changes
   // without waiting for a full profile cache refetch.
@@ -60,8 +60,8 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
               {profile.profilePhoto
                 ? <img src={profile.profilePhoto} alt={profile.fullName} className="w-full h-full object-cover" />
                 : <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400">
-                  {profile.firstName[0]}{profile.lastName[0]}
-                </div>
+                    {profile.firstName[0]}{profile.lastName[0]}
+                  </div>
               }
             </div>
             {isOwner && (
@@ -151,7 +151,9 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
                 {[profile.location.city, profile.location.country].filter(Boolean).join(', ')}
               </span>
             )}
-            <span className="text-brand">{profile.connectionCount} connections</span>
+            <Link to="/network" className="text-brand hover:text-brand-dark font-medium text-sm">
+              {profile.connectionCount ?? 0} connection{(profile.connectionCount ?? 0) !== 1 ? 's' : ''}
+            </Link>
           </div>
 
           {/* Links */}

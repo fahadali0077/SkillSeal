@@ -348,6 +348,15 @@ export async function listRequests(userId: string): Promise<IThreadSummary[]> {
   return listThreads(userId, true);
 }
 
+// Count pending message requests — used by MessagingPage badge on load
+export async function countRequests(userId: string): Promise<number> {
+  return Thread.countDocuments({
+    $or: [{ participantA: userId }, { participantB: userId }],
+    isRequest: true,
+    deletedFor: { $ne: userId },
+  });
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 7. POST /messages/requests/:requestId/accept
 // ─────────────────────────────────────────────────────────────────────────────

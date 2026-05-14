@@ -25,9 +25,8 @@ export default function MessagingPage() {
   const [activeThread, setActive]   = useState<IThreadSummary | null>(null);
   const [activeTab, setActiveTab]   = useState<Tab>('messages');
   const [mobileView, setMobileView] = useState<'list' | 'thread'>('list');
-  const requestCount = useMessagingStore((s) =>
-    Object.values(s.liveMessages).flat().filter((m) => m.isInMailMessage).length,
-  );
+  const { data: reqCountData } = useMessageRequestCount();
+  const requestCount = reqCountData?.count ?? 0;
 
   // Open thread from URL param (?thread=threadId)
   const threadParam = params.get('thread');

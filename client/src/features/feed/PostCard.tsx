@@ -203,7 +203,7 @@ export default function PostCard({ post, animate = true }: Props) {
           className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <MessageCircle size={15} />
-          <span>{post.commentCount > 0 ? post.commentCount : ''} Comment</span>
+          <span>{post.commentCount > 0 ? `${post.commentCount} Comment${post.commentCount !== 1 ? 's' : ''}` : 'Comment'}</span>
         </button>
 
         <button
@@ -212,7 +212,7 @@ export default function PostCard({ post, animate = true }: Props) {
           className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-green-600 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
         >
           <Repeat2 size={15} />
-          <span>{post.repostCount > 0 ? post.repostCount : ''} Repost</span>
+          <span>{post.repostCount > 0 ? `${post.repostCount} Repost${post.repostCount !== 1 ? 's' : ''}` : 'Repost'}</span>
         </button>
       </div>
 

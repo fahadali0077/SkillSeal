@@ -16,6 +16,8 @@ import { startSession, submitAnswer, recordStrike, getSessionState, abandonSessi
 import { computeCompositeScore } from '../services/assessment/scoring.service';
 import { Session } from '../models/Session.model';
 import type { ISessionDocument } from '../models/Session.model';
+import { Verification } from '../models/Verification.model';
+import { Skill } from '../models/Skill.model';
 import mongoose from 'mongoose';
 import type { SkillTier } from '@SkillSeal/shared';
 const router = Router();
@@ -63,4 +65,39 @@ router.get('/:id/report', async (req: AuthRequest, res: Response) => {
     sendSuccess(res, { sessionId, status: session.status, finalTier: result.finalTier, scores: result.scores, verificationId: session.verificationId?.toString() ?? null, durationMs: session.durationMs ?? 0, completedAt: session.endTime?.toISOString() ?? new Date().toISOString(), retakeAfterDays: result.retakeAfterDays }, 'Session report');
   } catch (err) { handle(err, res); }
 });
+
+// GET /sessions/my-verifications — all verified skills for the logged-in user
+router.get('/my-verifications', async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user!.userId;
+    const verifs = await Verification.find({ userId: new mongoose.Types.ObjectId(userId) })
+      .sort({ issuedAt: -1 })
+      .lean();
+
+    const skillIds = [...new Set(verifs.map((v) => v.skillId.toString()))];
+    const skills   = await Skill.find({ _id: { $in: skillIds } }).lean();
+    const skillMap = new Map(skills.map((s: any) => [s._id.toString(), s]));
+
+    const data = verifs.map((v) => {
+      const skill = skillMap.get(v.skillId.toString()) as any;
+      return {
+        verificationId: (v as any)._id.toString(),
+        skillId:        v.skillId.toString(),
+        skillName:      skill?.name    ?? 'Unknown',
+        skillIcon:      skill?.icon    ?? '🔧',
+        skillCategory:  skill?.category ?? '',
+        tier:           v.tier,
+        compositeScore: v.compositeScore,
+        certificateId:  v.certificateId,
+        status:         v.status,
+        issuedAt:       v.issuedAt,
+        expiresAt:      v.expiresAt,
+        isExpired:      new Date(v.expiresAt) < new Date(),
+      };
+    });
+
+    sendSuccess(res, data, 'Verifications retrieved');
+  } catch (err) { handle(err, res); }
+});
+
 export default router;

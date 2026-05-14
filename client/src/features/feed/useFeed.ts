@@ -145,27 +145,26 @@ export function useVotePoll(postId: string) {
       await qc.cancelQueries({ queryKey: ['feed'] });
       await qc.cancelQueries({ queryKey: ['userPosts'] });
 
-      const patchPosts = (posts: IPostCard[]) =>
-        posts.map((p) => {
-          if (p._id !== postId || !p.pollOptions) return p;
-          const prevVoted = p.pollOptions.find((o) => o.hasVoted);
-          return {
-            ...p,
-            pollOptions: p.pollOptions.map((o) => ({
-              ...o,
-              hasVoted: o._id === optionId,
-              voteCount: o._id === optionId
-                ? o.voteCount + 1
-                : o._id === prevVoted?._id
-                  ? Math.max(0, o.voteCount - 1)
-                  : o.voteCount,
-            })),
-          };
-        });
+      const patchPost = (p: IPostCard) => {
+        if (p._id !== postId || !p.pollOptions) return p;
+        const prevVoted = p.pollOptions.find((o) => o.hasVoted);
+        return {
+          ...p,
+          pollOptions: p.pollOptions.map((o) => ({
+            ...o,
+            hasVoted:  o._id === optionId,
+            voteCount: o._id === optionId
+              ? o.voteCount + 1
+              : o._id === prevVoted?._id
+                ? Math.max(0, o.voteCount - 1)
+                : o.voteCount,
+          })),
+        };
+      };
 
       const patch = (old: any) => {
         if (!old) return old;
-        return { ...old, pages: old.pages.map((pg: any) => ({ ...pg, posts: patchPosts(pg.posts) })) };
+        return { ...old, pages: old.pages.map((pg: any) => ({ ...pg, posts: pg.posts.map(patchPost) })) };
       };
 
       qc.setQueriesData<any>({ queryKey: ['feed'] }, patch);

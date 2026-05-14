@@ -20,6 +20,7 @@ import CertificationsSection   from './CertificationsSection';
 import ProfileCompletenessBar  from './ProfileCompletenessBar';
 import EditProfileModal        from './EditProfileModal';
 import PeopleYouMayKnow        from '../connections/PeopleYouMayKnow';
+import UserPostsSection        from './UserPostsSection';
 
 const fadeIn = {
   initial:  { opacity: 0, y: 16 },
@@ -107,6 +108,11 @@ export default function ProfilePage() {
           {/* Education */}
           <motion.div {...fadeIn} transition={{ delay: 0.2 }}>
             <EducationSection profile={profile} isOwner={isOwner} />
+          </motion.div>
+
+          {/* Posts */}
+          <motion.div {...fadeIn} transition={{ delay: 0.25 }}>
+            <UserPostsSection userId={profile._id} isOwner={isOwner} />
           </motion.div>
         </div>
 

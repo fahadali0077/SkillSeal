@@ -69,6 +69,12 @@ export const feedApi = {
       method: 'POST', body: JSON.stringify({ commentary }),
     }),
 
+  // Get posts by a specific user (for profile page)
+  getUserPosts: (userId: string, page = 1) =>
+    apiFetch<{ posts: IPostCard[]; total: number; hasMore: boolean }>(
+      `${API_ORIGIN}/api/v1/users/${userId}/posts?page=${page}&limit=10`,
+    ),
+
   // Vote on poll
   vote: (postId: string, optionId: string) =>
     apiFetch<IPost>(`${API_ORIGIN}/api/v1/posts/${postId}/vote`, {

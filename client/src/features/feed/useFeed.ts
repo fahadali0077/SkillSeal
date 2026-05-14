@@ -8,6 +8,18 @@ import toast from 'react-hot-toast';
 import type { IPostCard, ReactionType } from '@SkillSeal/shared';
 import { feedApi, type CreatePostInput } from './feedApi';
 
+// ── User posts (profile page) ─────────────────────────────────────────────────
+
+export function useUserPosts(userId: string) {
+  return useInfiniteQuery({
+    queryKey: ['userPosts', userId],
+    queryFn: ({ pageParam }) => feedApi.getUserPosts(userId, pageParam as number),
+    initialPageParam: 1,
+    getNextPageParam: (last, pages) => last.hasMore ? pages.length + 1 : undefined,
+    enabled: !!userId,
+  });
+}
+
 // ── Feed (infinite scroll) ────────────────────────────────────────────────────
 
 export function useInfiniteFeed() {

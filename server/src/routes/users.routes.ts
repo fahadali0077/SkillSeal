@@ -15,6 +15,7 @@ import {
   addSkill, removeSkill, uploadProfilePhoto,
 } from '../services/users.service';
 import { getConnectionDegree, followUser, unfollowUser } from '../services/connections.service';
+import { getPostsByUser } from '../services/feed.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
@@ -190,6 +191,16 @@ router.delete('/:id/follow', authenticate, async (req: AuthRequest, res: Respons
   try {
     await unfollowUser(req.user!.userId, req.params['id']!);
     sendSuccess(res, null, 'Unfollowed');
+  } catch (err) { handleError(err, res); }
+});
+
+// GET /users/:id/posts — public profile posts
+router.get('/:id/posts', optionalAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const page  = parseInt(req.query['page'] as string) || 1;
+    const limit = Math.min(parseInt(req.query['limit'] as string) || 10, 20);
+    const result = await getPostsByUser(req.params['id']!, req.user?.userId, page, limit);
+    sendSuccess(res, result, 'Posts retrieved');
   } catch (err) { handleError(err, res); }
 });
 

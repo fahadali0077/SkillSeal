@@ -599,3 +599,26 @@ export async function getComments(postId: string): Promise<ICommentOut[]> {
     }),
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Get posts by a specific user (for profile page)
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getPostsByUser(
+  authorId: string,
+  viewerId: string | undefined,
+  page = 1,
+  limit = 10,
+): Promise<{ posts: IPostCard[]; total: number; hasMore: boolean }> {
+  const skip = (page - 1) * limit;
+  const [docs, total] = await Promise.all([
+    Post.find({ authorId: new Types.ObjectId(authorId), isDeleted: false })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean<IPostDocument[]>(),
+    Post.countDocuments({ authorId: new Types.ObjectId(authorId), isDeleted: false }),
+  ]);
+
+  const posts = await Promise.all(docs.map((doc) => serializePost(doc, viewerId)));
+  return { posts: posts.map(toPostCard), total, hasMore: skip + docs.length < total };
+}

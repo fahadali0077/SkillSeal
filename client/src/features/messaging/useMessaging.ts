@@ -147,6 +147,12 @@ export function useThreads() {
   });
 }
 
+/** Total unread messages across all threads — used for the nav badge */
+export function useUnreadCount(): number {
+  const { data: threads = [] } = useThreads();
+  return threads.reduce((sum, t) => sum + (t.unreadCount ?? 0), 0);
+}
+
 export function useThread(threadId: string) {
   return useInfiniteQuery({
     queryKey: msgKeys.thread(threadId),

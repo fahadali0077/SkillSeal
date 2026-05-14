@@ -82,6 +82,20 @@ export const messagingApi = {
   requestCount: () =>
     apiFetch<{ count: number }>(`${BASE}/requests/count`),
 
+  uploadAttachment: async (file: File): Promise<{ url: string; type: string; name: string; sizeBytes: number }> => {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(`${BASE}/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken') ?? ''}` },
+      body: form,
+    });
+    const json = await res.json() as { success: boolean; data: { url: string; type: string; name: string; sizeBytes: number } };
+    if (!json.success) throw new Error('Upload failed');
+    return json.data;
+  },
+
   search: (query: string) =>
     apiFetch<IMessageOut[]>(`${BASE}/search?query=${encodeURIComponent(query)}`),
 };

@@ -9,6 +9,7 @@ import {
 import { useAuthStore } from '../features/auth/useAuth';
 import NotificationBell from '../features/notifications/NotificationBell';
 import { useNotificationSocket } from '../features/notifications/useNotifications';
+import { useUnreadCount } from '../features/messaging/useMessaging';
 import { connectSocket, disconnectSocket } from './socketClient';
 
 const CANDIDATE_NAV = [
@@ -147,6 +148,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const role = (user as { role?: string })?.role ?? 'candidate';
   const isRecruiter = role === 'recruiter' || role === 'company_admin';
   const navItems = isRecruiter ? RECRUITER_NAV : CANDIDATE_NAV;
+  const unreadMessages = useUnreadCount();
 
   useEffect(() => { if (user && accessToken) connectSocket(accessToken); }, [accessToken]);
 
@@ -154,7 +156,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-4">
-          {/* Logo — links to role home */}
+          {/* Logo */}
           <Link to={isRecruiter ? '/recruiter' : '/assessment'} className="flex items-center gap-2 shrink-0">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isRecruiter ? 'bg-indigo-600' : 'bg-brand'}`}>
               <ShieldCheck size={18} className="text-white" />
@@ -180,7 +182,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               >
                 {({ isActive }) => (
                   <>
-                    <span className={isActive ? (isRecruiter ? 'text-indigo-600' : 'text-brand') : ''}>{item.icon}</span>
+                    <span className={`relative ${isActive ? (isRecruiter ? 'text-indigo-600' : 'text-brand') : ''}`}>
+                      {item.icon}
+                      {item.to === '/messages' && unreadMessages > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
+                          {unreadMessages > 99 ? '99+' : unreadMessages}
+                        </span>
+                      )}
+                    </span>
                     <span>{item.label}</span>
                   </>
                 )}
@@ -223,8 +232,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               `flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl ${isActive ? (isRecruiter ? 'text-indigo-600' : 'text-brand') : 'text-gray-400'}`
             }
           >
-            {item.icon}
-            <span className="text-[10px] font-medium">{item.label}</span>
+            {({ isActive }) => (
+              <>
+                <span className={`relative ${isActive ? (isRecruiter ? 'text-indigo-600' : 'text-brand') : 'text-gray-400'}`}>
+                  {item.icon}
+                  {item.to === '/messages' && unreadMessages > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
+                      {unreadMessages > 99 ? '99+' : unreadMessages}
+                    </span>
+                  )}
+                </span>
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </>
+            )}
           </NavLink>
         ))}
         <NavLink

@@ -6,6 +6,7 @@ import { ApiErrorCode } from '@SkillSeal/shared';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
 import { sendSuccess, sendError } from '../utils/response';
 import { AppError } from '../middleware/error.middleware';
+import { upload, uploadToCloudinary, isMulterError, isInvalidFileType } from '../middleware/upload.middleware';
 import {
   listThreads, getThread, sendMessage, markThreadRead,
   deleteMessage, listRequests, countRequests, acceptRequest, ignoreRequest, searchMessages,
@@ -107,6 +108,29 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
     const msgs = await searchMessages(req.user!.userId, query);
     sendSuccess(res, msgs, 'Search results');
   } catch (err) { handle(err, res); }
+});
+
+// POST /messages/upload — upload a file attachment, returns the CDN URL
+router.post('/upload', upload.single('file'), async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      sendError(res, 'No file provided.', ApiErrorCode.VALIDATION_ERROR, 400);
+      return;
+    }
+    const result = await uploadToCloudinary(req.file.buffer, 'skillseal/message-attachments');
+    sendSuccess(res, {
+      url:       result.url,
+      type:      req.file.mimetype,
+      name:      req.file.originalname,
+      sizeBytes: result.bytes,
+    }, 'File uploaded');
+  } catch (err) {
+    if (isMulterError(err) || isInvalidFileType(err)) {
+      sendError(res, 'Invalid file. Allowed: JPEG, PNG, WebP, PDF (max 10 MB).', ApiErrorCode.VALIDATION_ERROR, 400);
+      return;
+    }
+    handle(err, res);
+  }
 });
 
 export default router;

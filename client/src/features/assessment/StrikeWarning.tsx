@@ -32,7 +32,7 @@ export default function StrikeWarning({ strikeCount }: Props) {
       setVisible(true);
       // Strike 3 banner stays visible until the terminated screen replaces it
       if (strikeCount < 3) {
-        const t = setTimeout(() => setVisible(false), 5000);
+        const t = setTimeout(() => setVisible(false), 2500);
         return () => clearTimeout(t);
       }
     }
@@ -62,7 +62,7 @@ export default function StrikeWarning({ strikeCount }: Props) {
                 className="h-full bg-white/60"
                 initial={{ width: '100%' }}
                 animate={{ width: '0%' }}
-                transition={{ duration: 5, ease: 'linear' }}
+                transition={{ duration: 2.5, ease: 'linear' }}
               />
             </div>
           )}

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Copy, CheckCheck, ExternalLink, ArrowRight, RefreshCw, Clock, Loader2, TrendingUp, AlertTriangle, Share2, Trophy } from 'lucide-react';
+import { API_ORIGIN } from '../../lib/apiBase';
 import type { SkillTier } from '@SkillSeal/shared';
 interface ScoreBreakdown { compositeScore: number; conceptScore: number; speedScore: number; consistencyScore: number; behaviorScore: number; aiScore: number; aiProbability: number; }
 interface SessionReport { sessionId: string; status: string; finalTier: SkillTier | null; scores: ScoreBreakdown; verificationId: string | null; durationMs: number; completedAt: string; retakeAfterDays: number; }
@@ -27,7 +28,7 @@ export default function SessionComplete({ sessionId, skillName, declaredTier, ce
   const [idCopied, setIdCopied] = useState(false); const [urlCopied, setUrlCopied] = useState(false);
   useEffect(() => {
     if (initialData) return; let cancelled = false; const delays = [600, 1800, 4000];
-    async function attempt(n: number): Promise<void> { try { const res = await fetch(`/api/v1/sessions/${sessionId}/report`, { credentials: 'include' }); const body = await res.json() as { success: boolean; data: SessionReport; message: string }; if (!body.success) throw new Error(body.message); if (!cancelled) { setReport(body.data); setLoading(false); } } catch (e) { if (cancelled) return; if (n < delays.length) setTimeout(() => attempt(n + 1), delays[n]); else { setFetchErr('Results unavailable. Check your profile.'); setLoading(false); } } }
+    async function attempt(n: number): Promise<void> { try { const res = await fetch(`${API_ORIGIN}/api/v1/sessions/${sessionId}/report`, { credentials: 'include' }); const body = await res.json() as { success: boolean; data: SessionReport; message: string }; if (!body.success) throw new Error(body.message); if (!cancelled) { setReport(body.data); setLoading(false); } } catch (e) { if (cancelled) return; if (n < delays.length) setTimeout(() => attempt(n + 1), delays[n]); else { setFetchErr('Results unavailable. Check your profile.'); setLoading(false); } } }
     void attempt(0); return () => { cancelled = true; };
   }, [sessionId]);
   const scores = report?.scores; const target = scores?.compositeScore ?? 0; const display = useCountUp(target, 1500, !loading && !!scores);

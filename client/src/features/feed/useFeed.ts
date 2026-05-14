@@ -98,7 +98,10 @@ export function useReact(postId: string) {
         },
       );
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: ['feed'] }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ['feed'] });
+      void qc.invalidateQueries({ queryKey: ['userPosts'] });
+    },
   });
 }
 
@@ -106,7 +109,10 @@ export function useUnreact(postId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => feedApi.unreact(postId),
-    onSettled: () => qc.invalidateQueries({ queryKey: ['feed'] }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ['feed'] });
+      void qc.invalidateQueries({ queryKey: ['userPosts'] });
+    },
   });
 }
 

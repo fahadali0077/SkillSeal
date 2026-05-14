@@ -11,7 +11,7 @@ import ReactionPicker, { REACTIONS } from './ReactionPicker';
 import PollCard from './PollCard';
 import CertificateAnnouncement from './CertificateAnnouncement';
 import CommentSection from './CommentSection';
-import { useReact, useUnreact, useDeletePost, useRepost } from './useFeed';
+import { useReact, useUnreact, useDeletePost, useRepost, useVotePoll } from './useFeed';
 import { useAuthStore } from '../auth/useAuth';
 
 function Avatar({ src, name }: { src: string; name: string }) {
@@ -54,6 +54,7 @@ export default function PostCard({ post, animate = true }: Props) {
   const unreact = useUnreact(post._id);
   const deletePost = useDeletePost();
   const repost = useRepost();
+  const votePoll = useVotePoll(post._id);
 
   const handleReact = (r: ReactionType) => react.mutate(r);
   const handleUnreact = () => unreact.mutate();
@@ -171,8 +172,13 @@ export default function PostCard({ post, animate = true }: Props) {
       )}
 
       {/* Poll */}
-      {post.hasPoll && (
-        <PollCard postId={post._id} options={[]} expiresAt={null} />
+      {post.hasPoll && post.pollOptions && post.pollOptions.length > 0 && (
+        <PollCard
+          postId={post._id}
+          options={post.pollOptions}
+          expiresAt={post.pollExpiresAt ?? null}
+          onVote={(optionId) => votePoll.mutate(optionId)}
+        />
       )}
 
       {/* Certificate announcement */}
@@ -218,7 +224,7 @@ export default function PostCard({ post, animate = true }: Props) {
 
       {/* Comments */}
       {showComments && (
-        <CommentSection postId={post._id} comments={[]} total={post.commentCount} />
+        <CommentSection postId={post._id} total={post.commentCount} />
       )}
     </Wrapper>
   );

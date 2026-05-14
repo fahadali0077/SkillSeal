@@ -167,8 +167,8 @@ export function useSendMessage() {
   const qc    = useQueryClient();
   const store = useMessagingStore();
   return useMutation({
-    mutationFn: ({ recipientId, content }: { recipientId: string; content: string }) =>
-      messagingApi.send(recipientId, content),
+    mutationFn: ({ recipientId, content, attachments }: { recipientId: string; content: string; attachments?: { url: string; type: string; name: string; sizeBytes: number }[] }) =>
+      messagingApi.send(recipientId, content, attachments),
     onSuccess: (msg) => {
       // Optimistically add to live messages
       store.addLiveMessage(msg.threadId, msg);

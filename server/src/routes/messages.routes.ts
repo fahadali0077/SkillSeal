@@ -114,7 +114,7 @@ router.get('/search', async (req: AuthRequest, res: Response) => {
 router.post('/upload', upload.single('file'), async (req: AuthRequest, res: Response) => {
   try {
     if (!req.file) {
-      sendError(res, 'No file provided.', ApiErrorCode.VALIDATION_ERROR, 400);
+      sendError(res, 'No file provided.', 400, ApiErrorCode.VALIDATION_ERROR);
       return;
     }
     const result = await uploadToCloudinary(req.file.buffer, 'skillseal/message-attachments');
@@ -126,7 +126,7 @@ router.post('/upload', upload.single('file'), async (req: AuthRequest, res: Resp
     }, 'File uploaded');
   } catch (err) {
     if (isMulterError(err) || isInvalidFileType(err)) {
-      sendError(res, 'Invalid file. Allowed: JPEG, PNG, WebP, PDF (max 10 MB).', ApiErrorCode.VALIDATION_ERROR, 400);
+      sendError(res, 'Invalid file. Allowed: JPEG, PNG, WebP, PDF (max 10 MB).', 400, ApiErrorCode.VALIDATION_ERROR);
       return;
     }
     handle(err, res);

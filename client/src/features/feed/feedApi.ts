@@ -69,6 +69,16 @@ export const feedApi = {
       method: 'POST', body: JSON.stringify({ commentary }),
     }),
 
+  // Vote on poll
+  vote: (postId: string, optionId: string) =>
+    apiFetch<IPost>(`${API_ORIGIN}/api/v1/posts/${postId}/vote`, {
+      method: 'POST', body: JSON.stringify({ optionId }),
+    }),
+
+  // Get comments for a post
+  getComments: (postId: string) =>
+    apiFetch<CommentOut[]>(`${API_ORIGIN}/api/v1/posts/${postId}/comments`),
+
   // Hashtags
   getHashtagPosts: (tag: string, page: number) =>
     apiFetch<{ posts: IPostCard[]; total: number }>(

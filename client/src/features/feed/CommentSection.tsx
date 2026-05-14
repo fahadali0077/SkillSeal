@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import { useAddComment } from './useFeed';
+import { useAddComment, useComments } from './useFeed';
 import { useAuthStore } from '../auth/useAuth';
 import type { CommentOut } from './feedApi';
 
@@ -113,16 +113,18 @@ function CommentItem({ comment, postId, depth, replies = [] }: CommentItemProps)
 }
 
 interface Props {
-  postId:   string;
-  comments: CommentOut[];
-  total:    number;
+  postId: string;
+  total:  number;
 }
 
-export default function CommentSection({ postId, comments, total }: Props) {
+export default function CommentSection({ postId, total }: Props) {
   const [text, setText] = useState('');
   const [expanded, setExpanded] = useState(false);
   const addComment = useAddComment(postId);
   const user = useAuthStore((s) => s.user);
+
+  // Fetch comments from server
+  const { data: comments = [], isLoading } = useComments(postId);
 
   const topLevel = comments.filter((c) => !c.parentCommentId);
   const replies  = comments.filter((c) => !!c.parentCommentId);
@@ -158,6 +160,13 @@ export default function CommentSection({ postId, comments, total }: Props) {
               {addComment.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex justify-center py-4">
+          <Loader2 size={18} className="animate-spin text-gray-300" />
         </div>
       )}
 

@@ -90,12 +90,33 @@ export function useUnreact(postId: string) {
 
 // ── Comments ──────────────────────────────────────────────────────────────────
 
+export function useComments(postId: string) {
+  return useQuery({
+    queryKey: ['comments', postId],
+    queryFn: () => feedApi.getComments(postId),
+    enabled: !!postId,
+  });
+}
+
 export function useAddComment(postId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ content, parentCommentId }: { content: string; parentCommentId?: string }) =>
       feedApi.addComment(postId, content, parentCommentId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['post', postId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['comments', postId] });
+      qc.invalidateQueries({ queryKey: ['feed'] });
+    },
+  });
+}
+
+// ── Poll vote ─────────────────────────────────────────────────────────────────
+
+export function useVotePoll(postId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (optionId: string) => feedApi.vote(postId, optionId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['feed'] }),
   });
 }
 

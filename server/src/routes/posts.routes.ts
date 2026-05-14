@@ -8,7 +8,7 @@ import { sendSuccess, sendError } from '../utils/response';
 import { AppError } from '../middleware/error.middleware';
 import {
   createPost, getPost, deletePost,
-  upsertReaction, removeReaction, addComment, repost,
+  upsertReaction, removeReaction, addComment, repost, votePoll, getComments,
 } from '../services/feed.service';
 
 const router = Router();
@@ -67,11 +67,29 @@ router.delete('/:id/like', authenticate, async (req: AuthRequest, res: Response)
   } catch (err) { handleError(err, res); }
 });
 
+// GET /posts/:id/comments
+router.get('/:id/comments', optionalAuth, async (req: AuthRequest, res: Response) => {
+  try {
+    const comments = await getComments(req.params['id']!);
+    sendSuccess(res, comments, 'Comments retrieved');
+  } catch (err) { handleError(err, res); }
+});
+
 // POST /posts/:id/comments
 router.post('/:id/comments', authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const comment = await addComment(req.params['id']!, req.user!.userId, req.body as Parameters<typeof addComment>[2]);
     sendSuccess(res, comment, 'Comment added', 201);
+  } catch (err) { handleError(err, res); }
+});
+
+// POST /posts/:id/vote
+router.post('/:id/vote', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { optionId } = req.body as { optionId?: string };
+    if (!optionId) { sendError(res, 'optionId required', 400, ApiErrorCode.MISSING_REQUIRED_FIELD); return; }
+    const post = await votePoll(req.params['id']!, req.user!.userId, optionId);
+    sendSuccess(res, post, 'Vote recorded');
   } catch (err) { handleError(err, res); }
 });
 

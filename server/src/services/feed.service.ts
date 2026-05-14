@@ -131,6 +131,8 @@ function toPostCard(post: IPost): IPostCard {
     imageUrls: post.imageUrls,
     linkPreview: post.linkPreview ? { title: post.linkPreview.title, imageUrl: post.linkPreview.imageUrl, siteName: post.linkPreview.siteName } : null,
     hasPoll: !!post.pollOptions,
+    pollOptions: post.pollOptions ?? null,
+    pollExpiresAt: post.pollExpiresAt ?? null,
     tags: post.tags,
     reactionSummary: post.reactionSummary,
     commentCount: post.commentCount,
@@ -545,4 +547,55 @@ export async function getFeed(
 
   logger.info(`[feed] Computed ${result.posts.length} posts for userId=${userId} page=${page}`);
   return result;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Poll vote
+// ─────────────────────────────────────────────────────────────────────────────
+export async function votePoll(postId: string, userId: string, optionId: string): Promise<IPost> {
+  const doc = await Post.findById(postId);
+  if (!doc) throw new AppError('Post not found.', 404, true);
+  if (!doc.pollOptions?.length) throw new AppError('Post has no poll.', 400, true);
+
+  const expiresAt = doc.pollDuration
+    ? new Date(doc.createdAt.getTime() + doc.pollDuration * 86400000)
+    : null;
+  if (expiresAt && expiresAt < new Date()) throw new AppError('Poll has ended.', 400, true);
+
+  const uid = new Types.ObjectId(userId);
+
+  // Remove any existing vote across all options
+  doc.pollOptions.forEach((opt) => {
+    opt.votes = opt.votes.filter((v) => v.toString() !== userId) as typeof opt.votes;
+  });
+
+  // Add vote to selected option
+  const option = doc.pollOptions.find((o) => o._id?.toString() === optionId);
+  if (!option) throw new AppError('Poll option not found.', 404, true);
+  option.votes.push(uid);
+
+  await doc.save();
+  return toPost(doc, userId);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Get comments for a post
+// ─────────────────────────────────────────────────────────────────────────────
+export async function getComments(postId: string): Promise<ICommentOut[]> {
+  const doc = await Post.findOne({ _id: postId, isDeleted: false }).lean<IPostDocument>();
+  if (!doc) throw new AppError('Post not found.', 404, true);
+
+  const comments = doc.comments ?? [];
+  return Promise.all(
+    comments.map(async (c: any) => {
+      const author = await buildAuthor(c.authorId.toString());
+      return {
+        _id:             c._id.toString(),
+        authorId:        c.authorId.toString(),
+        author,
+        content:         c.content ?? '',
+        parentCommentId: c.parentCommentId?.toString() ?? null,
+        createdAt:       c.createdAt?.toISOString() ?? new Date().toISOString(),
+      } as ICommentOut;
+    }),
+  );
 }

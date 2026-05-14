@@ -130,6 +130,8 @@ export interface IPostCard {
   imageUrls: string[];
   linkPreview: Pick<ILinkPreview, 'title' | 'imageUrl' | 'siteName'> | null;
   hasPoll: boolean;
+  pollOptions: IPollOption[] | null;
+  pollExpiresAt: string | null;
   tags: string[];
   reactionSummary: IReactionSummary;
   commentCount: number;

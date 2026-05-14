@@ -195,7 +195,7 @@ export default function AssessmentLanding() {
           <motion.div key="skill" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
 
             {/* My Verified Skills section */}
-            {{ hasVerifications && (
+            {{ hasVerifications, && (
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy size={16} className="text-amber-500" />

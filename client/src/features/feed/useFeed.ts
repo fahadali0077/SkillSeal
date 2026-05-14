@@ -70,56 +70,30 @@ export function useReact(postId: string) {
     mutationFn: (reaction: ReactionType) => feedApi.react(postId, reaction),
     onMutate: async (reaction) => {
       await qc.cancelQueries({ queryKey: ['feed'] });
-      // Optimistically update the card in the infinite list
-      qc.setQueriesData<{ pages: { posts: IPostCard[] }[] }>(
-        { queryKey: ['feed'] },
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              posts: page.posts.map((p) => {
-                if (p._id !== postId) return p;
-                const alreadyReacted = !!p.reactionSummary?.userReaction;
-                return {
-                  ...p,
-                  reactionSummary: {
-                    ...p.reactionSummary,
-                    userReaction: reaction,
-                    total: alreadyReacted
-                      ? (p.reactionSummary?.total ?? 0)
-                      : (p.reactionSummary?.total ?? 0) + 1,
-                  },
-                };
-                qc.setQueriesData<any>({ queryKey: ['userPosts'] }, (old: any) => {
-                  if (!old) return old;
-                  return {
-                    ...old,
-                    pages: old.pages.map((page: any) => ({
-                      ...page,
-                      posts: page.posts.map((p: any) => {
-                        if (p._id !== postId) return p;
-                        const alreadyReacted = !!p.reactionSummary?.userReaction;
-                        return {
-                          ...p,
-                          reactionSummary: {
-                            ...p.reactionSummary,
-                            userReaction: reaction,
-                            total: alreadyReacted
-                              ? (p.reactionSummary?.total ?? 0)
-                              : (p.reactionSummary?.total ?? 0) + 1,
-                          },
-                        };
-                      }),
-                    })),
-                  };
-                });
-              }),
-            })),
-          };
-        },
-      );
+      await qc.cancelQueries({ queryKey: ['userPosts'] });
+
+      const patchPost = (p: IPostCard) => {
+        if (p._id !== postId) return p;
+        const alreadyReacted = !!p.reactionSummary?.userReaction;
+        return {
+          ...p,
+          reactionSummary: {
+            ...p.reactionSummary,
+            userReaction: reaction,
+            total: alreadyReacted
+              ? (p.reactionSummary?.total ?? 0)
+              : (p.reactionSummary?.total ?? 0) + 1,
+          },
+        };
+      };
+
+      const patch = (old: any) => {
+        if (!old) return old;
+        return { ...old, pages: old.pages.map((pg: any) => ({ ...pg, posts: pg.posts.map(patchPost) })) };
+      };
+
+      qc.setQueriesData<any>({ queryKey: ['feed'] }, patch);
+      qc.setQueriesData<any>({ queryKey: ['userPosts'] }, patch);
     },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ['feed'] });

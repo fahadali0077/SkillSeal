@@ -1,5 +1,6 @@
 import { useSEO } from '../lib/useSEO';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Clock, UserCheck, Sparkles } from 'lucide-react';
 import PendingRequestsList from '../features/connections/PendingRequestsList';
@@ -16,7 +17,9 @@ export default function NetworkPage() {
     canonical: '/network',
   });
 
-  const [tab, setTab] = useState<Tab>('suggestions');
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get('tab') as Tab) ?? 'suggestions';
+  const [tab, setTab] = useState<Tab>(initialTab);
   const { data: pending = [] } = usePendingRequests();
 
   const TABS = [

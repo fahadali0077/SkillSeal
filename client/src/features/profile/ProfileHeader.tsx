@@ -151,9 +151,15 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
                 {[profile.location.city, profile.location.country].filter(Boolean).join(', ')}
               </span>
             )}
-            <Link to="/network" className="text-brand hover:text-brand-dark font-medium text-sm">
-              {profile.connectionCount ?? 0} connection{(profile.connectionCount ?? 0) !== 1 ? 's' : ''}
-            </Link>
+            {isOwner ? (
+              <Link to="/network?tab=connections" className="text-brand hover:text-brand-dark font-medium text-sm">
+                {profile.connectionCount ?? 0} connection{(profile.connectionCount ?? 0) !== 1 ? 's' : ''}
+              </Link>
+            ) : (
+              <span className="text-gray-500 text-sm">
+                {profile.connectionCount ?? 0} connection{(profile.connectionCount ?? 0) !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
 
           {/* Links */}

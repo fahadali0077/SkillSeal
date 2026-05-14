@@ -569,12 +569,12 @@ export async function votePoll(postId: string, userId: string, optionId: string)
   });
 
   // Add vote to selected option
-  const option = doc.pollOptions.find((o) => o._id?.toString() === optionId);
+  const option = doc.pollOptions.find((o) => (o as any)._id?.toString() === optionId);
   if (!option) throw new AppError('Poll option not found.', 404, true);
   option.votes.push(uid);
 
   await doc.save();
-  return toPost(doc, userId);
+  return serializePost(doc, userId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

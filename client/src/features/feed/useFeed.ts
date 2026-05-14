@@ -92,6 +92,29 @@ export function useReact(postId: string) {
                       : (p.reactionSummary?.total ?? 0) + 1,
                   },
                 };
+                qc.setQueriesData<any>({ queryKey: ['userPosts'] }, (old: any) => {
+                  if (!old) return old;
+                  return {
+                    ...old,
+                    pages: old.pages.map((page: any) => ({
+                      ...page,
+                      posts: page.posts.map((p: any) => {
+                        if (p._id !== postId) return p;
+                        const alreadyReacted = !!p.reactionSummary?.userReaction;
+                        return {
+                          ...p,
+                          reactionSummary: {
+                            ...p.reactionSummary,
+                            userReaction: reaction,
+                            total: alreadyReacted
+                              ? (p.reactionSummary?.total ?? 0)
+                              : (p.reactionSummary?.total ?? 0) + 1,
+                          },
+                        };
+                      }),
+                    })),
+                  };
+                });
               }),
             })),
           };
@@ -144,7 +167,40 @@ export function useVotePoll(postId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (optionId: string) => feedApi.vote(postId, optionId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['feed'] }),
+    onMutate: async (optionId) => {
+      await qc.cancelQueries({ queryKey: ['feed'] });
+      await qc.cancelQueries({ queryKey: ['userPosts'] });
+
+      const patchPosts = (posts: IPostCard[]) =>
+        posts.map((p) => {
+          if (p._id !== postId || !p.pollOptions) return p;
+          const prevVoted = p.pollOptions.find((o) => o.hasVoted);
+          return {
+            ...p,
+            pollOptions: p.pollOptions.map((o) => ({
+              ...o,
+              hasVoted: o._id === optionId,
+              voteCount: o._id === optionId
+                ? o.voteCount + 1
+                : o._id === prevVoted?._id
+                  ? Math.max(0, o.voteCount - 1)
+                  : o.voteCount,
+            })),
+          };
+        });
+
+      const patch = (old: any) => {
+        if (!old) return old;
+        return { ...old, pages: old.pages.map((pg: any) => ({ ...pg, posts: patchPosts(pg.posts) })) };
+      };
+
+      qc.setQueriesData<any>({ queryKey: ['feed'] }, patch);
+      qc.setQueriesData<any>({ queryKey: ['userPosts'] }, patch);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ['feed'] });
+      void qc.invalidateQueries({ queryKey: ['userPosts'] });
+    },
   });
 }
 

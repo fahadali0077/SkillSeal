@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MessageSquare, Loader2, Circle } from 'lucide-react';
+import { Search, MessageSquare, Loader2, SquarePen } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useThreads, useMessagingStore } from './useMessaging';
 import type { IThreadSummary } from './messagingApi';
@@ -11,6 +11,7 @@ import type { IThreadSummary } from './messagingApi';
 interface Props {
   activeThreadId?: string;
   onSelect:        (thread: IThreadSummary) => void;
+  onCompose:       () => void;
 }
 
 function Avatar({ src, name, isOnline }: { src: string; name: string; isOnline: boolean }) {
@@ -27,7 +28,7 @@ function Avatar({ src, name, isOnline }: { src: string; name: string; isOnline: 
   );
 }
 
-export default function ThreadList({ activeThreadId, onSelect }: Props) {
+export default function ThreadList({ activeThreadId, onSelect, onCompose }: Props) {
   const [search, setSearch] = useState('');
   const { data: threads = [], isLoading } = useThreads();
   const onlineUsers = useMessagingStore((s) => s.onlineUsers);
@@ -43,9 +44,18 @@ export default function ThreadList({ activeThreadId, onSelect }: Props) {
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="px-4 py-4 border-b border-gray-100">
-        <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <MessageSquare size={18} className="text-brand" /> Messages
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold text-gray-900 flex items-center gap-2">
+            <MessageSquare size={18} className="text-brand" /> Messages
+          </h2>
+          <button
+            onClick={onCompose}
+            title="New message"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-brand hover:bg-brand/10 transition-colors"
+          >
+            <SquarePen size={18} />
+          </button>
+        </div>
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
           <input

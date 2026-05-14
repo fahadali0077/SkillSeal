@@ -12,6 +12,7 @@ import { MessageSquareDashed, Send, Loader2, ArrowLeft } from 'lucide-react';
 import ThreadList from './ThreadList';
 import MessageThread from './MessageThread';
 import MessageRequests from './MessageRequests';
+import NewMessageModal from './NewMessageModal';
 import { useSocketEvents, useMessagingStore, useMessageRequestCount, useThreads, useSendMessage } from './useMessaging';
 import type { IThreadSummary } from './messagingApi';
 import { profileApi } from '../profile/profileApi';
@@ -139,6 +140,8 @@ export default function MessagingPage() {
   // When ?userId= is present and no existing thread found yet
   const [newConvUserId, setNewConvUserId] = useState<string | null>(null);
 
+  const [composeOpen, setComposeOpen] = useState(false);
+
   const { data: reqCountData } = useMessageRequestCount();
   const requestCount = reqCountData?.count ?? 0;
   const { data: threads = [], isSuccess: threadsLoaded } = useThreads();
@@ -231,6 +234,7 @@ export default function MessagingPage() {
                   <ThreadList
                     activeThreadId={activeThread?.threadId}
                     onSelect={selectThread}
+                    onCompose={() => setComposeOpen(true)}
                   />
                 </motion.div>
               ) : (
@@ -294,6 +298,22 @@ export default function MessagingPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ── New message modal ───────────────────────────────────────────── */}
+      <NewMessageModal
+        open={composeOpen}
+        onClose={() => setComposeOpen(false)}
+        onSelect={(userId) => {
+          setComposeOpen(false);
+          const existing = threads.find((t) => t.participant._id === userId);
+          if (existing) {
+            selectThread(existing);
+          } else {
+            setNewConvUserId(userId);
+            setMobileView('thread');
+          }
+        }}
+      />
     </div>
   );
 }

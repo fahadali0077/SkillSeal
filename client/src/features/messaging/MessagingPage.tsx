@@ -11,7 +11,7 @@ import { MessageSquareDashed, Inbox } from 'lucide-react';
 import ThreadList from './ThreadList';
 import MessageThread from './MessageThread';
 import MessageRequests from './MessageRequests';
-import { useSocketEvents, useMessagingStore } from './useMessaging';
+import { useSocketEvents, useMessagingStore, useMessageRequestCount } from './useMessaging';
 import type { IThreadSummary } from './messagingApi';
 
 type Tab = 'messages' | 'requests';

@@ -79,6 +79,9 @@ export const messagingApi = {
   ignoreRequest: (requestId: string) =>
     apiFetch<null>(`${BASE}/requests/${requestId}/ignore`, { method: 'POST' }),
 
+  requestCount: () =>
+    apiFetch<{ count: number }>(`${BASE}/requests/count`),
+
   search: (query: string) =>
     apiFetch<IMessageOut[]>(`${BASE}/search?query=${encodeURIComponent(query)}`),
 };

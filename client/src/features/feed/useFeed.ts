@@ -4,6 +4,7 @@
 import {
   useInfiniteQuery, useMutation, useQueryClient, useQuery,
 } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import type { IPostCard, ReactionType } from '@SkillSeal/shared';
 import { feedApi, type CreatePostInput } from './feedApi';
 

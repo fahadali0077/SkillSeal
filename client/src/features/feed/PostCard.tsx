@@ -1,11 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // PostCard.tsx  –  renders any post type with full interaction controls
 // ─────────────────────────────────────────────────────────────────────────────
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MessageCircle, Repeat2, MoreHorizontal, Trash2, Hash } from 'lucide-react';
+import { MessageCircle, Repeat2, MoreHorizontal, Trash2, Hash, Flag } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import toast from 'react-hot-toast';
 import type { IPostCard, ReactionType } from '@SkillSeal/shared';
 import ReactionPicker, { REACTIONS } from './ReactionPicker';
 import PollCard from './PollCard';
@@ -43,34 +44,69 @@ interface Props {
   animate?: boolean;
 }
 
-export default function PostCard({ post, animate = true }: Props) {
+export default function PostCard({ post, animate = false }: Props) {
   const [showComments, setShowComments] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [reposting, setReposting] = useState(false);
-  const user = useAuthStore((s) => s.user);
+  const [menuOpen, setMenuOpen]         = useState(false);
+  const [reposting, setReposting]       = useState(false);
+  const menuRef                         = useRef<HTMLDivElement>(null);
+  const user    = useAuthStore((s) => s.user);
   const isOwner = user?._id === post.author._id;
 
-  const react = useReact(post._id);
-  const unreact = useUnreact(post._id);
+  const react      = useReact(post._id);
+  const unreact    = useUnreact(post._id);
   const deletePost = useDeletePost();
-  const repost = useRepost();
-  const votePoll = useVotePoll(post._id);
+  const repost     = useRepost();
+  const votePoll   = useVotePoll(post._id);
 
-  const handleReact = (r: ReactionType) => react.mutate(r);
-  const handleUnreact = () => unreact.mutate();
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
+
+  const handleReact = (r: ReactionType) => {
+    react.mutate(r, {
+      onError: () => toast.error('Could not add reaction. Please try again.'),
+    });
+  };
+
+  const handleUnreact = () => {
+    unreact.mutate(undefined, {
+      onError: () => toast.error('Could not remove reaction.'),
+    });
+  };
+
   const handleRepost = async () => {
     if (reposting) return;
     setReposting(true);
-    await repost.mutateAsync({ postId: post._id });
-    setReposting(false);
+    try {
+      await repost.mutateAsync({ postId: post._id });
+      toast.success('Reposted!');
+    } catch {
+      toast.error('Could not repost. Please try again.');
+    } finally {
+      setReposting(false);
+    }
   };
 
-  const wrapper = animate
-    ? { as: motion.article, initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { type: 'spring', damping: 24, stiffness: 260 } }
-    : { as: 'article' as const };
+  const handleDelete = () => {
+    deletePost.mutate(post._id, {
+      onSuccess: () => toast.success('Post deleted.'),
+      onError:   () => toast.error('Could not delete post.'),
+    });
+    setMenuOpen(false);
+  };
 
   const Wrapper = animate ? motion.article : 'article';
-  const motionProps = animate ? { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { type: 'spring' as const, damping: 24, stiffness: 260 } } : {};
+  const motionProps = animate
+    ? { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { type: 'spring' as const, damping: 24, stiffness: 260 } }
+    : {};
 
   return (
     <Wrapper {...(motionProps as object)} className="card p-5">
@@ -96,26 +132,35 @@ export default function PostCard({ post, animate = true }: Props) {
           </div>
         </div>
 
-        {/* Menu */}
-        <div className="relative">
+        {/* Three-dot menu */}
+        <div ref={menuRef} className="relative">
           <button
             onClick={() => setMenuOpen((o) => !o)}
-            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors"
           >
             <MoreHorizontal size={16} />
           </button>
+
           {menuOpen && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-20 min-w-[140px] py-1"
+              initial={{ opacity: 0, scale: 0.92, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.12 }}
+              className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-30 min-w-[150px] py-1 overflow-hidden"
             >
-              {isOwner && (
+              {isOwner ? (
                 <button
-                  onClick={() => { deletePost.mutate(post._id); setMenuOpen(false); }}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  onClick={handleDelete}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                 >
-                  <Trash2 size={14} /> Delete
+                  <Trash2 size={14} /> Delete post
+                </button>
+              ) : (
+                <button
+                  onClick={() => { toast('Post reported.'); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <Flag size={14} /> Report post
                 </button>
               )}
             </motion.div>
@@ -146,7 +191,7 @@ export default function PostCard({ post, animate = true }: Props) {
       {/* Images */}
       {post.imageUrls.length > 0 && (
         <div className={`grid gap-1 mt-2 rounded-xl overflow-hidden
-          ${post.imageUrls.length === 1 ? 'grid-cols-1' : post.imageUrls.length === 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
+          ${post.imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
           {post.imageUrls.slice(0, 4).map((url, i) => (
             <img
               key={i}
@@ -177,7 +222,11 @@ export default function PostCard({ post, animate = true }: Props) {
           postId={post._id}
           options={post.pollOptions}
           expiresAt={post.pollExpiresAt ?? null}
-          onVote={(optionId) => votePoll.mutate(optionId)}
+          onVote={(optionId) => {
+            votePoll.mutate(optionId, {
+              onError: () => toast.error('Could not record vote. Please try again.'),
+            });
+          }}
         />
       )}
 
@@ -215,7 +264,8 @@ export default function PostCard({ post, animate = true }: Props) {
         <button
           onClick={handleRepost}
           disabled={reposting}
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-green-600 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+          className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors
+            ${reposting ? 'text-green-600 cursor-not-allowed' : 'text-gray-500 hover:text-green-600 hover:bg-green-50'}`}
         >
           <Repeat2 size={15} />
           <span>{post.repostCount > 0 ? `${post.repostCount} Repost${post.repostCount !== 1 ? 's' : ''}` : 'Repost'}</span>

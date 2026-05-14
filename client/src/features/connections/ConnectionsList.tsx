@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useConnections, useRemoveConnection } from './useConnections';
-import { Link } from 'react-router-dom';
-import { Search, UserMinus, Loader2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, UserMinus, Loader2, MessageSquare } from 'lucide-react';
 
 export default function ConnectionsList() {
   const [search, setSearch] = useState('');
   const { data, isLoading } = useConnections(search);
   const connections = data?.connections ?? [];
   const remove = useRemoveConnection();
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-4">
-      {/* FIX 5 — header with total count */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="font-semibold text-gray-900">Your connections</h2>
@@ -60,16 +60,28 @@ export default function ConnectionsList() {
                 <p className="text-xs text-gray-500 truncate">{c.headline}</p>
               </div>
 
-              {/* FIX 5 — labelled remove button with red hover */}
-              <button
-                onClick={() => remove.mutate(c._id)}
-                disabled={remove.isPending}
-                title="Remove connection"
-                className="shrink-0 flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-red-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors border border-transparent hover:border-red-100"
-              >
-                <UserMinus size={13} />
-                <span className="hidden sm:inline">Remove</span>
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                {/* Message button */}
+                <button
+                  onClick={() => navigate(`/messages?userId=${c._id}`)}
+                  title="Message"
+                  className="flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-brand hover:bg-brand/10 px-2 py-1.5 rounded-lg transition-colors border border-transparent hover:border-brand/20"
+                >
+                  <MessageSquare size={13} />
+                  <span className="hidden sm:inline">Message</span>
+                </button>
+
+                {/* Remove button */}
+                <button
+                  onClick={() => remove.mutate(c._id)}
+                  disabled={remove.isPending}
+                  title="Remove connection"
+                  className="flex items-center gap-1 text-[11px] font-medium text-gray-400 hover:text-red-500 hover:bg-red-50 px-2 py-1.5 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                >
+                  <UserMinus size={13} />
+                  <span className="hidden sm:inline">Remove</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>

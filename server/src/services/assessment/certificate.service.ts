@@ -29,9 +29,38 @@ export async function issueCertificate(sessionId: string): Promise<{ status: str
   const { scores, finalTier, retakeAfterDays } = await computeCompositeScore(sessionId);
   const { compositeScore, aiProbability } = scores;
 
-  if (compositeScore < 50) return { status: 'not_certified', retakeAfterDays: 14 };
-  if (compositeScore < 70) return { status: 'partial', retakeAfterDays: 7 };
+  // ALWAYS mark the session completed and save scores, regardless of outcome.
+  // Otherwise the session stays 'active' forever and the report endpoint returns 409.
+  const baseSessionUpdate = {
+    status:           'completed' as const,
+    endTime:          new Date(),
+    compositeScore,
+    conceptScore:     scores.conceptScore,
+    speedScore:       scores.speedScore,
+    consistencyScore: scores.consistencyScore,
+    behaviorScore:    scores.behaviorScore,
+    aiScore:          scores.aiScore,
+    aiProbability,
+    finalTier:        finalTier || session.declaredTier,
+  };
 
+  // Failed (< 50) — record completion, no verification, no badge
+  if (compositeScore < 50) {
+    await Session.findByIdAndUpdate(sessionId, baseSessionUpdate);
+    await deleteSession(sessionId);
+    logger.info(`[cert] Not certified: userId=${session.userId} score=${compositeScore}`);
+    return { status: 'not_certified', retakeAfterDays: 14 };
+  }
+
+  // Partial pass (50–69) — record completion, no verification, no badge
+  if (compositeScore < 70) {
+    await Session.findByIdAndUpdate(sessionId, baseSessionUpdate);
+    await deleteSession(sessionId);
+    logger.info(`[cert] Partial pass: userId=${session.userId} score=${compositeScore}`);
+    return { status: 'partial', retakeAfterDays: 7 };
+  }
+
+  // Passed (>= 70) — issue full certificate
   const issuedAt = new Date();
   const expiresAt = new Date(issuedAt.getTime() + 365 * 86400000);
   const year = issuedAt.getFullYear();
@@ -61,10 +90,8 @@ export async function issueCertificate(sessionId: string): Promise<{ status: str
   }, { arrayFilters: [{ 'el.skillId': session.skillId }] });
 
   await Session.findByIdAndUpdate(sessionId, {
-    status: 'completed', verificationId: verif._id, endTime: new Date(),
-    compositeScore, conceptScore: scores.conceptScore, speedScore: scores.speedScore,
-    consistencyScore: scores.consistencyScore, behaviorScore: scores.behaviorScore,
-    aiScore: scores.aiScore, aiProbability, finalTier: finalTier || session.declaredTier,
+    ...baseSessionUpdate,
+    verificationId: verif._id,
   });
 
   await deleteSession(sessionId);

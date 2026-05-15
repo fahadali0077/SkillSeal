@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Copy, CheckCheck, ExternalLink, ArrowRight, RefreshCw, Clock, Loader2, TrendingUp, AlertTriangle, Share2, Trophy } from 'lucide-react';
 import type { SkillTier } from '@SkillSeal/shared';
-import { API_ORIGIN } from '../../lib/apiBase';
+import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
 interface ScoreBreakdown { compositeScore: number; conceptScore: number; speedScore: number; consistencyScore: number; behaviorScore: number; aiScore: number; aiProbability: number; }
 interface SessionReport { sessionId: string; status: string; finalTier: SkillTier | null; scores: ScoreBreakdown; verificationId: string | null; durationMs: number; completedAt: string; retakeAfterDays: number; }
 export interface Props { sessionId: string; skillName: string; declaredTier: SkillTier; certificateId?: string; onReset: () => void; initialData?: SessionReport; }
@@ -27,9 +27,33 @@ export default function SessionComplete({ sessionId, skillName, declaredTier, ce
   const [report, setReport] = useState<SessionReport | null>(initialData ?? null); const [certId, setCertId] = useState(propCertId ?? ''); const [fetchErr, setFetchErr] = useState(''); const [loading, setLoading] = useState(!initialData);
   const [idCopied, setIdCopied] = useState(false); const [urlCopied, setUrlCopied] = useState(false);
   useEffect(() => {
-    if (initialData) return; let cancelled = false; const delays = [600, 1800, 4000];
-    async function attempt(n: number): Promise<void> { try { const res = await fetch(`${API_ORIGIN}/api/v1/sessions/${sessionId}/report`, { credentials: 'include', headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken') ?? ''}` } }); const body = await res.json() as { success: boolean; data: SessionReport; message: string }; if (!body.success) throw new Error(body.message); if (!cancelled) { setReport(body.data); setLoading(false); } } catch (e) { if (cancelled) return; if (n < delays.length) setTimeout(() => attempt(n + 1), delays[n]); else { setFetchErr('Results unavailable. Check your profile.'); setLoading(false); } } }
-    void attempt(0); return () => { cancelled = true; };
+    if (initialData) return; let cancelled = false;
+    // 12 retries with gentle backoff. Total budget: ~45s — enough for slow certificate issuance.
+    const delays = [400, 800, 1200, 1600, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000];
+    async function attempt(n: number): Promise<void> {
+      try {
+        // apiFetch handles auth headers + silent refresh on 401
+        const data = await apiFetch<SessionReport>(`${API_ORIGIN}/api/v1/sessions/${sessionId}/report`);
+        if (!cancelled) { setReport(data); setLoading(false); }
+      } catch (e) {
+        if (cancelled) return;
+        const msg = (e as Error)?.message ?? '';
+        // If user was logged out by apiFetch (refresh failed), surface that instead of retrying
+        if (msg.includes('Session expired')) {
+          setFetchErr('Your session expired. Please log in to view results from your profile.');
+          setLoading(false);
+          return;
+        }
+        if (n < delays.length) {
+          setTimeout(() => { if (!cancelled) void attempt(n + 1); }, delays[n]);
+        } else {
+          setFetchErr('Your results are being finalized. Please check your profile in a moment.');
+          setLoading(false);
+        }
+      }
+    }
+    void attempt(0);
+    return () => { cancelled = true; };
   }, [sessionId]);
   const scores = report?.scores; const target = scores?.compositeScore ?? 0; const display = useCountUp(target, 1500, !loading && !!scores);
   const passed = target >= 70; const partial = target >= 50 && target < 70; const statusColor = passed ? '#22c55e' : partial ? '#f59e0b' : '#ef4444';

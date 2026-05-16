@@ -7,9 +7,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router-dom';
-import { Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { Mail, Loader2, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { forgotPasswordSchema, type ForgotPasswordFormValues } from './authSchemas';
 import { useForgotPasswordMutation } from './authApi';
+import AuthShell from './AuthShell';
 
 export default function ForgotPasswordPage() {
   useSEO({ title: 'Reset Password', canonical: '/forgot-password' });
@@ -31,77 +32,81 @@ export default function ForgotPasswordPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="card p-8 text-center">
-            <CheckCircle2 size={48} className="text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Check your email</h2>
-            <p className="text-gray-600 text-sm mb-6">
-              If an account exists for that email address, we've sent a password reset link.
-              It will expire in 1 hour.
-            </p>
-            <Link to="/login" className="btn-primary inline-flex items-center gap-2">
-              Back to sign in
-            </Link>
+      <AuthShell
+        marketingTitle={<>Reset sent.<br /><span className="bg-gradient-to-r from-blue-300 via-indigo-300 to-purple-300 bg-clip-text text-transparent">Check your inbox.</span></>}
+        marketingBody="If an account exists with that email, you'll get a reset link within a minute. The link expires in 1 hour."
+      >
+        <div className="card p-6 sm:p-8 text-center">
+          <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-green-100 to-green-50 rounded-2xl flex items-center justify-center">
+            <CheckCircle2 size={36} className="text-green-500" />
           </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Check your email</h2>
+          <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+            If an account exists for that email address, we've sent a password reset link.
+            It will expire in 1 hour.
+          </p>
+          <Link to="/login" className="btn-primary w-full py-3">
+            <ArrowLeft size={15} /> Back to sign in
+          </Link>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-brand">SkillSeal</h1>
-          <p className="text-gray-500 mt-1 text-sm">Verified Skills for Proven Hiring</p>
-        </div>
+    <AuthShell
+      marketingTitle={<>Forgot it?<br /><span className="bg-gradient-to-r from-blue-300 via-indigo-300 to-purple-300 bg-clip-text text-transparent">No problem.</span></>}
+      marketingBody="Enter the email you signed up with. We'll send a secure reset link if an account exists."
+    >
+      <div className="card p-6 sm:p-8">
+        <Link to="/login" className="btn-ghost text-sm -ml-2 mb-3">
+          <ArrowLeft size={14} /> Back
+        </Link>
 
-        <div className="card p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Reset your password</h2>
-          <p className="text-gray-500 text-sm mb-6">
-            Enter your email and we'll send you a reset link if an account exists.
-          </p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-1 tracking-tight">Reset your password</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          We'll send you a reset link if an account exists.
+        </p>
 
-          <form onSubmit={handleSubmit(onSubmit as any)} noValidate className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email address
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                className={`input ${errors.email ? 'border-red-400 focus:ring-red-400' : ''}`}
-                placeholder="you@example.com"
-                {...register('email')}
-              />
-              {errors.email && (
-                <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
-              )}
-            </div>
+        <form onSubmit={handleSubmit(onSubmit as any)} noValidate className="space-y-4">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+              Email address
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              className={`input ${errors.email ? 'border-red-400 focus:ring-red-400/20' : ''}`}
+              placeholder="you@example.com"
+              {...register('email')}
+            />
+            {errors.email && (
+              <p className="mt-1.5 text-xs text-red-600">{errors.email.message}</p>
+            )}
+          </div>
 
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="btn-primary w-full flex items-center justify-center gap-2"
-            >
-              {mutation.isPending ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Mail size={16} />
-              )}
-              {mutation.isPending ? 'Sending…' : 'Send reset link'}
-            </button>
-          </form>
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className="btn-primary w-full py-3"
+          >
+            {mutation.isPending ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Mail size={16} />
+            )}
+            {mutation.isPending ? 'Sending…' : 'Send reset link'}
+          </button>
+        </form>
 
-          <p className="mt-6 text-center text-sm text-gray-600">
-            <Link to="/login" className="text-brand hover:text-brand-dark font-medium">
-              Back to sign in
-            </Link>
-          </p>
-        </div>
+        <p className="mt-6 text-center text-sm text-gray-600">
+          Remembered it?{' '}
+          <Link to="/login" className="text-brand hover:text-brand-dark font-semibold">
+            Sign in
+          </Link>
+        </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

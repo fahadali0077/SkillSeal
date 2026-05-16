@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Users } from 'lucide-react';
 
 import { useSEO } from '../../lib/useSEO';
 import { useProfile }          from './useProfile';
@@ -55,17 +55,21 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-brand" />
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-gray-400">
+        <Loader2 size={36} className="animate-spin text-brand" />
+        <p className="text-sm">Loading profile…</p>
       </div>
     );
   }
 
   if (isError || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 text-gray-500">
-        <AlertCircle size={40} />
-        <p className="font-medium">Profile not found.</p>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
+        <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center">
+          <AlertCircle size={32} className="text-red-400" />
+        </div>
+        <p className="font-semibold text-gray-700">Profile not found</p>
+        <p className="text-sm text-gray-400">The profile you're looking for doesn't exist or has been removed.</p>
       </div>
     );
   }
@@ -117,7 +121,7 @@ export default function ProfilePage() {
         </div>
 
         {/* ── Right sidebar ──────────────────────────────────────────────── */}
-        <div className="space-y-4">
+        <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
 
           {/* Profile completeness — owner only */}
           {isOwner && (
@@ -133,13 +137,28 @@ export default function ProfilePage() {
             </motion.div>
           )}
 
-          {/* Connection count card */}
-          <motion.div {...fadeIn} transition={{ delay: 0.15 }} className="card p-4">
-            <p className="text-sm text-gray-500">Connections</p>
-            <p className="text-2xl font-bold text-gray-900">{profile.connectionCount}</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {profile.followerCount} followers · {profile.followingCount} following
-            </p>
+          {/* Connection / network stats */}
+          <motion.div {...fadeIn} transition={{ delay: 0.15 }} className="card p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-brand/10 flex items-center justify-center">
+                <Users size={15} className="text-brand" />
+              </div>
+              <h3 className="font-semibold text-gray-900 text-sm">Network</h3>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="py-1">
+                <p className="text-2xl font-bold text-gray-900 tabular-nums">{profile.connectionCount ?? 0}</p>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-0.5">Connections</p>
+              </div>
+              <div className="py-1 border-l border-gray-100">
+                <p className="text-2xl font-bold text-gray-900 tabular-nums">{profile.followerCount ?? 0}</p>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-0.5">Followers</p>
+              </div>
+              <div className="py-1 border-l border-gray-100">
+                <p className="text-2xl font-bold text-gray-900 tabular-nums">{profile.followingCount ?? 0}</p>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-0.5">Following</p>
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>

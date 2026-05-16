@@ -42,24 +42,48 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
   };
 
   return (
-    <div className="card overflow-hidden mb-4">
-      {/* Banner */}
-      <div className="h-32 bg-gradient-to-r from-brand to-brand-light relative">
-        {profile.bannerImage && (
+    <div className="card overflow-hidden">
+      {/* Banner — taller, gradient, with subtle pattern overlay */}
+      <div className="h-40 sm:h-48 bg-gradient-to-br from-brand via-brand-light to-indigo-500 relative overflow-hidden">
+        {profile.bannerImage ? (
           <img src={profile.bannerImage} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <>
+            {/* Decorative grid pattern */}
+            <div
+              className="absolute inset-0 opacity-[0.12] pointer-events-none"
+              style={{
+                backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+                backgroundSize: '48px 48px',
+              }}
+            />
+            {/* Animated glow */}
+            <motion.div
+              animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.6, 0.4] }}
+              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -top-20 -right-20 w-80 h-80 bg-white/15 rounded-full blur-[80px]"
+            />
+            <motion.div
+              animate={{ scale: [1.05, 1, 1.05], opacity: [0.25, 0.4, 0.25] }}
+              transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+              className="absolute -bottom-16 -left-16 w-72 h-72 bg-indigo-300/30 rounded-full blur-[80px]"
+            />
+          </>
         )}
+        {/* Soft fade to white at bottom for smoother avatar overlap */}
+        <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-white/40 to-transparent pointer-events-none" />
       </div>
 
       {/* Avatar + CTAs row */}
-      <div className="px-5 pb-5">
-        <div className="flex items-end justify-between -mt-12 mb-3">
+      <div className="px-5 sm:px-6 pb-5 sm:pb-6">
+        <div className="flex items-end justify-between -mt-14 sm:-mt-16 mb-3">
 
           {/* Avatar */}
           <motion.div className="relative" whileHover={{ scale: isOwner ? 1.03 : 1 }}>
-            <div className="w-24 h-24 rounded-full border-4 border-white bg-gray-200 overflow-hidden shadow">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-gray-200 overflow-hidden shadow-xl ring-1 ring-gray-100">
               {profile.profilePhoto
                 ? <img src={profile.profilePhoto} alt={profile.fullName} className="w-full h-full object-cover" />
-                : <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-gray-400">
+                : <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200">
                     {profile.firstName[0]}{profile.lastName[0]}
                   </div>
               }
@@ -69,7 +93,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
                 <button
                   onClick={() => inputRef.current?.click()}
                   disabled={uploadPhoto.isPending}
-                  className="absolute bottom-0 right-0 bg-white border border-gray-200 rounded-full p-1.5 shadow hover:bg-gray-50 transition-colors"
+                  className="absolute bottom-1 right-1 bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-gray-50 hover:scale-105 transition-all"
                   aria-label="Upload photo"
                 >
                   {uploadPhoto.isPending
@@ -87,16 +111,15 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
           <div className="flex gap-2 pb-1 flex-wrap justify-end">
             {isOwner ? (
               <>
-                <button onClick={onEdit} className="btn-secondary flex items-center gap-1.5 text-sm">
+                <button onClick={onEdit} className="btn-secondary text-sm py-2 px-3">
                   <Edit2 size={14} /> Edit profile
                 </button>
-                <button onClick={handleShare} className="btn-secondary flex items-center gap-1.5 text-sm">
+                <button onClick={handleShare} className="btn-secondary text-sm py-2 px-3">
                   <Share2 size={14} /> Share
                 </button>
               </>
             ) : (
               <>
-                {/* Full connection button — handles Connect/Pending/Connected+dropdown/Remove */}
                 <ConnectionButton
                   targetUserId={profile._id}
                   connectionStatus={profile.connectionStatus}
@@ -105,18 +128,16 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
                   onStatusChange={setLiveStatus}
                 />
 
-                {/* Message — only visible when connected */}
                 {liveStatus === 'accepted' && (
                   <button
                     onClick={() => navigate(`/messages?userId=${profile._id}`)}
-                    className="btn-secondary flex items-center gap-1.5 text-sm"
+                    className="btn-secondary text-sm py-2 px-3"
                   >
                     <MessageSquare size={14} /> Message
                   </button>
                 )}
 
-                {/* Share profile */}
-                <button onClick={handleShare} className="btn-secondary flex items-center gap-1.5 text-sm">
+                <button onClick={handleShare} className="btn-secondary text-sm py-2 px-3">
                   <Share2 size={14} /> Share
                 </button>
               </>
@@ -127,24 +148,24 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
         {/* Name & meta */}
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-gray-900">{profile.fullName}</h1>
+            <h1 className="text-2xl sm:text-[26px] font-bold text-gray-900 tracking-tight">{profile.fullName}</h1>
             {profile.openToWork && (
-              <span className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
+              <span className="badge-success">
                 Open to work
               </span>
             )}
             {profile.isHiring && (
-              <span className="text-xs font-medium bg-blue-50 text-brand border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="badge-info">
                 <Briefcase size={10} /> Hiring
               </span>
             )}
           </div>
 
           {profile.headline && (
-            <p className="text-gray-700 mt-0.5">{profile.headline}</p>
+            <p className="text-gray-700 mt-1 text-sm sm:text-base">{profile.headline}</p>
           )}
 
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-sm text-gray-500">
             {(profile.location?.city || profile.location?.country) && (
               <span className="flex items-center gap-1">
                 <MapPin size={13} />
@@ -152,7 +173,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
               </span>
             )}
             {isOwner ? (
-              <Link to="/network?tab=connections" className="text-brand hover:text-brand-dark font-medium text-sm">
+              <Link to="/network?tab=connections" className="text-brand hover:text-brand-dark font-semibold text-sm transition-colors">
                 {profile.connectionCount ?? 0} connection{(profile.connectionCount ?? 0) !== 1 ? 's' : ''}
               </Link>
             ) : (
@@ -164,11 +185,11 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
 
           {/* Links */}
           {profile.links?.length > 0 && (
-            <div className="flex flex-wrap gap-3 mt-3">
+            <div className="flex flex-wrap gap-2 mt-3">
               {profile.links.map((lk, i) => (
                 <a key={i} href={lk.url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs text-brand hover:text-brand-dark font-medium">
-                  <Link2 size={12} /> {lk.label || lk.type}
+                  className="inline-flex items-center gap-1 text-xs text-brand hover:text-white font-medium bg-brand/5 hover:bg-brand border border-brand/15 hover:border-brand px-2.5 py-1 rounded-full transition-all">
+                  <Link2 size={11} /> {lk.label || lk.type}
                 </a>
               ))}
             </div>
@@ -176,7 +197,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
 
           {/* Summary */}
           {profile.summary && (
-            <p className="mt-3 text-sm text-gray-600 line-clamp-3">{profile.summary}</p>
+            <p className="mt-3.5 text-sm text-gray-600 leading-relaxed line-clamp-4">{profile.summary}</p>
           )}
         </div>
       </div>

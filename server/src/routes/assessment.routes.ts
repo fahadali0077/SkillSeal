@@ -100,25 +100,45 @@ router.get('/:id/report', async (req: AuthRequest, res: Response) => {
   } catch (err) { handle(err, res); }
 });
 
-// GET /sessions/my-verifications — all verified skills for the logged-in user
+// GET /sessions/my-verifications — all verified skills + recent attempts for the logged-in user
 router.get('/my-verifications', async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user!.userId;
+
+    // 1) All verifications (passed attempts)
     const verifs = await Verification.find({ userId: new mongoose.Types.ObjectId(userId) })
       .sort({ issuedAt: -1 })
       .lean();
 
-    const skillIds = [...new Set(verifs.map((v) => v.skillId.toString()))];
+    // 2) Recent completed/terminated sessions WITHOUT a verification (failed attempts)
+    const verifSessionIds = verifs.map((v: any) => v.sessionId?.toString()).filter(Boolean);
+    const failedSessions = await Session.find({
+      userId: new mongoose.Types.ObjectId(userId),
+      status: { $in: ['completed', 'terminated', 'expired'] },
+      _id: { $nin: verifSessionIds.map((id: string) => new mongoose.Types.ObjectId(id)) },
+    })
+      .sort({ endTime: -1, createdAt: -1 })
+      .limit(20)
+      .lean<ISessionDocument[]>();
+
+    // Resolve skill metadata for both
+    const skillIds = [
+      ...new Set([
+        ...verifs.map((v: any) => v.skillId.toString()),
+        ...failedSessions.map((s: any) => s.skillId.toString()),
+      ]),
+    ];
     const skills   = await Skill.find({ _id: { $in: skillIds } }).lean();
     const skillMap = new Map(skills.map((s: any) => [s._id.toString(), s]));
 
-    const data = verifs.map((v) => {
+    const verifiedData = verifs.map((v: any) => {
       const skill = skillMap.get(v.skillId.toString()) as any;
       return {
-        verificationId: (v as any)._id.toString(),
+        verificationId: v._id.toString(),
+        sessionId:      v.sessionId?.toString() ?? null,
         skillId:        v.skillId.toString(),
-        skillName:      skill?.name    ?? 'Unknown',
-        skillIcon:      skill?.icon    ?? '🔧',
+        skillName:      skill?.name     ?? 'Unknown',
+        skillIcon:      skill?.icon     ?? '🔧',
         skillCategory:  skill?.category ?? '',
         tier:           v.tier,
         compositeScore: v.compositeScore,
@@ -127,10 +147,31 @@ router.get('/my-verifications', async (req: AuthRequest, res: Response) => {
         issuedAt:       v.issuedAt,
         expiresAt:      v.expiresAt,
         isExpired:      new Date(v.expiresAt) < new Date(),
+        isCertified:    true,
       };
     });
 
-    sendSuccess(res, data, 'Verifications retrieved');
+    const failedData = failedSessions.map((s: any) => {
+      const skill = skillMap.get(s.skillId.toString()) as any;
+      return {
+        verificationId: null,
+        sessionId:      s._id.toString(),
+        skillId:        s.skillId.toString(),
+        skillName:      skill?.name     ?? 'Unknown',
+        skillIcon:      skill?.icon     ?? '🔧',
+        skillCategory:  skill?.category ?? '',
+        tier:           s.declaredTier,
+        compositeScore: s.compositeScore ?? 0,
+        certificateId:  null,
+        status:         s.status === 'terminated' ? 'TERMINATED' : 'FAILED',
+        issuedAt:       s.endTime ?? s.createdAt,
+        expiresAt:      null,
+        isExpired:      false,
+        isCertified:    false,
+      };
+    });
+
+    sendSuccess(res, [...verifiedData, ...failedData], 'Verifications retrieved');
   } catch (err) { handle(err, res); }
 });
 

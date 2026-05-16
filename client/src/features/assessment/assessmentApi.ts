@@ -4,9 +4,10 @@ const SESSIONS_BASE = `${API_ORIGIN}/api/v1/sessions`, ANSWERS_BASE = `${API_ORI
 export type PlanId = 'pro_monthly' | 'pro_yearly' | 'recruiter_monthly' | 'recruiter_yearly';
 export interface ISkillOption { _id: string; name: string; slug: string; category: string; icon: string; availableTiers: string[]; }
 export interface IMyVerification {
-  verificationId: string; skillId: string; skillName: string; skillIcon: string;
-  skillCategory: string; tier: string; compositeScore: number; certificateId: string;
-  status: 'VERIFIED' | 'FLAGGED' | 'EXPIRED' | 'REVOKED'; issuedAt: string; expiresAt: string; isExpired: boolean;
+  verificationId: string | null; sessionId: string | null; skillId: string; skillName: string; skillIcon: string;
+  skillCategory: string; tier: string; compositeScore: number; certificateId: string | null;
+  status: 'VERIFIED' | 'FLAGGED' | 'EXPIRED' | 'REVOKED' | 'FAILED' | 'TERMINATED';
+  issuedAt: string; expiresAt: string | null; isExpired: boolean; isCertified: boolean;
 }
 export const assessmentApi = {
   fetchSkills: () => apiFetch<ISkillOption[]>(SKILLS_BASE),

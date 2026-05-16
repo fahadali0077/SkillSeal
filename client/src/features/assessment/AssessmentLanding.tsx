@@ -41,18 +41,23 @@ function scoreColor(score: number) {
   return score >= 70 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
 }
 
-// ── Verified skill badge card ─────────────────────────────────────────────────
+// ── Skill attempt card (certified or failed) ──────────────────────────────────
 function VerifiedCard({ v, onRetake }: { v: IMyVerification; onRetake: () => void }) {
-  const expired = v.isExpired || v.status === 'EXPIRED';
-  const flagged = v.status === 'FLAGGED' || v.status === 'REVOKED';
-  const verified = !expired && !flagged;
+  const failed     = v.status === 'FAILED' || v.status === 'TERMINATED';
+  const expired    = v.isExpired || v.status === 'EXPIRED';
+  const flagged    = v.status === 'FLAGGED' || v.status === 'REVOKED';
+  const verified   = v.isCertified && !expired && !flagged;
+  const terminated = v.status === 'TERMINATED';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       className={`rounded-xl border p-4 flex items-center gap-4
-        ${verified ? 'border-green-200 bg-green-50/50' : 'border-gray-200 bg-gray-50'}`}
+        ${verified ? 'border-green-200 bg-green-50/50'
+          : terminated ? 'border-red-200 bg-red-50/40'
+          : failed ? 'border-amber-200 bg-amber-50/40'
+          : 'border-gray-200 bg-gray-50'}`}
     >
       <span className="text-2xl shrink-0">{v.skillIcon}</span>
 
@@ -62,9 +67,11 @@ function VerifiedCard({ v, onRetake }: { v: IMyVerification; onRetake: () => voi
           <span className={`text-[11px] font-semibold capitalize px-2 py-0.5 rounded-full border ${tierColor(v.tier)}`}>
             {v.tier}
           </span>
-          {verified && <ShieldCheck size={13} className="text-green-600" />}
-          {expired  && <span className="text-[11px] text-amber-600 font-medium">Expired</span>}
-          {flagged  && <span className="text-[11px] text-red-600 font-medium">Flagged</span>}
+          {verified   && <span className="text-[11px] text-green-600 font-medium flex items-center gap-0.5"><ShieldCheck size={11} /> Verified</span>}
+          {expired    && !failed && <span className="text-[11px] text-amber-600 font-medium">Expired</span>}
+          {flagged    && <span className="text-[11px] text-red-600 font-medium">Flagged</span>}
+          {failed     && !terminated && <span className="text-[11px] text-amber-700 font-medium">Not certified</span>}
+          {terminated && <span className="text-[11px] text-red-700 font-medium flex items-center gap-0.5"><XCircle size={11} /> Terminated</span>}
         </div>
 
         <div className="flex items-center gap-3 mt-1">
@@ -75,13 +82,15 @@ function VerifiedCard({ v, onRetake }: { v: IMyVerification; onRetake: () => voi
             </span>
           </div>
           <span className="text-xs text-gray-400">
-            {expired ? `Expired ${new Date(v.expiresAt).toLocaleDateString()}` : `Expires ${new Date(v.expiresAt).toLocaleDateString()}`}
+            {failed ? `Attempted ${new Date(v.issuedAt).toLocaleDateString()}`
+              : expired ? `Expired ${new Date(v.expiresAt!).toLocaleDateString()}`
+              : `Expires ${v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : '—'}`}
           </span>
         </div>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        {verified && (
+        {verified && v.verificationId && (
           <Link
             to={`/verify/${v.verificationId}`}
             className="text-[11px] flex items-center gap-1 text-brand hover:underline"
@@ -94,7 +103,7 @@ function VerifiedCard({ v, onRetake }: { v: IMyVerification; onRetake: () => voi
           className="flex items-center gap-1 text-[11px] font-medium text-gray-600 border border-gray-200 bg-white hover:bg-gray-100 px-2.5 py-1.5 rounded-lg transition-colors"
         >
           <RefreshCw size={11} />
-          {expired ? 'Renew' : 'Upgrade'}
+          {expired ? 'Renew' : failed ? 'Retry' : 'Upgrade'}
         </button>
       </div>
     </motion.div>
@@ -147,9 +156,10 @@ export default function AssessmentLanding() {
     navigate('/assessment/active');
   };
 
-  // For each skill, find its best verification
+  // For each skill, find the best certified verification (skipping failed attempts)
   const verifMap = new Map<string, IMyVerification>();
   for (const v of verifications) {
+    if (!v.isCertified) continue;
     const existing = verifMap.get(v.skillId);
     if (!existing || TIER_ORDER.indexOf(v.tier as SkillTier) > TIER_ORDER.indexOf(existing.tier as SkillTier)) {
       verifMap.set(v.skillId, v);
@@ -195,24 +205,18 @@ export default function AssessmentLanding() {
           <motion.div key="skill" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
 
             {/* My Verified Skills section */}
-            {(verifLoading || hasVerifications) && (
+            {hasVerifications && (
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy size={16} className="text-amber-500" />
-                  <h2 className="font-semibold text-gray-900">My Verified Skills</h2>
+                  <h2 className="font-semibold text-gray-900">My Skill Attempts</h2>
                   {verifLoading && <Loader2 size={14} className="animate-spin text-gray-300" />}
                 </div>
-
-                {!verifLoading && verifications.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-gray-200 p-4 text-center text-sm text-gray-400">
-                    No verified skills yet — complete an assessment below to get your first badge!
-                  </div>
-                )}
 
                 <div className="space-y-2">
                   {verifications.map((v) => (
                     <VerifiedCard
-                      key={v.verificationId}
+                      key={v.verificationId ?? v.sessionId ?? v.skillId}
                       v={v}
                       onRetake={() => {
                         const skill = skills.find(s => s._id === v.skillId);

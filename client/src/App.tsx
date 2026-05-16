@@ -58,6 +58,14 @@ function AssessmentOverlay() {
   return <IsolationMode />;
 }
 
+// Smart route guard for /assessment/active: redirects to /assessment when no session is active.
+// During an active/completed/terminated session, the global AssessmentOverlay handles the UI.
+function AssessmentActiveRoute() {
+  const status = useAssessmentStatus();
+  if (status === 'idle' || status === 'error') return <Navigate to="/assessment" replace />;
+  return null; // overlay handles UI
+}
+
 export default function App() {
   const isAuthenticated = useIsAuthenticated();
   const user = useAuthStore(s => s.user);
@@ -106,7 +114,7 @@ export default function App() {
                 </div>
               } />
               <Route path="/assessment" element={<AssessmentLanding />} />
-              <Route path="/assessment/active" element={<IsolationMode />} />
+              <Route path="/assessment/active" element={<AssessmentActiveRoute />} />
               <Route path="/recruiter" element={<RecruiterDashboard />} />
               <Route path="/recruiter/candidates/:userId" element={<FullCandidateView />} />
               <Route path="/billing" element={<BillingSettings />} />

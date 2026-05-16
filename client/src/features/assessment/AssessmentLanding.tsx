@@ -12,25 +12,25 @@ import { useAssessmentStore } from './useAssessment';
 import { assessmentApi, type ISkillOption, type IMyVerification } from './assessmentApi';
 
 const TIERS = [
-  { value: 'beginner' as SkillTier, label: 'Beginner', description: 'Foundational concepts', time: '~25 min' },
-  { value: 'intermediate' as SkillTier, label: 'Intermediate', description: 'Real-world patterns', time: '~30 min' },
-  { value: 'advanced' as SkillTier, label: 'Advanced', description: 'Deep internals', time: '~35 min' },
-  { value: 'expert' as SkillTier, label: 'Expert', description: 'Architecture & scalability', time: '~40 min' },
+  { value: 'beginner'     as SkillTier, label: 'Beginner',     description: 'Foundational concepts',      time: '~25 min' },
+  { value: 'intermediate' as SkillTier, label: 'Intermediate',  description: 'Real-world patterns',        time: '~30 min' },
+  { value: 'advanced'     as SkillTier, label: 'Advanced',      description: 'Deep internals',             time: '~35 min' },
+  { value: 'expert'       as SkillTier, label: 'Expert',        description: 'Architecture & scalability', time: '~40 min' },
 ];
 
 const TIER_ORDER: SkillTier[] = ['beginner', 'intermediate', 'advanced', 'expert'];
 
 const RULES = [
   { icon: <Monitor size={15} />, text: 'Stay on this tab throughout' },
-  { icon: <Eye size={15} />, text: 'No copy-pasting — clipboard is monitored' },
-  { icon: <Wifi size={15} />, text: 'Ensure stable internet connection' },
+  { icon: <Eye     size={15} />, text: 'No copy-pasting — clipboard is monitored' },
+  { icon: <Wifi    size={15} />, text: 'Ensure stable internet connection' },
   { icon: <AlertTriangle size={15} />, text: '3 violations will terminate your session' },
 ];
 
 const Q_DIST = [
-  { type: 'Multiple Choice', count: 14, time: '60s each', icon: '📝' },
-  { type: 'Scenario-based', count: 4, time: '120s each', icon: '🔍' },
-  { type: 'Written theory', count: 2, time: '150s each', icon: '✍️' },
+  { type: 'Multiple Choice', count: 14, time: '60s each',  icon: '📝' },
+  { type: 'Scenario-based',  count:  4, time: '120s each', icon: '🔍' },
+  { type: 'Written theory',  count:  2, time: '150s each', icon: '✍️' },
 ];
 
 function tierColor(tier: string) {
@@ -48,10 +48,10 @@ function VerifiedCard({ v, onRetake, onDelete, deleting }: {
   onDelete: () => void;
   deleting: boolean;
 }) {
-  const failed = v.status === 'FAILED' || v.status === 'TERMINATED';
-  const expired = v.isExpired || v.status === 'EXPIRED';
-  const flagged = v.status === 'FLAGGED' || v.status === 'REVOKED';
-  const verified = v.isCertified && !expired && !flagged;
+  const failed     = v.status === 'FAILED' || v.status === 'TERMINATED';
+  const expired    = v.isExpired || v.status === 'EXPIRED';
+  const flagged    = v.status === 'FLAGGED' || v.status === 'REVOKED';
+  const verified   = v.isCertified && !expired && !flagged;
   const terminated = v.status === 'TERMINATED';
 
   return (
@@ -61,8 +61,8 @@ function VerifiedCard({ v, onRetake, onDelete, deleting }: {
       className={`rounded-xl border p-4 flex items-center gap-4
         ${verified ? 'border-green-200 bg-green-50/50'
           : terminated ? 'border-red-200 bg-red-50/40'
-            : failed ? 'border-amber-200 bg-amber-50/40'
-              : 'border-gray-200 bg-gray-50'}`}
+          : failed ? 'border-amber-200 bg-amber-50/40'
+          : 'border-gray-200 bg-gray-50'}`}
     >
       <span className="text-2xl shrink-0">{v.skillIcon}</span>
 
@@ -72,10 +72,10 @@ function VerifiedCard({ v, onRetake, onDelete, deleting }: {
           <span className={`text-[11px] font-semibold capitalize px-2 py-0.5 rounded-full border ${tierColor(v.tier)}`}>
             {v.tier}
           </span>
-          {verified && <span className="text-[11px] text-green-600 font-medium flex items-center gap-0.5"><ShieldCheck size={11} /> Verified</span>}
-          {expired && !failed && <span className="text-[11px] text-amber-600 font-medium">Expired</span>}
-          {flagged && <span className="text-[11px] text-red-600 font-medium">Flagged</span>}
-          {failed && !terminated && <span className="text-[11px] text-amber-700 font-medium">Not certified</span>}
+          {verified   && <span className="text-[11px] text-green-600 font-medium flex items-center gap-0.5"><ShieldCheck size={11} /> Verified</span>}
+          {expired    && !failed && <span className="text-[11px] text-amber-600 font-medium">Expired</span>}
+          {flagged    && <span className="text-[11px] text-red-600 font-medium">Flagged</span>}
+          {failed     && !terminated && <span className="text-[11px] text-amber-700 font-medium">Not certified</span>}
           {terminated && <span className="text-[11px] text-red-700 font-medium flex items-center gap-0.5"><XCircle size={11} /> Terminated</span>}
         </div>
 
@@ -89,7 +89,7 @@ function VerifiedCard({ v, onRetake, onDelete, deleting }: {
           <span className="text-xs text-gray-400">
             {failed ? `Attempted ${new Date(v.issuedAt).toLocaleDateString()}`
               : expired ? `Expired ${new Date(v.expiresAt!).toLocaleDateString()}`
-                : `Expires ${v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : '—'}`}
+              : `Expires ${v.expiresAt ? new Date(v.expiresAt).toLocaleDateString() : '—'}`}
           </span>
         </div>
       </div>
@@ -131,14 +131,14 @@ export default function AssessmentLanding() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const preSkillId = params.get('skillId');
-  const preTier = params.get('tier') as SkillTier | null;
+  const preTier    = params.get('tier') as SkillTier | null;
 
-  const [skills, setSkills] = useState<ISkillOption[]>([]);
-  const [verifications, setVerifications] = useState<IMyVerification[]>([]);
-  const [skillsLoading, setSkillsLoading] = useState(true);
-  const [verifLoading, setVerifLoading] = useState(true);
-  const [skillsError, setSkillsError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [skills,         setSkills]         = useState<ISkillOption[]>([]);
+  const [verifications,  setVerifications]  = useState<IMyVerification[]>([]);
+  const [skillsLoading,  setSkillsLoading]  = useState(true);
+  const [verifLoading,   setVerifLoading]   = useState(true);
+  const [skillsError,    setSkillsError]    = useState<string | null>(null);
+  const [deletingId,     setDeletingId]     = useState<string | null>(null);
 
   const handleDeleteAttempt = async (v: IMyVerification) => {
     const id = v.sessionId ?? v.verificationId;
@@ -161,28 +161,28 @@ export default function AssessmentLanding() {
 
   useEffect(() => {
     assessmentApi.fetchSkills()
-      .then(d => setSkills(d))
+      .then(d  => setSkills(d))
       .catch(e => setSkillsError(e.message ?? 'Failed to load skills'))
       .finally(() => setSkillsLoading(false));
 
     assessmentApi.fetchMyVerifications()
-      .then(d => setVerifications(d))
+      .then(d  => setVerifications(d))
       .catch(() => setVerifications([]))
       .finally(() => setVerifLoading(false));
   }, []);
 
   const prefilledSkill = skills.find(s => s._id === preSkillId) ?? null;
-  const [step, setStep] = useState<'skill' | 'tier' | 'preflight'>(
+  const [step,          setStep]  = useState<'skill' | 'tier' | 'preflight'>(
     prefilledSkill && preTier ? 'preflight' : prefilledSkill ? 'tier' : 'skill',
   );
   const [selectedSkill, setSkill] = useState<ISkillOption | null>(prefilledSkill);
-  const [selectedTier, setTier] = useState<SkillTier | null>(preTier);
-  const [agreed, setAgreed] = useState(false);
+  const [selectedTier,  setTier]  = useState<SkillTier | null>(preTier);
+  const [agreed, setAgreed]       = useState(false);
 
   const startSession = useAssessmentStore(s => s.startSession);
-  const status = useAssessmentStore(s => s.status);
-  const error = useAssessmentStore(s => s.error);
-  const isStarting = status === 'starting';
+  const status       = useAssessmentStore(s => s.status);
+  const error        = useAssessmentStore(s => s.error);
+  const isStarting   = status === 'starting';
 
   const handleStart = async () => {
     if (!selectedSkill || !selectedTier || !agreed) return;
@@ -203,7 +203,7 @@ export default function AssessmentLanding() {
   const hasVerifications = verifications.length > 0;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-10">
+    <div className="max-w-5xl mx-auto px-4 py-10">
       {/* Header */}
       <div className="text-center mb-8">
         <div className="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto mb-4">
@@ -218,7 +218,7 @@ export default function AssessmentLanding() {
         {['Skill', 'Tier', 'Review'].map((label, i) => {
           const stepId = (['skill', 'tier', 'preflight'] as const)[i];
           const active = step === stepId;
-          const done = (['skill', 'tier', 'preflight'] as const).indexOf(step) > i;
+          const done   = (['skill', 'tier', 'preflight'] as const).indexOf(step) > i;
           return (
             <div key={label} className="flex items-center gap-2">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors
@@ -238,16 +238,18 @@ export default function AssessmentLanding() {
         {step === 'skill' && (
           <motion.div key="skill" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
 
-            {/* My Verified Skills section */}
+            <div className={`grid gap-6 ${hasVerifications ? 'lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
+
+            {/* My Skill Attempts (LEFT column) */}
             {hasVerifications && (
-              <div className="mb-6">
+              <div>
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy size={16} className="text-amber-500" />
                   <h2 className="font-semibold text-gray-900">My Skill Attempts</h2>
                   {verifLoading && <Loader2 size={14} className="animate-spin text-gray-300" />}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   {verifications.map((v) => {
                     const id = v.sessionId ?? v.verificationId ?? v.skillId;
                     return (
@@ -264,59 +266,63 @@ export default function AssessmentLanding() {
                     );
                   })}
                 </div>
-
-                <div className="border-t border-gray-100 my-6" />
               </div>
             )}
 
-            {/* Skill picker */}
-            <h2 className="font-semibold text-gray-900 mb-3">
-              {hasVerifications ? 'Verify a new skill' : 'Choose a skill to verify'}
-            </h2>
+            {/* Verify a new skill (RIGHT column) */}
+            <div>
+              <h2 className="font-semibold text-gray-900 mb-3">
+                {hasVerifications ? 'Verify a new skill' : 'Choose a skill to verify'}
+              </h2>
 
-            {skillsLoading && (
-              <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
-                <Loader2 size={20} className="animate-spin" /> Loading skills…
-              </div>
-            )}
-            {skillsError && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{skillsError}</div>
-            )}
-            {!skillsLoading && !skillsError && (
-              <div className="grid gap-3">
-                {skills.map(skill => {
-                  const bestVerif = verifMap.get(skill._id);
-                  const verified = bestVerif && !bestVerif.isExpired && bestVerif.status === 'VERIFIED';
-                  return (
-                    <button
-                      key={skill._id}
-                      onClick={() => { setSkill(skill); setStep('tier'); }}
-                      className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-all
-                        ${selectedSkill?._id === skill._id ? 'border-brand bg-blue-50' : 'border-gray-200 hover:border-brand/50'}`}
-                    >
-                      <span className="text-3xl">{skill.icon}</span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-gray-900">{skill.name}</p>
-                          {verified && (
-                            <span className={`text-[10px] font-bold capitalize px-2 py-0.5 rounded-full border ${tierColor(bestVerif!.tier)}`}>
-                              ✓ {bestVerif!.tier}
-                            </span>
-                          )}
-                          {bestVerif && bestVerif.isExpired && (
-                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                              Expired
-                            </span>
-                          )}
+              {skillsLoading && (
+                <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
+                  <Loader2 size={20} className="animate-spin" /> Loading skills…
+                </div>
+              )}
+              {skillsError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{skillsError}</div>
+              )}
+              {!skillsLoading && !skillsError && (
+                <div className="grid grid-cols-1 gap-3">
+                  {skills.map(skill => {
+                    const bestVerif = verifMap.get(skill._id);
+                    const verified  = bestVerif && !bestVerif.isExpired && bestVerif.status === 'VERIFIED';
+                    return (
+                      <button
+                        key={skill._id}
+                        onClick={() => { setSkill(skill); setStep('tier'); }}
+                        className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-all
+                          ${selectedSkill?._id === skill._id ? 'border-brand bg-blue-50' : 'border-gray-200 hover:border-brand/50'}`}
+                      >
+                        <span className="text-3xl">{skill.icon}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-gray-900">{skill.name}</p>
+                            {verified && (
+                              <span className={`text-[10px] font-bold capitalize px-2 py-0.5 rounded-full border ${tierColor(bestVerif!.tier)}`}>
+                                ✓ {bestVerif!.tier}
+                              </span>
+                            )}
+                            {bestVerif && bestVerif.isExpired && (
+                              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                Expired
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500 capitalize">{skill.category}</p>
                         </div>
-                        <p className="text-sm text-gray-500 capitalize">{skill.category}</p>
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300" />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                        <ChevronRight size={16} className="text-gray-300" />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            </div>
+                  const bestVerif = verifMap.get(skill._id);
+            </div>
           </motion.div>
         )}
 
@@ -342,8 +348,9 @@ export default function AssessmentLanding() {
                   <p className="text-xs font-semibold text-gray-500 mb-2">Your current badges for {selectedSkill.name}</p>
                   <div className="flex flex-wrap gap-2">
                     {skillVerifs.map(v => (
-                      <span key={v.verificationId} className={`text-[11px] font-semibold capitalize px-2.5 py-1 rounded-full border ${v.isExpired ? 'text-gray-400 bg-gray-100 border-gray-200 line-through' : tierColor(v.tier)
-                        }`}>
+                      <span key={v.verificationId} className={`text-[11px] font-semibold capitalize px-2.5 py-1 rounded-full border ${
+                        v.isExpired ? 'text-gray-400 bg-gray-100 border-gray-200 line-through' : tierColor(v.tier)
+                      }`}>
                         {v.isExpired ? '⚠️' : '✓'} {v.tier} · {v.compositeScore}/100
                       </span>
                     ))}
@@ -358,7 +365,7 @@ export default function AssessmentLanding() {
                 .map(tier => {
                   const existing = verifications.find(v => v.skillId === selectedSkill?._id && v.tier === tier.value);
                   const isVerified = existing && !existing.isExpired && existing.status === 'VERIFIED';
-                  const isExpired = existing?.isExpired;
+                  const isExpired  = existing?.isExpired;
 
                   return (
                     <button

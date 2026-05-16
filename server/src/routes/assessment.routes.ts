@@ -100,6 +100,32 @@ router.get('/:id/report', async (req: AuthRequest, res: Response) => {
   } catch (err) { handle(err, res); }
 });
 
+// DELETE /sessions/:id — remove an attempt from the user's history (along with answers + verification)
+router.delete('/:id', async (req: AuthRequest, res: Response) => {
+  try {
+    const sessionId = req.params['id']!;
+    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+      sendError(res, 'Invalid session ID.', 400, ApiErrorCode.VALIDATION_ERROR);
+      return;
+    }
+    const userId = req.user!.userId;
+
+    const session = await Session.findOne({ _id: sessionId, userId: new mongoose.Types.ObjectId(userId) });
+    if (!session) { sendError(res, 'Session not found.', 404, ApiErrorCode.NOT_FOUND); return; }
+    if (session.status === 'active') { sendError(res, 'Cannot delete an active session.', 409, ApiErrorCode.CONFLICT); return; }
+
+    await Promise.all([
+      Session.deleteOne({ _id: sessionId }),
+      Answer.deleteMany({ sessionId: new mongoose.Types.ObjectId(sessionId) }),
+      session.verificationId
+        ? Verification.deleteOne({ _id: session.verificationId })
+        : Promise.resolve(),
+    ]);
+
+    sendSuccess(res, { deleted: true }, 'Attempt deleted');
+  } catch (err) { handle(err, res); }
+});
+
 // GET /sessions/my-verifications — all verified skills + recent attempts for the logged-in user
 router.get('/my-verifications', async (req: AuthRequest, res: Response) => {
   try {

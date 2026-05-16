@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, ChevronRight, Clock, AlertTriangle, CheckCircle2,
   Monitor, Wifi, Eye, Loader2, ArrowLeft, Trophy, RefreshCw,
-  XCircle, Star, BarChart2, ExternalLink,
+  XCircle, Star, BarChart2, ExternalLink, Trash2,
 } from 'lucide-react';
 import type { SkillTier } from '@SkillSeal/shared';
 import { useAssessmentStore } from './useAssessment';
@@ -42,7 +42,12 @@ function scoreColor(score: number) {
 }
 
 // ── Skill attempt card (certified or failed) ──────────────────────────────────
-function VerifiedCard({ v, onRetake }: { v: IMyVerification; onRetake: () => void }) {
+function VerifiedCard({ v, onRetake, onDelete, deleting }: {
+  v: IMyVerification;
+  onRetake: () => void;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
   const failed     = v.status === 'FAILED' || v.status === 'TERMINATED';
   const expired    = v.isExpired || v.status === 'EXPIRED';
   const flagged    = v.status === 'FLAGGED' || v.status === 'REVOKED';
@@ -105,6 +110,15 @@ function VerifiedCard({ v, onRetake }: { v: IMyVerification; onRetake: () => voi
           <RefreshCw size={11} />
           {expired ? 'Renew' : failed ? 'Retry' : 'Upgrade'}
         </button>
+
+        <button
+          onClick={onDelete}
+          disabled={deleting}
+          title="Delete this attempt"
+          className="flex items-center justify-center w-7 h-7 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+        >
+          {deleting ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+        </button>
       </div>
     </motion.div>
   );
@@ -124,6 +138,26 @@ export default function AssessmentLanding() {
   const [skillsLoading,  setSkillsLoading]  = useState(true);
   const [verifLoading,   setVerifLoading]   = useState(true);
   const [skillsError,    setSkillsError]    = useState<string | null>(null);
+  const [deletingId,     setDeletingId]     = useState<string | null>(null);
+
+  const handleDeleteAttempt = async (v: IMyVerification) => {
+    const id = v.sessionId ?? v.verificationId;
+    if (!id) return;
+    const ok = window.confirm(
+      `Delete this ${v.isCertified ? 'verification' : 'attempt'} for ${v.skillName} (${v.tier})?\n\n` +
+      (v.isCertified ? 'Your certificate and badge will be permanently removed.' : 'This attempt will be removed from your history.'),
+    );
+    if (!ok) return;
+    setDeletingId(id);
+    try {
+      await assessmentApi.deleteAttempt(v.sessionId ?? id);
+      setVerifications((prev) => prev.filter((x) => (x.sessionId ?? x.verificationId) !== id));
+    } catch (e) {
+      alert((e as Error).message ?? 'Failed to delete. Try again.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     assessmentApi.fetchSkills()
@@ -214,16 +248,21 @@ export default function AssessmentLanding() {
                 </div>
 
                 <div className="space-y-2">
-                  {verifications.map((v) => (
-                    <VerifiedCard
-                      key={v.verificationId ?? v.sessionId ?? v.skillId}
-                      v={v}
-                      onRetake={() => {
-                        const skill = skills.find(s => s._id === v.skillId);
-                        if (skill) { setSkill(skill); setStep('tier'); }
-                      }}
-                    />
-                  ))}
+                  {verifications.map((v) => {
+                    const id = v.sessionId ?? v.verificationId ?? v.skillId;
+                    return (
+                      <VerifiedCard
+                        key={id}
+                        v={v}
+                        deleting={deletingId === id}
+                        onRetake={() => {
+                          const skill = skills.find(s => s._id === v.skillId);
+                          if (skill) { setSkill(skill); setStep('tier'); }
+                        }}
+                        onDelete={() => void handleDeleteAttempt(v)}
+                      />
+                    );
+                  })}
                 </div>
 
                 <div className="border-t border-gray-100 my-6" />

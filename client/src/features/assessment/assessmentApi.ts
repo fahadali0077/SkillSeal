@@ -12,6 +12,8 @@ export interface IMyVerification {
 export const assessmentApi = {
   fetchSkills: () => apiFetch<ISkillOption[]>(SKILLS_BASE),
   fetchMyVerifications: () => apiFetch<IMyVerification[]>(`${SESSIONS_BASE}/my-verifications`),
+  deleteAttempt: (sessionId: string) =>
+    apiFetch<{ deleted: boolean }>(`${SESSIONS_BASE}/${sessionId}`, { method: 'DELETE' }),
   abandonSession: () => apiFetch<Record<string, never>>(`${SESSIONS_BASE}/abandon`, { method: 'POST', body: JSON.stringify({}) }),
   startSession: (skillId: string, tier: SkillTier) => apiFetch<{ sessionId: string; firstQuestion: IQuestion; sessionState: ISessionState }>(`${SESSIONS_BASE}/start`, { method: 'POST', body: JSON.stringify({ skillId, tier }) }),
   submitAnswer: (sessionId: string, questionId: string, selectedOption: string | null, textAnswer: string, timeTaken: number, isTimeout: boolean, submittedAt: string) => apiFetch<{ accepted: boolean; isCorrect: boolean | null; conceptScore: number; sessionComplete: boolean; sessionState: ISessionState; nextQuestion: IQuestion | null; result?: unknown }>(`${ANSWERS_BASE}/submit`, { method: 'POST', body: JSON.stringify({ sessionId, questionId, selectedOption, textAnswer, timeTaken, isTimeout, submittedAt }) }),

@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { Session } from '../../models/Session.model';
 import { Skill } from '../../models/Skill.model';
 import { User } from '../../models/User.model';
+import { Answer } from '../../models/Answer.model';
 import { AppError } from '../../middleware/error.middleware';
 import { getSession, saveSession, updateSession, deleteSession, setAnswer, getAnswer, consumeAnswer, setActiveSession, getActiveSession, clearActiveSession, setCooldown, getCooldown, getCooldownTTL } from '../../utils/redis';
 import type { ServerSessionState, StoredAnswer } from '../../utils/redis';
@@ -113,6 +114,30 @@ export async function submitAnswer(input: { sessionId: string; questionId: strin
   }
   state.answers.push({ questionId, questionType: stored.questionType, isCorrect, timeTakenMs, conceptScore, aiScore, isTimeout });
   state.runningConceptScore += conceptScore; state.runningSpeedScore += speedPct; state.questionIndex += 1;
+
+  // CRITICAL: Persist answer to MongoDB so computeCompositeScore can read it.
+  // Without this write, the Answer collection stays empty and every assessment scores 0/100.
+  try {
+    await Answer.create({
+      sessionId:      new Types.ObjectId(sessionId),
+      questionId:     new Types.ObjectId(questionId),
+      questionType:   stored.questionType,
+      difficulty:     stored.difficulty ?? 'medium',
+      selectedOption: selectedOption ?? null,
+      textAnswer:     textAnswer ?? '',
+      isTimeout,
+      isCorrect,
+      conceptScore,
+      aiScore,
+      timeTaken:      timeTakenMs,
+      submittedAt:    new Date(),
+    });
+  } catch (e) {
+    // Don't fail the request if the persist fails — answer is still in Redis state.
+    // But log so we can investigate.
+    // eslint-disable-next-line no-console
+    console.error('[submitAnswer] failed to persist Answer doc:', (e as Error)?.message);
+  }
 
   // ── CRITICAL: persist answers + questionIndex to Redis BEFORE calling
   // adjustDifficulty.  adjustDifficulty calls updateSession which reads the

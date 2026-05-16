@@ -4,7 +4,7 @@
 import { useSEO } from '../../lib/useSEO';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PenLine, Loader2, RefreshCw, Rss } from 'lucide-react';
+import { PenLine, Loader2, RefreshCw, Rss, Image, BarChart2, FileText, Sparkles } from 'lucide-react';
 import { useInfiniteFeed } from './useFeed';
 import PostCard from './PostCard';
 import CreatePostModal from './CreatePostModal';
@@ -51,46 +51,93 @@ export default function FeedPage() {
         {/* ── Main feed column ─────────────────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-4">
 
-          {/* Create post prompt */}
-          <div className="card p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center font-bold text-brand shrink-0">
-              {user?.firstName?.[0] ?? 'U'}
+          {/* Composer card */}
+          <div className="card p-4 sm:p-5">
+            <div className="flex items-center gap-3">
+              {/* Avatar */}
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center font-bold text-brand shrink-0 ring-2 ring-brand/10">
+                {user?.profilePhoto
+                  ? <img src={user.profilePhoto} alt="" className="w-full h-full object-cover rounded-full" />
+                  : (user?.firstName?.[0] ?? 'U')}
+              </div>
+
+              {/* Compose prompt */}
+              <button
+                onClick={() => setCreateOpen(true)}
+                className="flex-1 text-left bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-full px-4 py-2.5 text-sm text-gray-500 transition-colors"
+              >
+                What's on your mind, {user?.firstName ?? 'there'}?
+              </button>
             </div>
-            <button
-              onClick={() => setCreateOpen(true)}
-              className="flex-1 text-left border border-gray-200 rounded-full px-4 py-2.5 text-sm text-gray-400 hover:bg-gray-50 hover:border-gray-300 transition-colors"
-            >
-              Share an update, achievement or insight…
-            </button>
-            <button
-              onClick={() => setCreateOpen(true)}
-              className="btn-primary flex items-center gap-1.5 text-sm shrink-0"
-            >
-              <PenLine size={14} /> Post
-            </button>
+
+            {/* Quick action shortcuts */}
+            <div className="grid grid-cols-3 gap-1 mt-3 pt-3 border-t border-gray-100">
+              <button
+                onClick={() => setCreateOpen(true)}
+                className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <Image size={15} className="text-blue-500" /> Photo
+              </button>
+              <button
+                onClick={() => setCreateOpen(true)}
+                className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <BarChart2 size={15} className="text-amber-500" /> Poll
+              </button>
+              <button
+                onClick={() => setCreateOpen(true)}
+                className="flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <FileText size={15} className="text-green-500" /> Article
+              </button>
+            </div>
           </div>
 
           {/* Feed states */}
           {isLoading && (
-            <div className="flex justify-center py-16 text-gray-300">
-              <Loader2 size={32} className="animate-spin" />
+            <div className="space-y-4">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="card p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="skeleton w-10 h-10 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <div className="skeleton h-3 w-32 rounded" />
+                      <div className="skeleton h-2.5 w-20 rounded" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="skeleton h-3 w-full rounded" />
+                    <div className="skeleton h-3 w-5/6 rounded" />
+                    <div className="skeleton h-3 w-3/4 rounded" />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
           {isError && (
-            <div className="card p-8 text-center text-gray-400">
-              <p className="mb-3">Could not load your feed.</p>
-              <button onClick={() => refetch()} className="btn-secondary flex items-center gap-2 mx-auto text-sm">
+            <div className="card p-8 text-center">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-red-50 flex items-center justify-center">
+                <RefreshCw size={22} className="text-red-400" />
+              </div>
+              <p className="font-semibold text-gray-700 mb-1">Couldn't load your feed</p>
+              <p className="text-sm text-gray-400 mb-4">Check your connection and try again.</p>
+              <button onClick={() => refetch()} className="btn-secondary text-sm mx-auto">
                 <RefreshCw size={14} /> Retry
               </button>
             </div>
           )}
 
-          {!isLoading && allPosts.length === 0 && (
-            <div className="card p-10 text-center text-gray-400">
-              <Rss size={40} className="mx-auto mb-3 opacity-30" />
-              <p className="font-medium text-gray-600 mb-1">Your feed is empty</p>
-              <p className="text-sm">Connect with people and follow topics to see posts here.</p>
+          {!isLoading && !isError && allPosts.length === 0 && (
+            <div className="card p-10 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center">
+                <Rss size={28} className="text-brand" />
+              </div>
+              <p className="font-bold text-gray-900 mb-1">Your feed is empty</p>
+              <p className="text-sm text-gray-500 max-w-xs mx-auto">Connect with people and follow topics to start seeing posts here.</p>
+              <button onClick={() => setCreateOpen(true)} className="btn-primary text-sm mt-5 mx-auto">
+                <PenLine size={14} /> Create your first post
+              </button>
             </div>
           )}
 
@@ -111,16 +158,21 @@ export default function FeedPage() {
           {/* Infinite scroll sentinel */}
           <div ref={loaderRef} className="flex justify-center py-6">
             {isFetchingNextPage && (
-              <Loader2 size={24} className="animate-spin text-gray-300" />
+              <div className="flex items-center gap-2 text-gray-400 text-xs">
+                <Loader2 size={14} className="animate-spin" />
+                Loading more…
+              </div>
             )}
             {!hasNextPage && allPosts.length > 0 && (
-              <p className="text-xs text-gray-300">You're all caught up ✓</p>
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full">
+                <Sparkles size={11} className="text-amber-500" /> You're all caught up
+              </div>
             )}
           </div>
         </div>
 
         {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-        <div className="space-y-4">
+        <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
           <TrendingHashtags />
           <PeopleYouMayKnow />
         </div>

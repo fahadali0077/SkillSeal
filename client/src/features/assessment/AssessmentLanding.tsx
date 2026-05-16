@@ -202,31 +202,68 @@ export default function AssessmentLanding() {
 
   const hasVerifications = verifications.length > 0;
 
+  // Stats for the hero strip
+  const certifiedCount = verifications.filter(v => v.isCertified && !v.isExpired && v.status === 'VERIFIED').length;
+  const totalAttempts  = verifications.length;
+  const avgScore = verifications.length > 0
+    ? Math.round(verifications.reduce((s, v) => s + v.compositeScore, 0) / verifications.length)
+    : 0;
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-brand/10 flex items-center justify-center mx-auto mb-4">
-          <ShieldCheck size={32} className="text-brand" />
+    <div className="max-w-5xl mx-auto px-4 py-8">
+
+      {/* ── Compact gradient hero ──────────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand to-brand-light text-white p-6 mb-6">
+        <div className="relative z-10 flex items-start justify-between gap-6 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+              <ShieldCheck size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold leading-tight">Skill Verification</h1>
+              <p className="text-white/80 text-sm">Earn verified badges through 20-question assessments</p>
+            </div>
+          </div>
+
+          {/* Stats — only when user has attempts */}
+          {hasVerifications && (
+            <div className="flex gap-5 text-center">
+              <div>
+                <div className="text-2xl font-bold tabular-nums">{certifiedCount}</div>
+                <div className="text-[11px] text-white/70 uppercase tracking-wide">Certified</div>
+              </div>
+              <div className="w-px bg-white/20" />
+              <div>
+                <div className="text-2xl font-bold tabular-nums">{totalAttempts}</div>
+                <div className="text-[11px] text-white/70 uppercase tracking-wide">Attempts</div>
+              </div>
+              <div className="w-px bg-white/20" />
+              <div>
+                <div className="text-2xl font-bold tabular-nums">{avgScore}</div>
+                <div className="text-[11px] text-white/70 uppercase tracking-wide">Avg score</div>
+              </div>
+            </div>
+          )}
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Skill Verification</h1>
-        <p className="text-gray-500 mt-1">Earn a verified badge by passing a 20-question assessment</p>
+        {/* Decorative gradient orbs */}
+        <div className="absolute -right-8 -top-12 w-44 h-44 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -left-12 -bottom-12 w-44 h-44 rounded-full bg-white/5 blur-3xl pointer-events-none" />
       </div>
 
-      {/* Step indicator */}
-      <div className="flex items-center justify-center gap-2 mb-8">
+      {/* ── Slim step indicator ───────────────────────────────────────── */}
+      <div className="flex items-center justify-center gap-1.5 mb-6">
         {['Skill', 'Tier', 'Review'].map((label, i) => {
           const stepId = (['skill', 'tier', 'preflight'] as const)[i];
           const active = step === stepId;
           const done   = (['skill', 'tier', 'preflight'] as const).indexOf(step) > i;
           return (
-            <div key={label} className="flex items-center gap-2">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors
+            <div key={label} className="flex items-center gap-1.5">
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors
                 ${done ? 'bg-green-500 text-white' : active ? 'bg-brand text-white' : 'bg-gray-100 text-gray-400'}`}>
-                {done ? <CheckCircle2 size={14} /> : i + 1}
+                {done ? <CheckCircle2 size={11} /> : i + 1}
               </div>
-              <span className={`text-sm ${active ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>{label}</span>
-              {i < 2 && <ChevronRight size={14} className="text-gray-300" />}
+              <span className={`text-xs ${active ? 'text-gray-900 font-semibold' : 'text-gray-400'}`}>{label}</span>
+              {i < 2 && <ChevronRight size={12} className="text-gray-300" />}
             </div>
           );
         })}
@@ -237,19 +274,22 @@ export default function AssessmentLanding() {
         {/* ── STEP 1: SKILL ──────────────────────────────────────────── */}
         {step === 'skill' && (
           <motion.div key="skill" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <div className={`grid gap-5 ${hasVerifications ? 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
 
-            <div className={`grid gap-6 ${hasVerifications ? 'lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
-
-            {/* My Skill Attempts (LEFT column) */}
+            {/* My Skill Attempts (LEFT — stats panel) */}
             {hasVerifications && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Trophy size={16} className="text-amber-500" />
-                  <h2 className="font-semibold text-gray-900">My Skill Attempts</h2>
-                  {verifLoading && <Loader2 size={14} className="animate-spin text-gray-300" />}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 h-fit">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+                      <Trophy size={15} className="text-amber-500" />
+                    </div>
+                    <h2 className="font-semibold text-gray-900 text-sm">My Skill Attempts</h2>
+                  </div>
+                  <span className="text-xs text-gray-400">{totalAttempts}</span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-1 -mr-1">
                   {verifications.map((v) => {
                     const id = v.sessionId ?? v.verificationId ?? v.skillId;
                     return (
@@ -269,11 +309,19 @@ export default function AssessmentLanding() {
               </div>
             )}
 
-            {/* Verify a new skill (RIGHT column) */}
-            <div>
-              <h2 className="font-semibold text-gray-900 mb-3">
-                {hasVerifications ? 'Verify a new skill' : 'Choose a skill to verify'}
-              </h2>
+            {/* Verify a new skill (RIGHT — primary CTA) */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-brand/10 flex items-center justify-center">
+                    <Sparkles size={15} className="text-brand" />
+                  </div>
+                  <h2 className="font-semibold text-gray-900 text-sm">
+                    {hasVerifications ? 'Verify a new skill' : 'Choose a skill to verify'}
+                  </h2>
+                </div>
+                {!skillsLoading && <span className="text-xs text-gray-400">{skills.length} available</span>}
+              </div>
 
               {skillsLoading && (
                 <div className="flex items-center justify-center py-12 text-gray-400 gap-2">
@@ -284,7 +332,7 @@ export default function AssessmentLanding() {
                 <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{skillsError}</div>
               )}
               {!skillsLoading && !skillsError && (
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-2 max-h-[600px] overflow-y-auto pr-1 -mr-1">
                   {skills.map(skill => {
                     const bestVerif = verifMap.get(skill._id);
                     const verified  = bestVerif && !bestVerif.isExpired && bestVerif.status === 'VERIFIED';
@@ -292,27 +340,31 @@ export default function AssessmentLanding() {
                       <button
                         key={skill._id}
                         onClick={() => { setSkill(skill); setStep('tier'); }}
-                        className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-all
-                          ${selectedSkill?._id === skill._id ? 'border-brand bg-blue-50' : 'border-gray-200 hover:border-brand/50'}`}
+                        className={`group flex items-center gap-3 p-3 rounded-xl border text-left transition-all
+                          ${selectedSkill?._id === skill._id
+                            ? 'border-brand bg-blue-50 ring-2 ring-brand/10'
+                            : 'border-gray-200 hover:border-brand/40 hover:bg-gray-50'}`}
                       >
-                        <span className="text-3xl">{skill.icon}</span>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-gray-900">{skill.name}</p>
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-xl shrink-0 group-hover:bg-white transition-colors">
+                          {skill.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-semibold text-gray-900 text-sm">{skill.name}</p>
                             {verified && (
-                              <span className={`text-[10px] font-bold capitalize px-2 py-0.5 rounded-full border ${tierColor(bestVerif!.tier)}`}>
+                              <span className={`text-[10px] font-bold capitalize px-1.5 py-0.5 rounded border ${tierColor(bestVerif!.tier)}`}>
                                 ✓ {bestVerif!.tier}
                               </span>
                             )}
                             {bestVerif && bestVerif.isExpired && (
-                              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
                                 Expired
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-500 capitalize">{skill.category}</p>
+                          <p className="text-xs text-gray-500 capitalize">{skill.category}</p>
                         </div>
-                        <ChevronRight size={16} className="text-gray-300" />
+                        <ChevronRight size={15} className="text-gray-300 group-hover:text-brand transition-colors shrink-0" />
                       </button>
                     );
                   })}

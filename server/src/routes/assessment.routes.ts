@@ -14,7 +14,9 @@ function requireRedis(_req: Request, res: Response, next: NextFunction): void {
 }
 import { startSession, submitAnswer, recordStrike, getSessionState, abandonSession } from '../services/assessment/session.service';
 import { computeCompositeScore } from '../services/assessment/scoring.service';
+import { issueCertificate } from '../services/assessment/certificate.service';
 import { Session } from '../models/Session.model';
+import { Answer } from '../models/Answer.model';
 import type { ISessionDocument } from '../models/Session.model';
 import { Verification } from '../models/Verification.model';
 import { Skill } from '../models/Skill.model';
@@ -55,9 +57,41 @@ router.get('/:id/report', async (req: AuthRequest, res: Response) => {
   try {
     const sessionId = req.params['id']!;
     if (!mongoose.Types.ObjectId.isValid(sessionId)) { sendError(res, 'Invalid session ID.', 400, ApiErrorCode.VALIDATION_ERROR); return; }
-    const session = await Session.findOne({ _id: sessionId, userId: new mongoose.Types.ObjectId(req.user!.userId) }).lean<ISessionDocument>();
+    let session = await Session.findOne({ _id: sessionId, userId: new mongoose.Types.ObjectId(req.user!.userId) }).lean<ISessionDocument>();
     if (!session) { sendError(res, 'Session not found.', 404, ApiErrorCode.NOT_FOUND); return; }
-    if (session.status === 'active') { sendError(res, 'Session still in progress.', 409, ApiErrorCode.CONFLICT); return; }
+
+    // Self-heal: if session is still 'active' but all 20 answers are recorded,
+    // certificate issuance must have failed silently. Issue it now.
+    if (session.status === 'active') {
+      const TOTAL_QUESTIONS = 20;
+      const answerCount = await Answer.countDocuments({ sessionId: new mongoose.Types.ObjectId(sessionId) });
+      if (answerCount >= TOTAL_QUESTIONS) {
+        try {
+          await issueCertificate(sessionId);
+          session = await Session.findById(sessionId).lean<ISessionDocument>() as ISessionDocument;
+        } catch (issueErr) {
+          // Issuance failed — fall back to scoring without certificate so user sees their result
+          const fallback = await computeCompositeScore(sessionId);
+          await Session.findByIdAndUpdate(sessionId, {
+            status: 'completed',
+            endTime: new Date(),
+            compositeScore: fallback.scores.compositeScore,
+            conceptScore: fallback.scores.conceptScore,
+            speedScore: fallback.scores.speedScore,
+            consistencyScore: fallback.scores.consistencyScore,
+            behaviorScore: fallback.scores.behaviorScore,
+            aiScore: fallback.scores.aiScore,
+            aiProbability: fallback.scores.aiProbability,
+            finalTier: fallback.finalTier ?? session.declaredTier,
+          });
+          session = await Session.findById(sessionId).lean<ISessionDocument>() as ISessionDocument;
+        }
+      } else {
+        sendError(res, `Session still in progress. ${answerCount}/${TOTAL_QUESTIONS} answered.`, 409, ApiErrorCode.CONFLICT);
+        return;
+      }
+    }
+
     if (session.compositeScore && session.compositeScore > 0) {
       sendSuccess(res, { sessionId, status: session.status, finalTier: session.finalTier, scores: { compositeScore: session.compositeScore, conceptScore: session.conceptScore ?? 0, speedScore: session.speedScore ?? 0, consistencyScore: session.consistencyScore ?? 0, behaviorScore: session.behaviorScore ?? 0, aiScore: session.aiScore ?? 0, aiProbability: session.aiProbability ?? 0 }, verificationId: session.verificationId?.toString() ?? null, durationMs: session.durationMs ?? 0, completedAt: session.endTime?.toISOString() ?? new Date().toISOString(), retakeAfterDays: (session.compositeScore ?? 0) >= 70 ? 0 : (session.compositeScore ?? 0) >= 50 ? 7 : 14 }, 'Session report'); return;
     }

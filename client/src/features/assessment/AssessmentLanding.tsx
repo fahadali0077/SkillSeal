@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShieldCheck, ChevronRight, Clock, AlertTriangle, CheckCircle2,
   Monitor, Wifi, Eye, Loader2, ArrowLeft, Trophy, RefreshCw,
-  XCircle, Star, BarChart2, ExternalLink, Trash2, Search,
+  XCircle, Star, BarChart2, ExternalLink, Trash2, Search, Sparkles,
 } from 'lucide-react';
 import type { SkillTier } from '@SkillSeal/shared';
 import { useAssessmentStore } from './useAssessment';

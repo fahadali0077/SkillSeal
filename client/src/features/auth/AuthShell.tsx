@@ -20,8 +20,8 @@ const TRUST_POINTS = [
 interface Props {
   children:        ReactNode;
   /** Optional override for the left-panel hero copy */
-  marketingTitle?: string;
-  marketingBody?:  string;
+  marketingTitle?: ReactNode;
+  marketingBody?:  ReactNode;
 }
 
 export default function AuthShell({ children, marketingTitle, marketingBody }: Props) {

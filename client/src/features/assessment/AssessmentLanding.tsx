@@ -321,8 +321,6 @@ export default function AssessmentLanding() {
             </div>
 
             </div>
-                  const bestVerif = verifMap.get(skill._id);
-            </div>
           </motion.div>
         )}
 

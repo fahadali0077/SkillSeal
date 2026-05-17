@@ -8,17 +8,31 @@ import { useMarkRead } from './useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 
 const ICONS: Record<string, React.ReactNode> = {
-  connection_request:   <UserPlus    size={12} className="text-blue-500" />,
-  connection_accepted:  <UserPlus    size={12} className="text-green-500" />,
-  post_liked:           <Heart       size={12} className="text-red-500" />,
-  post_commented:       <MessageSquare size={12} className="text-blue-500" />,
-  post_reposted:        <MessageSquare size={12} className="text-purple-500" />,
-  new_message:          <MessageSquare size={12} className="text-brand" />,
-  job_match:            <Briefcase   size={12} className="text-green-500" />,
-  certificate_issued:   <ShieldCheck size={12} className="text-brand" />,
-  certificate_expiring: <AlertTriangle size={12} className="text-amber-500" />,
-  certificate_expired:  <AlertTriangle size={12} className="text-red-500" />,
-  application_status:   <Briefcase   size={12} className="text-purple-500" />,
+  connection_request:   <UserPlus    size={11} className="text-blue-500" />,
+  connection_accepted:  <UserPlus    size={11} className="text-green-500" />,
+  post_liked:           <Heart       size={11} className="text-red-500" />,
+  post_commented:       <MessageSquare size={11} className="text-blue-500" />,
+  post_reposted:        <MessageSquare size={11} className="text-purple-500" />,
+  new_message:          <MessageSquare size={11} className="text-brand" />,
+  job_match:            <Briefcase   size={11} className="text-green-500" />,
+  certificate_issued:   <ShieldCheck size={11} className="text-brand" />,
+  certificate_expiring: <AlertTriangle size={11} className="text-amber-500" />,
+  certificate_expired:  <AlertTriangle size={11} className="text-red-500" />,
+  application_status:   <Briefcase   size={11} className="text-purple-500" />,
+};
+
+const FALLBACK_BG: Record<string, string> = {
+  connection_request:   'bg-blue-50',
+  connection_accepted:  'bg-green-50',
+  post_liked:           'bg-red-50',
+  post_commented:       'bg-blue-50',
+  post_reposted:        'bg-purple-50',
+  new_message:          'bg-blue-50',
+  job_match:            'bg-green-50',
+  certificate_issued:   'bg-blue-50',
+  certificate_expiring: 'bg-amber-50',
+  certificate_expired:  'bg-red-50',
+  application_status:   'bg-purple-50',
 };
 
 function getLabel(n: INotification): string {
@@ -83,49 +97,54 @@ function getLink(n: INotification): string {
 export default function NotificationItem({ notification }: { notification: INotification }) {
   const markRead = useMarkRead();
 
-  // FIX 7 — extract sender avatar from payload
   const fromUser = (notification.payload as { fromUser?: { profilePhoto?: string; fullName?: string } }).fromUser;
+  const fallbackBg = FALLBACK_BG[notification.type] ?? 'bg-gray-100';
 
   return (
     <Link
       to={getLink(notification)}
       onClick={() => { if (!notification.isRead) markRead.mutate(notification._id); }}
-      className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${
-        notification.isRead ? '' : 'bg-blue-50/40'
+      className={`relative flex items-start gap-3 px-4 py-3.5 transition-colors group ${
+        notification.isRead ? 'hover:bg-gray-50' : 'bg-blue-50/40 hover:bg-blue-50/60'
       }`}
     >
-      {/* FIX 7 — avatar with type-icon overlay */}
+      {/* Brand left-stripe for unread */}
+      {!notification.isRead && (
+        <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand" />
+      )}
+
+      {/* Avatar with type-icon overlay */}
       <div className="relative shrink-0 mt-0.5">
         {fromUser?.profilePhoto ? (
           <img
             src={fromUser.profilePhoto}
             alt=""
-            className="w-9 h-9 rounded-full object-cover"
+            className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm"
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
+          <div className={`w-10 h-10 rounded-full ${fallbackBg} flex items-center justify-center ring-2 ring-white shadow-sm`}>
             {ICONS[notification.type] ?? <Bell size={16} className="text-gray-400" />}
           </div>
         )}
         {/* Type icon overlay — only shown when there's a real avatar */}
         {fromUser?.profilePhoto && (
-          <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full border border-gray-200 flex items-center justify-center">
-            <span className="scale-75">
-              {ICONS[notification.type] ?? <Bell size={10} className="text-gray-400" />}
-            </span>
+          <span className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 ${fallbackBg} rounded-full ring-2 ring-white flex items-center justify-center shadow-sm`}>
+            {ICONS[notification.type] ?? <Bell size={10} className="text-gray-400" />}
           </span>
         )}
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-800 leading-snug">{getLabel(notification)}</p>
-        <p className="text-xs text-gray-400 mt-0.5">
+        <p className={`text-sm leading-snug ${notification.isRead ? 'text-gray-700' : 'text-gray-900 font-medium'}`}>
+          {getLabel(notification)}
+        </p>
+        <p className="text-[11px] text-gray-400 mt-1">
           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
         </p>
       </div>
 
       {!notification.isRead && (
-        <div className="w-2 h-2 rounded-full bg-brand mt-1.5 shrink-0" />
+        <div className="w-2 h-2 rounded-full bg-brand mt-2 shrink-0 shadow-[0_0_0_3px_rgba(37,99,235,0.15)]" />
       )}
     </Link>
   );

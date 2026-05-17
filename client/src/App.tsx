@@ -30,7 +30,7 @@ import JobSearchPage from './features/jobs/JobSearchPage';
 import JobDetailPage from './features/jobs/JobDetailPage';
 import MyApplicationsPage from './features/jobs/MyApplicationsPage';
 import CompanyPage from './features/companies/CompanyPage';
-import NotificationList from './features/notifications/NotificationList';
+import NotificationsPage from './features/notifications/NotificationsPage';
 import AssessmentLanding from './features/assessment/AssessmentLanding';
 import IsolationMode from './features/assessment/IsolationMode';
 import RecruiterDashboard from './features/recruiter/RecruiterDashboard';
@@ -107,12 +107,7 @@ export default function App() {
               <Route path="/jobs/:id" element={<JobDetailPage />} />
               <Route path="/applications" element={<MyApplicationsPage />} />
               <Route path="/companies/:slug" element={<CompanyPage />} />
-              <Route path="/notifications" element={
-                <div className="max-w-2xl mx-auto px-4 py-6 card">
-                  <div className="px-4 py-3 border-b"><h1 className="font-bold text-gray-900">Notifications</h1></div>
-                  <NotificationList />
-                </div>
-              } />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/assessment" element={<AssessmentLanding />} />
               <Route path="/assessment/active" element={<AssessmentActiveRoute />} />
               <Route path="/recruiter" element={<RecruiterDashboard />} />

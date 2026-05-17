@@ -5,45 +5,62 @@ import { useSEO } from '../../lib/useSEO';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Briefcase, Loader2, CheckCircle2, XCircle, Clock, Star, MessageSquare } from 'lucide-react';
+import { Briefcase, CheckCircle2, XCircle, Clock, Star, MessageSquare, Search, ArrowRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useMyApplications } from './useJobs';
 import type { IApplicationOut } from './types';
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-  applied:      { label: 'Applied',      color: 'text-gray-600',  bg: 'bg-gray-100',   icon: <Clock size={14} /> },
-  viewed:       { label: 'Viewed',       color: 'text-blue-600',  bg: 'bg-blue-50',    icon: <Clock size={14} /> },
-  shortlisted:  { label: 'Shortlisted',  color: 'text-green-700', bg: 'bg-green-50',   icon: <Star size={14} /> },
-  contacted:    { label: 'Contacted',    color: 'text-brand',     bg: 'bg-blue-50',    icon: <MessageSquare size={14} /> },
-  interviewing: { label: 'Interviewing', color: 'text-purple-700',bg: 'bg-purple-50',  icon: <CheckCircle2 size={14} /> },
-  offer:        { label: 'Offer',        color: 'text-amber-700', bg: 'bg-amber-50',   icon: <Star size={14} /> },
-  rejected:     { label: 'Not selected', color: 'text-red-600',   bg: 'bg-red-50',     icon: <XCircle size={14} /> },
-  withdrawn:    { label: 'Withdrawn',    color: 'text-gray-400',  bg: 'bg-gray-50',    icon: <XCircle size={14} /> },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
+  applied:      { label: 'Applied',      color: 'text-gray-700',   bg: 'bg-gray-50',    border: 'border-gray-200',   icon: <Clock size={12} /> },
+  viewed:       { label: 'Viewed',       color: 'text-blue-700',   bg: 'bg-blue-50',    border: 'border-blue-200',   icon: <Clock size={12} /> },
+  shortlisted:  { label: 'Shortlisted',  color: 'text-green-700',  bg: 'bg-green-50',   border: 'border-green-200',  icon: <Star size={12} /> },
+  contacted:    { label: 'Contacted',    color: 'text-brand',      bg: 'bg-blue-50',    border: 'border-blue-200',   icon: <MessageSquare size={12} /> },
+  interviewing: { label: 'Interviewing', color: 'text-purple-700', bg: 'bg-purple-50',  border: 'border-purple-200', icon: <CheckCircle2 size={12} /> },
+  offer:        { label: 'Offer',        color: 'text-amber-700',  bg: 'bg-amber-50',   border: 'border-amber-200',  icon: <Star size={12} /> },
+  rejected:     { label: 'Not selected', color: 'text-red-600',    bg: 'bg-red-50',     border: 'border-red-200',    icon: <XCircle size={12} /> },
+  withdrawn:    { label: 'Withdrawn',    color: 'text-gray-400',   bg: 'bg-gray-50',    border: 'border-gray-200',   icon: <XCircle size={12} /> },
 };
 
 const STATUS_TABS = ['all', 'applied', 'shortlisted', 'interviewing', 'offer', 'rejected'];
 
 function AppCard({ app }: { app: IApplicationOut }) {
   const cfg = STATUS_CONFIG[app.status] ?? STATUS_CONFIG['applied'];
+  const matchColor = app.matchScore >= 70 ? 'text-green-600' : app.matchScore >= 40 ? 'text-brand' : 'text-gray-400';
   return (
-    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="card p-5 flex items-center gap-4">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="card p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition-all duration-200 hover:border-brand/30 hover:-translate-y-0.5"
+      style={{ transitionProperty: 'box-shadow, transform, border-color' }}
+    >
       {app.companyLogo
-        ? <img src={app.companyLogo} alt={app.companyName} className="w-12 h-12 rounded-xl object-contain border border-gray-100 shrink-0" />
-        : <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-bold shrink-0">{app.companyName[0]}</div>
+        ? <img src={app.companyLogo} alt={app.companyName} className="w-12 h-12 rounded-xl object-contain border border-gray-100 bg-white shrink-0" />
+        : <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center text-brand font-bold shrink-0">
+            {app.companyName[0]}
+          </div>
       }
+
       <div className="flex-1 min-w-0">
-        <Link to={`/jobs/${app.jobId}`} className="font-semibold text-gray-900 hover:text-brand text-sm">{app.jobTitle}</Link>
-        <p className="text-xs text-gray-500">{app.companyName}</p>
-        <p className="text-xs text-gray-400 mt-0.5">Applied {formatDistanceToNow(new Date(app.appliedAt), { addSuffix: true })}</p>
+        <Link to={`/jobs/${app.jobId}`} className="font-semibold text-gray-900 hover:text-brand text-sm sm:text-base block truncate transition-colors">
+          {app.jobTitle}
+        </Link>
+        <p className="text-xs text-gray-500 truncate">{app.companyName}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">
+          Applied {formatDistanceToNow(new Date(app.appliedAt), { addSuffix: true })}
+        </p>
       </div>
+
       {app.matchScore > 0 && (
-        <div className="text-center shrink-0">
-          <div className="text-lg font-bold text-brand">{app.matchScore}%</div>
-          <div className="text-xs text-gray-400">match</div>
+        <div className="text-center shrink-0 hidden sm:block">
+          <div className={`text-lg font-bold tabular-nums ${matchColor}`}>{app.matchScore}%</div>
+          <div className="text-[10px] text-gray-400 uppercase tracking-wide">Match</div>
         </div>
       )}
-      <div className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.color} shrink-0`}>
-        {cfg.icon}{cfg.label}
+
+      <div className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border shrink-0 ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+        {cfg.icon}
+        <span className="hidden sm:inline">{cfg.label}</span>
       </div>
     </motion.div>
   );
@@ -56,39 +73,107 @@ export default function MyApplicationsPage() {
 
   const filtered = activeTab === 'all' ? apps : apps.filter((a) => a.status === activeTab);
 
+  // Pipeline stats
+  const stats = {
+    total:    apps.length,
+    active:   apps.filter(a => ['applied', 'viewed', 'shortlisted', 'contacted', 'interviewing'].includes(a.status)).length,
+    offers:   apps.filter(a => a.status === 'offer').length,
+    closed:   apps.filter(a => ['rejected', 'withdrawn'].includes(a.status)).length,
+  };
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="flex items-center gap-3 mb-6">
-        <Briefcase size={22} className="text-brand" />
-        <h1 className="text-xl font-bold text-gray-900">My Applications</h1>
-        <span className="text-sm text-gray-400 font-medium">{apps.length} total</span>
+    <div className="max-w-4xl mx-auto px-4 py-6">
+
+      {/* ── Gradient hero with pipeline stats ─────────────────────────── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-brand to-blue-700 text-white p-5 sm:p-6 mb-5">
+        <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+              <Briefcase size={22} />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Applications</h1>
+              <p className="text-white/80 text-sm mt-0.5">Track every role you've applied to</p>
+            </div>
+          </div>
+
+          {apps.length > 0 && (
+            <div className="flex gap-5 text-center">
+              <div>
+                <div className="text-2xl font-bold tabular-nums">{stats.total}</div>
+                <div className="text-[10px] text-white/70 uppercase tracking-wide">Total</div>
+              </div>
+              <div className="w-px bg-white/20" />
+              <div>
+                <div className="text-2xl font-bold tabular-nums">{stats.active}</div>
+                <div className="text-[10px] text-white/70 uppercase tracking-wide">Active</div>
+              </div>
+              <div className="w-px bg-white/20" />
+              <div>
+                <div className="text-2xl font-bold tabular-nums">{stats.offers}</div>
+                <div className="text-[10px] text-white/70 uppercase tracking-wide">Offers</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="absolute -right-8 -top-12 w-44 h-44 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+        <div className="absolute -left-12 -bottom-12 w-44 h-44 rounded-full bg-white/5 blur-3xl pointer-events-none" />
       </div>
 
-      {/* Status tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-1 mb-5">
+      {/* ── Status filter pill tabs ───────────────────────────────────── */}
+      <div className="card p-1.5 mb-5 flex gap-1 overflow-x-auto">
         {STATUS_TABS.map((tab) => {
           const count = tab === 'all' ? apps.length : apps.filter((a) => a.status === tab).length;
+          const isActive = activeTab === tab;
           return (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors
-                ${activeTab === tab ? 'bg-brand text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+              className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium px-3 py-2 rounded-lg whitespace-nowrap transition-all shrink-0
+                ${isActive ? 'bg-brand text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
-              <span className="capitalize">{tab === 'all' ? 'All' : STATUS_CONFIG[tab]?.label ?? tab}</span>
-              {count > 0 && <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeTab === tab ? 'bg-white/20' : 'bg-gray-200'}`}>{count}</span>}
+              <span>{tab === 'all' ? 'All' : STATUS_CONFIG[tab]?.label ?? tab}</span>
+              {count > 0 && (
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${isActive ? 'bg-white/25' : 'bg-gray-200 text-gray-600'}`}>
+                  {count}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-16"><Loader2 size={24} className="animate-spin text-gray-300" /></div>
+        <div className="space-y-3">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="card p-5 flex items-center gap-4">
+              <div className="skeleton w-12 h-12 rounded-xl shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="skeleton h-3 w-48 rounded" />
+                <div className="skeleton h-2.5 w-32 rounded" />
+                <div className="skeleton h-2 w-24 rounded" />
+              </div>
+              <div className="skeleton h-7 w-20 rounded-full" />
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="card p-10 text-center text-gray-400">
-          <Briefcase size={40} className="mx-auto mb-3 opacity-30" />
-          <p>{activeTab === 'all' ? "You haven't applied to any jobs yet." : `No applications with status "${activeTab}".`}</p>
-          <Link to="/jobs" className="btn-primary inline-flex mt-4 text-sm">Browse jobs</Link>
+        <div className="card p-10 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center">
+            <Briefcase size={28} className="text-brand" />
+          </div>
+          <p className="font-bold text-gray-900 mb-1">
+            {activeTab === 'all' ? "No applications yet" : `Nothing in "${STATUS_CONFIG[activeTab]?.label ?? activeTab}"`}
+          </p>
+          <p className="text-sm text-gray-500 mb-5 max-w-xs mx-auto">
+            {activeTab === 'all'
+              ? "When you apply to jobs, they'll show up here so you can track every step."
+              : "Applications with this status will appear here."}
+          </p>
+          <Link to="/jobs" className="btn-primary text-sm mx-auto">
+            <Search size={14} /> Browse jobs
+            <ArrowRight size={13} />
+          </Link>
         </div>
       ) : (
         <AnimatePresence>

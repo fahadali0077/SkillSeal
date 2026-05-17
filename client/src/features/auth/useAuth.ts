@@ -21,7 +21,6 @@ export interface AuthUser {
   email: string;
   accountType: string;
   role: 'candidate' | 'recruiter' | 'company_admin' | 'platform_admin';
-  profilePhoto?: string;
 }
 
 interface AuthState {

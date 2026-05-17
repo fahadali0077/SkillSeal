@@ -19,8 +19,6 @@ import app from './app';
 import { connectDB } from './config/database';
 import { connectRedis } from './config/redis';
 import { createServer } from 'http';
-import { initSocket } from './config/socket';
-import logger from './utils/logger';
 
 const PORT = process.env.PORT || 5000;
 

@@ -70,32 +70,36 @@ function NewConversationPanel({
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white shrink-0">
         {onBack && (
-          <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-gray-100 md:hidden">
+          <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-gray-100 md:hidden transition-colors">
             <ArrowLeft size={18} className="text-gray-500" />
           </button>
         )}
         {recipientPhoto
-          ? <img src={recipientPhoto} alt={recipientName} className="w-9 h-9 rounded-full object-cover" />
-          : <div className="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center font-bold text-brand text-sm">{initials || '?'}</div>
+          ? <img src={recipientPhoto} alt={recipientName} className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm" />
+          : <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center font-bold text-brand text-sm ring-2 ring-white shadow-sm">{initials || '?'}</div>
         }
         <div>
           <p className="text-sm font-semibold text-gray-900">{recipientName || <span className="text-gray-300">Loading…</span>}</p>
-          <p className="text-xs text-gray-400">New conversation</p>
+          <p className="text-xs text-brand font-medium flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-brand rounded-full" /> New conversation
+          </p>
         </div>
       </div>
 
       {/* Empty state */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-2 text-gray-300 p-8">
-        <MessageSquareDashed size={48} className="opacity-30" />
-        <p className="text-sm text-gray-400 font-medium">Start a conversation</p>
-        <p className="text-xs text-gray-300 text-center">
-          Say hello to {recipientName || 'this person'} — your first message will appear here.
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 bg-gradient-to-br from-gray-50/50 to-white">
+        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center">
+          <MessageSquareDashed size={36} className="text-brand" />
+        </div>
+        <p className="text-base font-bold text-gray-900">Start a conversation</p>
+        <p className="text-sm text-gray-500 text-center max-w-xs">
+          Say hello to <span className="font-semibold text-gray-700">{recipientName || 'this person'}</span> — your first message will appear here.
         </p>
       </div>
 
       {/* Compose input */}
       <div className="border-t border-gray-100 p-3 bg-white shrink-0">
-        <div className="flex items-end gap-2 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20 transition-shadow px-3 py-2">
+        <div className="flex items-end gap-2 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10 transition-all px-3 py-2">
           <textarea
             ref={textRef}
             value={text}
@@ -111,9 +115,9 @@ function NewConversationPanel({
           <button
             onClick={handleSend}
             disabled={!text.trim() || sendMessage.isPending}
-            className={`shrink-0 p-2 rounded-xl transition-all mb-0.5
+            className={`shrink-0 p-2 rounded-xl transition-all mb-0.5 active:scale-95
               ${text.trim() && !sendMessage.isPending
-                ? 'bg-brand text-white hover:bg-brand-dark'
+                ? 'bg-brand text-white hover:bg-brand-dark shadow-sm'
                 : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`}
             aria-label="Send message"
           >
@@ -122,7 +126,10 @@ function NewConversationPanel({
               : <Send size={16} />}
           </button>
         </div>
-        <p className="text-xs text-gray-400 mt-1 ml-2">Enter to send · Shift+Enter for new line</p>
+        <p className="text-[11px] text-gray-400 mt-1.5 ml-2 flex items-center gap-3">
+          <span><kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] font-mono border border-gray-200">Enter</kbd> to send</span>
+          <span><kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] font-mono border border-gray-200">Shift</kbd>+<kbd className="px-1 py-0.5 bg-gray-100 rounded text-[10px] font-mono border border-gray-200">Enter</kbd> for new line</span>
+        </p>
       </div>
     </div>
   );
@@ -190,7 +197,7 @@ export default function MessagingPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 h-[calc(100vh-80px)]">
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm h-full overflow-hidden flex">
+      <div className="bg-white rounded-2xl border border-gray-200 h-full overflow-hidden flex" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
 
         {/* ── Left panel: thread list ─────────────────────────────────────── */}
         <div className={`
@@ -201,19 +208,21 @@ export default function MessagingPage() {
           <div className="flex px-4 pt-4 gap-1 shrink-0">
             <button
               onClick={() => setActiveTab('messages')}
-              className={`flex-1 text-sm font-medium py-1.5 rounded-lg transition-colors
-                ${activeTab === 'messages' ? 'bg-brand text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+              className={`flex-1 text-sm font-semibold py-2 rounded-lg transition-all
+                ${activeTab === 'messages' ? 'bg-brand text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               Messages
             </button>
             <button
               onClick={() => setActiveTab('requests')}
-              className={`flex-1 text-sm font-medium py-1.5 rounded-lg transition-colors relative
-                ${activeTab === 'requests' ? 'bg-brand text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+              className={`flex-1 text-sm font-semibold py-2 rounded-lg transition-all relative
+                ${activeTab === 'requests' ? 'bg-brand text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               Requests
               {requestCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] text-[10px] font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-white tabular-nums ${
+                  activeTab === 'requests' ? 'bg-white text-brand' : 'bg-red-500 text-white'
+                }`}>
                   {requestCount > 9 ? '9+' : requestCount}
                 </span>
               )}
@@ -286,12 +295,21 @@ export default function MessagingPage() {
                 key="empty"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-300 p-8"
+                className="flex-1 flex flex-col items-center justify-center gap-3 p-8 bg-gradient-to-br from-gray-50/50 to-white relative overflow-hidden"
               >
-                <MessageSquareDashed size={52} className="opacity-40" />
-                <p className="text-sm font-medium text-gray-400">Select a conversation</p>
-                <p className="text-xs text-gray-300 text-center">
-                  Choose from your messages on the left or start a new conversation from a profile.
+                {/* Decorative ambient glow */}
+                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-brand/5 blur-3xl pointer-events-none" />
+
+                <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center">
+                  <MessageSquareDashed size={42} className="text-brand" />
+                </div>
+                <p className="relative text-lg font-bold text-gray-900 mt-2">Your messages</p>
+                <p className="relative text-sm text-gray-500 text-center max-w-xs leading-relaxed">
+                  Choose a conversation on the left, or start a new one with the{' '}
+                  <button onClick={() => setComposeOpen(true)} className="text-brand hover:text-brand-dark font-semibold underline-offset-2 hover:underline">
+                    pencil icon
+                  </button>
+                  {' '}above the search bar.
                 </p>
               </motion.div>
             )}

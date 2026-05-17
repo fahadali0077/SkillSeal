@@ -134,7 +134,7 @@ router.post(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body as { email: string; password: string };
-      const result = await login({ email, password });
+      const result = await login({ email, password, ip: req.ip ?? 'unknown' });
 
       setRefreshCookie(res, result.refreshToken);
       sendSuccess(res, {

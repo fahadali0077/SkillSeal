@@ -9,6 +9,10 @@ import {
 import { useAuthStore } from '../features/auth/useAuth';
 import NotificationBell from '../features/notifications/NotificationBell';
 import { useNotificationSocket } from '../features/notifications/useNotifications';
+// PARTIAL-06: kept here for potential future use, but no longer called from
+// Layout — see App.tsx for the top-level invocation that survives across
+// route changes including the assessment overlay.
+void useNotificationSocket;
 import { useUnreadCount } from '../features/messaging/useMessaging';
 import { connectSocket, disconnectSocket } from './socketClient';
 
@@ -143,7 +147,8 @@ function GlobalSearch({ isRecruiter }: { isRecruiter: boolean }) {
 }
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  useNotificationSocket();
+  // PARTIAL-06: useNotificationSocket has moved to App.tsx so it stays
+  // mounted during the assessment overlay (which renders without Layout).
   const { user, accessToken } = useAuthStore() as { user: typeof useAuthStore extends () => { user: infer U } ? U : unknown; accessToken: string | null; logout: () => Promise<void> };
   const role = (user as { role?: string })?.role ?? 'candidate';
   const isRecruiter = role === 'recruiter' || role === 'company_admin';

@@ -127,6 +127,31 @@ export function useSocketEvents() {
       ({ userId }) => store.setOffline(userId),
     ));
 
+    // HIGH-19: a READ_RECEIPT event marks all messages in a thread sent up to
+    // the given timestamp as read by the receipt's sender. Update the cached
+    // thread pages in React Query so the UI reflects the read state without a
+    // round-trip.
+    cleanup.push(on<{ threadId: string; readerId: string; readAt: string }>(
+      SOCKET_EVENTS.READ_RECEIPT,
+      ({ threadId, readerId, readAt }) => {
+        qc.setQueriesData({ queryKey: msgKeys.thread(threadId) }, (old: any) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              messages: (page.messages ?? []).map((m: IMessageOut) => {
+                // Stamp readAt only on messages the reader did NOT send.
+                if (m.senderId === readerId || m.readAt) return m;
+                return { ...m, readAt };
+              }),
+            })),
+          };
+        });
+        void qc.invalidateQueries({ queryKey: msgKeys.threads() });
+      },
+    ));
+
     return () => cleanup.forEach((fn) => fn());
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 }

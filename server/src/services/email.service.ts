@@ -33,14 +33,15 @@ interface SendEmailOptions {
 }
 
 async function sendEmail(opts: SendEmailOptions): Promise<void> {
-  console.log(
-    `[email] >>> ATTEMPT to=${opts.to} subj="${opts.subject}"` +
+  // UX-19: structured logger only — no raw console writes. The previous
+  // double-log (console + logger) duplicated lines in production stdout.
+  logger.info(
+    `[email] ATTEMPT to=${opts.to} subj="${opts.subject}"` +
     ` via=Brevo-HTTP-API key=${BREVO_API_KEY ? BREVO_API_KEY.slice(0, 8) + '…' : '<MISSING>'}` +
     ` from=${FROM_EMAIL}`,
   );
 
   if (!BREVO_API_KEY) {
-    console.warn('[email] >>> SKIP — BREVO_API_KEY not set');
     logger.warn(`[email] BREVO_API_KEY missing — skipping send to ${opts.to}`);
     return;
   }
@@ -65,16 +66,12 @@ async function sendEmail(opts: SendEmailOptions): Promise<void> {
 
   if (!res.ok) {
     const body = await res.text().catch(() => '(unreadable)');
-    console.error(
-      `[email] >>> FAILURE to=${opts.to} status=${res.status} body=${body}`,
-    );
-    logger.error(`[email] Brevo API error ${res.status} for ${opts.to}: ${body}`);
+    logger.error(`[email] FAILURE to=${opts.to} status=${res.status} body=${body}`);
     throw new Error(`Brevo API returned ${res.status}: ${body}`);
   }
 
   const data = await res.json() as { messageId?: string };
-  console.log(`[email] >>> SUCCESS to=${opts.to} messageId=${data.messageId ?? 'n/a'}`);
-  logger.info(`[email] Sent to ${opts.to} (messageId=${data.messageId ?? 'n/a'})`);
+  logger.info(`[email] SUCCESS to=${opts.to} messageId=${data.messageId ?? 'n/a'}`);
 }
 
 // ── Email templates ───────────────────────────────────────────────────────────
@@ -131,6 +128,82 @@ export async function sendPasswordResetEmail(opts: {
         </a>
         <p style="color:#666;font-size:13px">This link expires in 1 hour and can only be used once.</p>
         <p style="color:#666;font-size:13px">If you didn't request a password reset, ignore this email — your account is safe.</p>
+        <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+        <p style="color:#999;font-size:12px">© ${new Date().getFullYear()} SkillSeal</p>
+      </div>
+    `,
+  });
+}
+
+/**
+ * HIGH-14: Notify a user that one of their verified skills is approaching
+ * expiry or has expired. Called from the certificate-expiry cron job at
+ * 30/7/1 days out and on the day of expiry.
+ */
+export async function sendCertificateExpiryEmail(opts: {
+  to: string;
+  firstName: string;
+  skillName: string;
+  daysUntilExpiry: number;   // 0 = already expired
+}): Promise<void> {
+  const isExpired = opts.daysUntilExpiry <= 0;
+  const subject = isExpired
+    ? `Your ${opts.skillName} certificate has expired`
+    : `Your ${opts.skillName} certificate expires in ${opts.daysUntilExpiry} day${opts.daysUntilExpiry === 1 ? '' : 's'}`;
+  const cta = `${CLIENT_URL}/assessments?skill=${encodeURIComponent(opts.skillName)}`;
+
+  await sendEmail({
+    to:      opts.to,
+    subject,
+    text:    `Hi ${opts.firstName},\n\n${isExpired ? `Your ${opts.skillName} certificate has expired. Retake the assessment to keep your verified status.` : `Your ${opts.skillName} certificate expires in ${opts.daysUntilExpiry} days. Retake the assessment to renew it before then.`}\n\nRetake here:\n${cta}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h2 style="color:#1E40AF">${subject}</h2>
+        <p>Hi <strong>${opts.firstName}</strong>,</p>
+        <p>${isExpired
+          ? `Your <strong>${opts.skillName}</strong> certificate has expired. Recruiters can no longer see it as a verified credential on your profile.`
+          : `Your <strong>${opts.skillName}</strong> certificate will expire in <strong>${opts.daysUntilExpiry} day${opts.daysUntilExpiry === 1 ? '' : 's'}</strong>. Retake the assessment now to keep your verified badge active.`}</p>
+        <a href="${cta}"
+           style="display:inline-block;background:#1E40AF;color:#fff;padding:12px 24px;
+                  border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0">
+          Retake assessment
+        </a>
+        <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
+        <p style="color:#999;font-size:12px">© ${new Date().getFullYear()} SkillSeal</p>
+      </div>
+    `,
+  });
+}
+
+/**
+ * HIGH-12: Send a daily digest of new matching jobs for a candidate. Called
+ * by the jobDigest cron job; consumes the queue populated by notifyJobMatch().
+ */
+export async function sendJobDigestEmail(opts: {
+  to: string;
+  firstName: string;
+  jobs: { jobId: string; title: string; postedAt: string }[];
+}): Promise<void> {
+  if (opts.jobs.length === 0) return;
+  const itemsHtml = opts.jobs.slice(0, 20).map((j) => `
+    <li style="margin-bottom:8px">
+      <a href="${CLIENT_URL}/jobs/${j.jobId}" style="color:#1E40AF;text-decoration:none">
+        <strong>${j.title}</strong>
+      </a>
+    </li>
+  `).join('');
+  const itemsText = opts.jobs.slice(0, 20).map((j) => `  • ${j.title} — ${CLIENT_URL}/jobs/${j.jobId}`).join('\n');
+
+  await sendEmail({
+    to:      opts.to,
+    subject: `${opts.jobs.length} new job${opts.jobs.length === 1 ? '' : 's'} match your skills today`,
+    text:    `Hi ${opts.firstName},\n\nNew jobs matching your verified skills:\n${itemsText}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+        <h2 style="color:#1E40AF">Today's matches</h2>
+        <p>Hi <strong>${opts.firstName}</strong>,</p>
+        <p>Here are the jobs posted in the last 24 hours that match your verified skills:</p>
+        <ul style="padding-left:20px">${itemsHtml}</ul>
         <hr style="border:none;border-top:1px solid #eee;margin:24px 0"/>
         <p style="color:#999;font-size:12px">© ${new Date().getFullYear()} SkillSeal</p>
       </div>

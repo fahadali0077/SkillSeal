@@ -2,11 +2,12 @@
 // CommentSection.tsx  –  threaded comments, 3-level depth
 // ─────────────────────────────────────────────────────────────────────────────
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { Send, ChevronDown, ChevronUp, Loader2, Trash2, Heart } from 'lucide-react';
 import { useAddComment, useComments } from './useFeed';
 import { useAuthStore } from '../auth/useAuth';
-import type { CommentOut } from './feedApi';
+import { feedApi, type CommentOut } from './feedApi';
 
 function Avatar({ src, name }: { src: string; name: string }) {
   return src
@@ -25,7 +26,33 @@ function CommentItem({ comment, postId, depth, replies = [] }: CommentItemProps)
   const [showReplies, setShowReplies] = useState(false);
   const [replyOpen, setReplyOpen]     = useState(false);
   const [replyText, setReplyText]     = useState('');
+  // HIGH-08: optimistic local state for like button.
+  const [liked, setLiked]             = useState(false);
+  const [likeCount, setLikeCount]     = useState(0);
   const addComment = useAddComment(postId);
+  const user = useAuthStore((s) => s.user);
+  const qc = useQueryClient();
+
+  const isOwnComment = user?._id === comment.authorId;
+
+  // HIGH-07: delete this comment (author only).
+  const deleteMutation = useMutation({
+    mutationFn: () => feedApi.deleteComment(postId, comment._id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['comments', postId] }),
+  });
+
+  // HIGH-08: toggle like on this comment.
+  const likeMutation = useMutation({
+    mutationFn: () => feedApi.likeComment(postId, comment._id),
+    onMutate: () => {
+      setLiked((l) => !l);
+      setLikeCount((c) => liked ? Math.max(0, c - 1) : c + 1);
+    },
+    onSuccess: (data) => {
+      setLiked(data.hasLiked);
+      setLikeCount(data.likeCount);
+    },
+  });
 
   const submitReply = async () => {
     if (!replyText.trim()) return;
@@ -47,12 +74,32 @@ function CommentItem({ comment, postId, depth, replies = [] }: CommentItemProps)
             <span className="text-xs text-gray-400">
               {new Date(comment.createdAt).toLocaleDateString()}
             </span>
+            <button
+              onClick={() => likeMutation.mutate()}
+              disabled={likeMutation.isPending}
+              className={`text-xs flex items-center gap-1 font-medium hover:text-brand ${liked ? 'text-red-500' : 'text-gray-500'}`}
+            >
+              <Heart size={12} fill={liked ? 'currentColor' : 'none'} />
+              {likeCount > 0 ? likeCount : 'Like'}
+            </button>
             {depth < 3 && (
               <button
                 onClick={() => setReplyOpen((o) => !o)}
                 className="text-xs text-gray-500 hover:text-brand font-medium"
               >
                 Reply
+              </button>
+            )}
+            {isOwnComment && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Delete this comment?')) deleteMutation.mutate();
+                }}
+                disabled={deleteMutation.isPending}
+                className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1"
+              >
+                <Trash2 size={12} />
+                Delete
               </button>
             )}
           </div>

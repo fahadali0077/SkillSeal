@@ -1,5 +1,8 @@
 import 'dotenv/config';
-
+import { initSocket } from './config/socket';
+import { startJobDigestJob } from './jobs/jobDigest.job';
+import { startPermanentDeletionJob } from './jobs/permanentDeletion.job';
+import logger from './utils/logger';
 // ── Catch anything that slips past the bootstrap try/catch ──────────────────
 // process.stdout.write is SYNCHRONOUS — it flushes before the process exits,
 // unlike logger.error() (Winston is async and may not flush before process.exit)
@@ -23,11 +26,11 @@ const PORT = process.env.PORT || 5000;
 
 // Synchronous print — guaranteed to appear in Render logs before any async work
 process.stdout.write(`[boot] Starting SkillSeal API  NODE_ENV=${process.env.NODE_ENV}  PORT=${PORT}\n`);
-process.stdout.write(`[boot] MONGODB_URI  = ${process.env.MONGODB_URI  ? '✓ set' : '✗ MISSING'}\n`);
-process.stdout.write(`[boot] REDIS_URL    = ${process.env.REDIS_URL    ? '✓ set' : '✗ MISSING'}\n`);
+process.stdout.write(`[boot] MONGODB_URI  = ${process.env.MONGODB_URI ? '✓ set' : '✗ MISSING'}\n`);
+process.stdout.write(`[boot] REDIS_URL    = ${process.env.REDIS_URL ? '✓ set' : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] GEMINI_API_KEY = ${process.env.GEMINI_API_KEY ? '✓ set' : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] CLOUDINARY_URL = ${process.env.CLOUDINARY_URL ? '✓ set' : '✗ MISSING'}\n`);
-process.stdout.write(`[boot] JWT_ACCESS_SECRET  = ${process.env.JWT_ACCESS_SECRET  ? `✓ (${process.env.JWT_ACCESS_SECRET.length} chars)` : '✗ MISSING'}\n`);
+process.stdout.write(`[boot] JWT_ACCESS_SECRET  = ${process.env.JWT_ACCESS_SECRET ? `✓ (${process.env.JWT_ACCESS_SECRET.length} chars)` : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] JWT_REFRESH_SECRET = ${process.env.JWT_REFRESH_SECRET ? `✓ (${process.env.JWT_REFRESH_SECRET.length} chars)` : '✗ MISSING'}\n`);
 
 async function bootstrap() {
@@ -49,6 +52,13 @@ async function bootstrap() {
 
     const httpServer = createServer(app);
     initSocket(httpServer);
+
+    if (process.env.NODE_ENV !== 'test') {
+      startJobDigestJob();          // daily 09:00 UTC — job-match email digests
+      startPermanentDeletionJob();  // daily 04:00 UTC — final user deletion past 30-day grace
+      process.stdout.write('[boot] Cron jobs scheduled (jobDigest, permanentDeletion)\n');
+    }
+
 
     httpServer.listen(PORT, () => {
       process.stdout.write(`[boot] 🚀 Server listening on port ${PORT}\n`);

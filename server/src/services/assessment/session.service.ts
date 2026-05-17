@@ -9,7 +9,10 @@ import { getSession, saveSession, updateSession, deleteSession, setAnswer, getAn
 import type { ServerSessionState, StoredAnswer } from '../../utils/redis';
 import { generateQuestion } from '../../ai/questionGenerator';
 import type { SupportedSkill } from '../../ai/conceptLibrary';
-import { pickConcept } from '../../ai/conceptLibrary';
+// UX-15: single source of truth — pull the supported-skill list straight
+// from conceptLibrary instead of re-declaring it here. The local list could
+// drift when new skills are added to the registry.
+import { pickConcept, SUPPORTED_SKILLS } from '../../ai/conceptLibrary';
 import { adjustDifficulty } from './adaptiveDifficulty.service';
 import { evaluateMicroTheory } from './microTheory.service';
 import { notify } from '../notifications.service';
@@ -18,15 +21,16 @@ import logger from '../../utils/logger';
 import type { IQuestion, ISessionState, SkillTier } from '@SkillSeal/shared';
 
 const TOTAL_QUESTIONS = 20;
-const COOLDOWN_PARTIAL = 7 * 24 * 3600;
-const COOLDOWN_FAIL = 14 * 24 * 3600;
+// CRIT-09: cooldown constants exported so certificate.service.ts can enforce
+// retake lockouts on FAIL/PARTIAL completions.
+export const COOLDOWN_PARTIAL = 7 * 24 * 3600;
+export const COOLDOWN_FAIL = 14 * 24 * 3600;
+export { setCooldown };
 const Q_PATTERN: Array<'mcq' | 'scenario' | 'micro-theory'> = ['mcq', 'mcq', 'mcq', 'scenario', 'mcq', 'mcq', 'mcq', 'scenario', 'micro-theory', 'mcq'];
 function qType(i: number): 'mcq' | 'scenario' | 'micro-theory' { return Q_PATTERN[i % Q_PATTERN.length]; }
 const TIMERS: Record<string, number> = { mcq: 60, scenario: 120, 'micro-theory': 150 };
-// Supported skills must have a matching entry in conceptLibrary.ts.
-// Any slug not in this list gets an explicit error instead of silently
-// serving React questions (which was the root cause of question mixing).
-const SUPPORTED_SKILLS: SupportedSkill[] = ['react', 'nodejs', 'mongodb', 'typescript', 'python', 'postgresql', 'docker', 'graphql'];
+// UX-15: SUPPORTED_SKILLS now imported from conceptLibrary so the registry
+// is the single source of truth.
 
 function toSkill(slug: string): SupportedSkill {
   if (SUPPORTED_SKILLS.includes(slug as SupportedSkill)) {
@@ -101,9 +105,17 @@ export async function submitAnswer(input: { sessionId: string; questionId: strin
   const stored = await consumeAnswer(sessionId, questionId);
   if (!stored) throw new AppError('Question not found or already answered.', 404, true);
   const maxTime = (TIMERS[stored.questionType] ?? 60) * 1000;
-  const speedPct = isTimeout ? 0 : Math.max(0, 1 - timeTakenMs / maxTime);
+
+  // CRIT-08: enforce timer on the server. If the client took longer than maxTime
+  // but did not flag isTimeout, treat the submission as a timeout. Prevents
+  // bypassing the timer via paused JS execution or tampered timeTakenMs values.
+  let serverEnforcedTimeout = isTimeout;
+  if (timeTakenMs > maxTime && !isTimeout) {
+    serverEnforcedTimeout = true;
+  }
+  const speedPct = serverEnforcedTimeout ? 0 : Math.max(0, 1 - timeTakenMs / maxTime);
   let isCorrect: boolean | null, conceptScore: number, aiScore = 0;
-  if (isTimeout) { isCorrect = false; conceptScore = 0; }
+  if (serverEnforcedTimeout) { isCorrect = false; conceptScore = 0; }
   else if (stored.questionType === 'micro-theory') {
     const rubric = (stored.aiEvalCriteria ?? stored.correctAnswer ?? '').split('\n').filter(Boolean);
     const res = await evaluateMicroTheory(textAnswer || '', rubric, stored.concept ?? '', timeTakenMs);
@@ -112,7 +124,7 @@ export async function submitAnswer(input: { sessionId: string; questionId: strin
     const s = (selectedOption ?? '').trim().toUpperCase(), c = stored.correctAnswer.trim().toUpperCase();
     isCorrect = s === c; conceptScore = isCorrect ? 1 : 0;
   }
-  state.answers.push({ questionId, questionType: stored.questionType, isCorrect, timeTakenMs, conceptScore, aiScore, isTimeout });
+  state.answers.push({ questionId, questionType: stored.questionType, isCorrect, timeTakenMs, conceptScore, aiScore, isTimeout: serverEnforcedTimeout });
   state.runningConceptScore += conceptScore; state.runningSpeedScore += speedPct; state.questionIndex += 1;
 
   // CRITICAL: Persist answer to MongoDB so computeCompositeScore can read it.
@@ -125,7 +137,7 @@ export async function submitAnswer(input: { sessionId: string; questionId: strin
       difficulty:     stored.difficulty ?? 'medium',
       selectedOption: selectedOption ?? null,
       textAnswer:     textAnswer ?? '',
-      isTimeout,
+      isTimeout:      serverEnforcedTimeout,
       isCorrect,
       conceptScore,
       aiScore,
@@ -135,8 +147,7 @@ export async function submitAnswer(input: { sessionId: string; questionId: strin
   } catch (e) {
     // Don't fail the request if the persist fails — answer is still in Redis state.
     // But log so we can investigate.
-    // eslint-disable-next-line no-console
-    console.error('[submitAnswer] failed to persist Answer doc:', (e as Error)?.message);
+    logger.error('[submitAnswer] failed to persist Answer doc:', (e as Error)?.message);
   }
 
   // ── CRITICAL: persist answers + questionIndex to Redis BEFORE calling
@@ -174,7 +185,10 @@ export async function recordStrike(sessionId: string, eventType: string, details
   const newCount = state.strikeCount + 1; const terminated = newCount >= 3;
   await updateSession(sessionId, { strikeCount: newCount, isTerminated: terminated, terminationReason: terminated ? 'strike_limit_reached' : state.terminationReason });
   await Session.findByIdAndUpdate(sessionId, { $inc: { strikeCount: 1 }, $push: { violationLog: { eventType, timestamp: new Date(), details: details ?? '' } }, ...(terminated ? { status: 'terminated', terminationReason: 'strike_limit_reached' } : {}) });
-  if (terminated) { await clearActiveSession(state.userId); await setCooldown(state.userId, state.skillId, COOLDOWN_PARTIAL); }
+  // CRIT-11: cheating users get COOLDOWN_FAIL (14 days), not COOLDOWN_PARTIAL (7).
+  // Honest users who just scored low get 7 days; a terminated-for-strikes user
+  // must not be rewarded with a shorter lockout than that.
+  if (terminated) { await clearActiveSession(state.userId); await setCooldown(state.userId, state.skillId, COOLDOWN_FAIL); }
   return { strikeCount: newCount, terminated };
 }
 

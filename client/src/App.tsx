@@ -37,7 +37,9 @@ import RecruiterDashboard from './features/recruiter/RecruiterDashboard';
 import FullCandidateView from './features/recruiter/FullCandidateView';
 import BillingSuccessPage from './features/billing/BillingSuccessPage';
 import BillingSettings from './features/billing/BillingSettings';
+import PostDetailPage from './pages/PostDetailPage';
 import { useAssessmentStatus } from './features/assessment/useAssessment';
+import { useNotificationSocket } from './features/notifications/useNotifications';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuth = useIsAuthenticated();
@@ -69,6 +71,9 @@ function AssessmentActiveRoute() {
 export default function App() {
   const isAuthenticated = useIsAuthenticated();
   const user = useAuthStore(s => s.user);
+  // PARTIAL-06: mount the notification socket at the App level so it survives
+  // the assessment overlay and any route that renders without Layout.
+  useNotificationSocket();
 
   return (
     <>
@@ -99,6 +104,7 @@ export default function App() {
           <Layout>
             <Routes>
               <Route path="/feed" element={<FeedPage />} />
+              <Route path="/posts/:id" element={<PostDetailPage />} />
               <Route path="/profile/:username" element={<ProfilePageWithKey />} />
               <Route path="/network" element={<NetworkPage />} />
               <Route path="/hashtag/:tag" element={<HashtagFeed />} />

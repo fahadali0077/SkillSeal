@@ -85,15 +85,32 @@ export const messagingApi = {
   uploadAttachment: async (file: File): Promise<{ url: string; type: string; name: string; sizeBytes: number }> => {
     const form = new FormData();
     form.append('file', file);
-    const res = await fetch(`${BASE}/upload`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken') ?? ''}` },
-      body: form,
-    });
-    const json = await res.json() as { success: boolean; data: { url: string; type: string; name: string; sizeBytes: number } };
-    if (!json.success) throw new Error('Upload failed');
-    return json.data;
+
+    // BROKEN-05: an AbortController with a 30-second timeout. The previous
+    // fetch had no timeout, so a Cloudinary stall left the spinner running
+    // forever and the user couldn't tell something had gone wrong.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort('timeout'), 30_000);
+
+    try {
+      const res = await fetch(`${BASE}/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken') ?? ''}` },
+        body: form,
+        signal: controller.signal,
+      });
+      const json = await res.json() as { success: boolean; data: { url: string; type: string; name: string; sizeBytes: number } };
+      if (!json.success) throw new Error('Upload failed');
+      return json.data;
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') {
+        throw new Error('Upload timed out after 30 seconds. Please try again.');
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   },
 
   search: (query: string) =>

@@ -8,6 +8,7 @@ import type { IUserDocument } from '../models/User.model';
 import { Post } from '../models/Post.model';
 import { Message } from '../models/Message.model';
 import { Thread } from '../models/Thread.model';
+import { Notification } from '../models/Notification.model';
 import { Verification } from '../models/Verification.model';
 import { Application } from '../models/Application.model';
 import { Connection } from '../models/Connection.model';
@@ -19,11 +20,29 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
   if (targetId !== actorId) { sendError(res, 'Forbidden.', 403, ApiErrorCode.FORBIDDEN); return; }
   try {
     const oid = new Types.ObjectId(targetId);
-    await Promise.all([Post.updateMany({ authorId: oid }, { $set: { isDeleted: true } }), User.updateMany({ connections: oid }, { $pull: { connections: oid } }), Connection.deleteMany({ $or: [{ requesterId: oid }, { recipientId: oid }] }), Verification.updateMany({ userId: oid }, { $unset: { userId: 1 } }), Message.deleteMany({ senderId: oid }), clearActiveSession(targetId)]);
     const scheduledAt = new Date(Date.now() + 30 * 24 * 3600 * 1000);
-    await User.findByIdAndUpdate(targetId, { $inc: { tokenVersion: 1 } });
+
+    // HIGH-18: cascade-delete user-owned data immediately at request time.
+    // The User document itself is preserved (with scheduledDeletionAt set) so
+    // active sessions and outstanding refresh tokens become invalid via
+    // tokenVersion bump, but a daily cron permanently removes the User
+    // after the 30-day grace period.
+    await Promise.all([
+      Post.updateMany({ authorId: oid }, { $set: { isDeleted: true } }),
+      User.updateMany({ connections: oid }, { $pull: { connections: oid } }),
+      Connection.deleteMany({ $or: [{ requesterId: oid }, { recipientId: oid }] }),
+      Verification.updateMany({ userId: oid }, { $unset: { userId: 1 } }),
+      Message.deleteMany({ senderId: oid }),
+      Thread.deleteMany({ $or: [{ participantA: oid }, { participantB: oid }] }),
+      Notification.deleteMany({ recipientId: oid }),
+      Application.deleteMany({ candidateId: oid }),
+      clearActiveSession(targetId),
+    ]);
+
+    // Schedule the permanent User deletion for 30 days from now.
+    await User.findByIdAndUpdate(targetId, { $inc: { tokenVersion: 1 }, $set: { scheduledDeletionAt: scheduledAt } });
     res.clearCookie('SkillSeal_refresh_token', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
-    logger.info(`[privacy] Account deletion scheduled: userId=${targetId}`);
+    logger.info(`[privacy] Account deletion scheduled: userId=${targetId} permanentlyAt=${scheduledAt.toISOString()}`);
     sendSuccess(res, { scheduledDeletionAt: scheduledAt.toISOString() }, 'Account deletion scheduled for 30 days from now.');
   } catch (err) { sendError(res, 'Failed.', 500, ApiErrorCode.INTERNAL_ERROR); }
 });

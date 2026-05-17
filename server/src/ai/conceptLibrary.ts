@@ -528,6 +528,11 @@ export const GRAPHQL_CONCEPTS: ConceptLibrary = {
 
 export type SupportedSkill = 'react' | 'nodejs' | 'mongodb' | 'typescript' | 'python' | 'postgresql' | 'docker' | 'graphql';
 
+// UX-15: single source of truth for the supported-skill list. session.service.ts
+// imports this rather than re-declaring it, so adding a new skill doesn't
+// require touching two files.
+export const SUPPORTED_SKILLS: SupportedSkill[] = ['react', 'nodejs', 'mongodb', 'typescript', 'python', 'postgresql', 'docker', 'graphql'];
+
 export const CONCEPT_REGISTRY: Record<SupportedSkill, ConceptLibrary> = {
   react:      REACT_CONCEPTS,
   nodejs:     NODEJS_CONCEPTS,

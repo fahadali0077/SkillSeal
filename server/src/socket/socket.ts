@@ -8,7 +8,19 @@ import { Server as HttpServer } from 'http';
 import { Server as SocketServer, Socket } from 'socket.io';
 import { verifyAccessToken } from '../utils/jwt';
 import type { ITokenPayload } from '@SkillSeal/shared';
+import { getRedis } from '../config/redis';
 import logger from '../utils/logger';
+
+// BROKEN-09: Redis presence tracking. We SET presence:{userId} on each socket
+// connect with a 5-minute TTL refresh, and DEL on disconnect *only* if no
+// other sockets remain for that user (handled via a counter). The TTL is a
+// safety net for ungraceful disconnects where the disconnect handler doesn't
+// fire (server crash, network partition). messages.service.ts:getUserMini
+// reads these keys to populate isOnline.
+const PRESENCE_PREFIX = 'presence:';
+const PRESENCE_TTL_SEC = 5 * 60;
+function presenceKey(userId: string) { return `${PRESENCE_PREFIX}${userId}`; }
+function presenceCountKey(userId: string) { return `${PRESENCE_PREFIX}count:${userId}`; }
 
 // ── Event constants ───────────────────────────────────────────────────────────
 
@@ -121,6 +133,17 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     socket.join(`user:${userId}`);
     logger.info(`[socket] Connected: userId=${userId} socketId=${socket.id}`);
 
+    // BROKEN-09: mark this user as online in Redis. The counter tracks how
+    // many open sockets they have so we only clear the presence key when
+    // the last one disconnects.
+    void (async () => {
+      try {
+        const redis = getRedis();
+        await redis.incr(presenceCountKey(userId));
+        await redis.set(presenceKey(userId), '1', 'EX', PRESENCE_TTL_SEC);
+      } catch (err) { logger.warn(`[socket] presence set failed: ${(err as Error).message}`); }
+    })();
+
     // Notify network that user is online
     emitToUser(userId, SOCKET_EVENTS.USER_ONLINE, { userId });
 
@@ -159,8 +182,18 @@ export function initSocket(httpServer: HttpServer): SocketServer {
     // ── Disconnect ───────────────────────────────────────────────────────
     socket.on('disconnect', (reason) => {
       logger.info(`[socket] Disconnected: userId=${userId} socketId=${socket.id} reason=${reason}`);
-      // Let the client's auto-reconnect handle re-joining rooms
-      emitToUser(userId, SOCKET_EVENTS.USER_OFFLINE, { userId });
+      // BROKEN-09: clear Redis presence only if this was the user's last socket.
+      void (async () => {
+        try {
+          const redis = getRedis();
+          const remaining = await redis.decr(presenceCountKey(userId));
+          if (remaining <= 0) {
+            await redis.del(presenceKey(userId));
+            await redis.del(presenceCountKey(userId));
+            emitToUser(userId, SOCKET_EVENTS.USER_OFFLINE, { userId });
+          }
+        } catch (err) { logger.warn(`[socket] presence clear failed: ${(err as Error).message}`); }
+      })();
     });
 
     // ── Error handler ────────────────────────────────────────────────────

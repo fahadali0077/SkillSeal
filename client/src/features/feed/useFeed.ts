@@ -1,12 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // useFeed.ts  –  React Query hooks for feed, posts, and hashtags
 // ─────────────────────────────────────────────────────────────────────────────
+import { useEffect } from 'react';
 import {
   useInfiniteQuery, useMutation, useQueryClient, useQuery,
 } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import type { IPostCard, ReactionType } from '@SkillSeal/shared';
 import { feedApi, type CreatePostInput } from './feedApi';
+import { getSocket } from '../../lib/socketClient';
 
 // ── User posts (profile page) ─────────────────────────────────────────────────
 
@@ -23,6 +25,18 @@ export function useUserPosts(userId: string) {
 // ── Feed (infinite scroll) ────────────────────────────────────────────────────
 
 export function useInfiniteFeed() {
+  const qc = useQueryClient();
+
+  // HIGH-01: live-update feed when the server emits 'new_post'. Without this,
+  // users only see new posts after a manual refresh.
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    const handler = () => qc.invalidateQueries({ queryKey: ['feed'] });
+    socket.on('new_post', handler);
+    return () => { socket.off('new_post', handler); };
+  }, [qc]);
+
   return useInfiniteQuery({
     queryKey: ['feed'],
     queryFn: ({ pageParam }) => feedApi.getFeed(pageParam as number),

@@ -54,10 +54,13 @@ export async function computeCompositeScore(sessionId:string){
   if(strikeCount>=2)deductions+=10;
   const behaviorScore=Math.max(0,100-deductions);
 
-  // AI score
+  // AI score (CRIT-06: aiScore on the Answer document is the canonical
+  // authenticity percentage 0-100, higher = more human. Sum directly.)
   const microAnswers=answers.filter(a=>a.questionType==='micro-theory');
-  const aiScore=microAnswers.length===0?100:Math.round((1-microAnswers.reduce((s,a)=>s+(a.aiScore??0),0)/microAnswers.length)*100);
-  const aiProbability=microAnswers.length===0?0:microAnswers.reduce((s,a)=>s+(a.aiScore??0),0)/microAnswers.length;
+  const aiScore=microAnswers.length===0?100:Math.round(microAnswers.reduce((s,a)=>s+(a.aiScore??100),0)/microAnswers.length);
+  // aiProbability is the raw probability the answers were AI-generated (0–1).
+  // Derived from the authenticity score: probability = 1 − (authenticity / 100).
+  const aiProbability=microAnswers.length===0?0:Math.max(0,Math.min(1,1-aiScore/100));
 
   const compositeScore=Math.round(conceptScore*0.40+speedScore*0.20+consistencyScore*0.15+behaviorScore*0.15+aiScore*0.10);
 

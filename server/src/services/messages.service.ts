@@ -13,6 +13,7 @@ import type { IUserDocument } from '../models/User.model';
 import { Connection }from '../models/Connection.model';
 import { AppError }  from '../middleware/error.middleware';
 import { emitToUser, SOCKET_EVENTS } from '../socket/socket';
+import { getRedis } from '../config/redis';
 import logger        from '../utils/logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -80,8 +81,20 @@ function serializeMessage(doc: IMessageDocument): IMessageOut {
 }
 
 async function getUserMini(userId: string): Promise<IParticipantMini> {
+  // BROKEN-09: presence is tracked in Redis by socket.ts (presence:{userId}
+  // SET on connect, DEL on disconnect of the last socket). Read it here so
+  // recipient mini-cards reflect real online status instead of a constant false.
+  let isOnline = false;
+  try {
+    const redis = getRedis();
+    isOnline = (await redis.exists(`presence:${userId}`)) === 1;
+  } catch {
+    // If Redis is unavailable, fall back to offline rather than blowing up
+    // the entire thread list.
+    isOnline = false;
+  }
   const u = await User.findById(userId).lean<IUserDocument>();
-  if (!u) return { _id: userId, fullName: 'Unknown', firstName: '', lastName: '', headline: '', profilePhoto: '', customUrl: '', isOnline: false };
+  if (!u) return { _id: userId, fullName: 'Unknown', firstName: '', lastName: '', headline: '', profilePhoto: '', customUrl: '', isOnline };
   return {
     _id:          u._id.toString(),
     fullName:     `${u.firstName} ${u.lastName}`,
@@ -90,7 +103,7 @@ async function getUserMini(userId: string): Promise<IParticipantMini> {
     headline:     u.headline ?? '',
     profilePhoto: u.profilePhoto ?? '',
     customUrl:    u.customUrl ?? '',
-    isOnline:     false, // real-time presence tracked via Socket.io
+    isOnline,
   };
 }
 

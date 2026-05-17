@@ -59,7 +59,10 @@ async function enrichSkills(
  *   employment type match  → +0.5
  * Normalised to 0–100.
  */
-async function computeMatchScore(
+// HIGH-06: exported so users.service.ts searchUsers() can compute a real
+// match score for a candidate against a specific job, rather than the previous
+// naive `Math.min(100, verifiedSkills.length * 20)` heuristic.
+export async function computeMatchScore(
   jobDoc: IJobDocument,
   viewer?: IUserDocument,
 ): Promise<number> {

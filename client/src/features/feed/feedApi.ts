@@ -85,6 +85,44 @@ export const feedApi = {
   getComments: (postId: string) =>
     apiFetch<CommentOut[]>(`${API_ORIGIN}/api/v1/posts/${postId}/comments`),
 
+  // HIGH-04: scrape Open Graph tags for a URL
+  scrapeLink: (url: string) =>
+    apiFetch<{ title: string; description: string; imageUrl: string; siteName: string }>(
+      `${API_ORIGIN}/api/v1/posts/scrape-link`,
+      { method: 'POST', body: JSON.stringify({ url }) },
+    ),
+
+  // HIGH-07: delete a comment
+  deleteComment: (postId: string, commentId: string) =>
+    apiFetch<null>(`${API_ORIGIN}/api/v1/posts/${postId}/comments/${commentId}`, {
+      method: 'DELETE',
+    }),
+
+  // HIGH-08: toggle like on a comment
+  likeComment: (postId: string, commentId: string) =>
+    apiFetch<{ likeCount: number; hasLiked: boolean }>(
+      `${API_ORIGIN}/api/v1/posts/${postId}/comments/${commentId}/like`,
+      { method: 'POST' },
+    ),
+
+  // BROKEN-03: upload image file (used by CreatePostModal image tab).
+  uploadImage: async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    // apiFetch sets JSON Content-Type by default; FormData uploads need the
+    // browser to pick a multipart boundary, so use a bare fetch here.
+    const token = localStorage.getItem('accessToken') ?? '';
+    const res = await fetch(`${API_ORIGIN}/api/v1/users/me/upload-photo`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    const json = await res.json();
+    return { url: json?.data?.photoUrl ?? '' };
+  },
+
   // Hashtags
   getHashtagPosts: (tag: string, page: number) =>
     apiFetch<{ posts: IPostCard[]; total: number }>(

@@ -13,6 +13,7 @@ const REACTIONS: { type: ReactionType; emoji: string; label: string }[] = [
   { type: 'love', emoji: '❤️', label: 'Love' },
   { type: 'insightful', emoji: '💡', label: 'Insightful' },
   { type: 'curious', emoji: '🤔', label: 'Curious' },
+  { type: 'funny', emoji: '😄', label: 'Funny' },
 ];
 
 const REACTION_COLORS: Record<ReactionType, string> = {

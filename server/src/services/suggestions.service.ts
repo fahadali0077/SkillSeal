@@ -107,13 +107,18 @@ export async function getPeopleYouMayKnow(viewerId: string): Promise<SuggestedUs
     .slice(0, 100)
     .map(([id]) => id);
 
-  const randomCandidates = await User.find({
-    _id: { $nin: [...excludeIds].map((id) => new Types.ObjectId(id)) },
-    emailVerified: true,
-  })
-    .select('_id')
-    .limit(200)
-    .lean<{ _id: Types.ObjectId }[]>();
+  // PARTIAL-02: use $sample so the random candidate pool is genuinely random
+  // each request. The previous `.find().limit(200)` returned the same 200
+  // documents (insertion order) every time, which meant new users always saw
+  // the same suggestions and suggestion quality decayed for active accounts.
+  const randomCandidates = await User.aggregate<{ _id: Types.ObjectId }>([
+    { $match: {
+      _id: { $nin: [...excludeIds].map((id) => new Types.ObjectId(id)) },
+      emailVerified: true,
+    } },
+    { $sample: { size: 200 } },
+    { $project: { _id: 1 } },
+  ]);
 
   const candidateIdSet = new Set([
     ...mutualCandidates,

@@ -150,6 +150,50 @@ export default function PostCard({ post, animate = false }: Props) {
         {/* ── Content ─────────────────────────────────────────────────── */}
         <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{post.content}</p>
 
+        {/* HIGH-22 / BROKEN-07: Read more link when content was truncated server-side */}
+        {post.isTruncated && (
+          <Link
+            to={`/posts/${post._id}`}
+            className="inline-block mt-1 text-xs text-brand hover:underline font-medium"
+          >
+            Read more →
+          </Link>
+        )}
+
+        {/* HIGH-09: nested original post when this is a repost */}
+        {post.isRepost && post.originalPost && (
+          <div className="mt-3 border border-gray-200 rounded-xl p-3 bg-gray-50">
+            <div className="flex items-center gap-2 mb-2">
+              <Avatar src={post.originalPost.author.profilePhoto} name={post.originalPost.author.fullName} />
+              <div className="min-w-0">
+                <Link
+                  to={`/u/${post.originalPost.author.customUrl || post.originalPost.author._id}`}
+                  className="font-semibold text-sm text-gray-900 hover:underline truncate block"
+                >
+                  {post.originalPost.author.fullName}
+                </Link>
+                <p className="text-xs text-gray-400 truncate">{post.originalPost.author.headline}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{post.originalPost.content}</p>
+            {post.originalPost.isTruncated && (
+              <Link
+                to={`/posts/${post.originalPost._id}`}
+                className="inline-block mt-1 text-xs text-brand hover:underline font-medium"
+              >
+                Read more →
+              </Link>
+            )}
+            {post.originalPost.imageUrls?.length > 0 && (
+              <img
+                src={post.originalPost.imageUrls[0]}
+                alt=""
+                className="w-full max-h-64 object-cover rounded-lg mt-2"
+              />
+            )}
+          </div>
+        )}
+
         {/* Tags */}
         {post.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">

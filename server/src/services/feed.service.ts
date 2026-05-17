@@ -10,7 +10,10 @@ import { User } from '../models/User.model';
 import type { IUserDocument } from '../models/User.model';
 import { Verification } from '../models/Verification.model';
 import { getRedis } from '../config/redis';
-import { getIO, SOCKET_EVENTS } from '../config/socket';
+// UX-17: import directly from ../socket/socket to match the pattern used by
+// all other services. The config/socket re-export shim was a legacy import
+// path kept only for one file.
+import { getIO, SOCKET_EVENTS } from '../socket/socket';
 import { AppError } from '../middleware/error.middleware';
 import logger from '../utils/logger';
 import type {
@@ -34,9 +37,107 @@ const FEED_TTL = 5 * 60;        // 5 minutes
 const FEED_WINDOW = 72 * 60 * 60 * 1000; // 72 h in ms
 
 function feedKey(userId: string) { return `feed:${userId}`; }
+
+/**
+ * Bust the cached feed pages for the given user IDs. Must be called after
+ * EVERY Post mutation that changes content visible to other users' feeds —
+ * create, delete, repost, vote, react, comment — otherwise stale pages will
+ * keep being served from Redis until the 5-minute TTL expires.
+ * UX-20: documented for developer ergonomics.
+ */
 function bustFeedKeys(userIds: string[]) {
   const redis = getRedis();
   return Promise.all(userIds.map((id) => redis.del(feedKey(id))));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HIGH-04: Open Graph link preview scraper
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fetches a URL and extracts Open Graph + standard meta tags into an
+ * ILinkPreview shape. Used by POST /posts/scrape-link.
+ *
+ * Implementation note: a regex-based OG extractor is intentional here — a full
+ * HTML parser (cheerio/jsdom) is overkill for a few <meta> tags. The function
+ * is defensive (timeout, byte cap, safe absolute-URL coercion for og:image).
+ */
+export async function scrapeLinkPreview(url: string): Promise<ILinkPreview> {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new AppError('Invalid URL.', 400, true);
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new AppError('Only http(s) URLs supported.', 400, true);
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  let html = '';
+  try {
+    const res = await fetch(parsed.toString(), {
+      signal: controller.signal,
+      redirect: 'follow',
+      headers: { 'User-Agent': 'SkillSealBot/1.0 (+https://skillseal.app)' },
+    });
+    if (!res.ok) {
+      return { title: '', description: '', imageUrl: '', siteName: parsed.hostname };
+    }
+    // Cap at ~512KB to avoid pulling huge pages.
+    const reader = res.body?.getReader();
+    if (reader) {
+      const decoder = new TextDecoder();
+      let total = 0;
+      while (total < 512 * 1024) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        html += decoder.decode(value, { stream: true });
+        total += value.byteLength;
+      }
+      html += decoder.decode();
+    } else {
+      html = await res.text();
+    }
+  } catch (err) {
+    logger.warn(`[scrapeLink] fetch failed for ${parsed.toString()}: ${(err as Error).message}`);
+    return { title: '', description: '', imageUrl: '', siteName: parsed.hostname };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  const metaContent = (selector: RegExp): string => {
+    const m = html.match(selector);
+    return m?.[1]?.trim() ?? '';
+  };
+
+  // Open Graph tags use either order: <meta property="og:title" content="..."> or content first.
+  const ogTitle = metaContent(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']+)["']/i)
+    || metaContent(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
+  const ogDesc = metaContent(/<meta[^>]+property=["']og:description["'][^>]*content=["']([^"']+)["']/i)
+    || metaContent(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:description["']/i);
+  const ogImage = metaContent(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
+    || metaContent(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
+  const ogSite = metaContent(/<meta[^>]+property=["']og:site_name["'][^>]*content=["']([^"']+)["']/i)
+    || metaContent(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:site_name["']/i);
+
+  // Fallbacks
+  const stdTitle = ogTitle || metaContent(/<title[^>]*>([^<]+)<\/title>/i);
+  const stdDesc = ogDesc || metaContent(/<meta[^>]+name=["']description["'][^>]*content=["']([^"']+)["']/i);
+
+  // Resolve image to an absolute URL.
+  let imageUrl = ogImage;
+  if (imageUrl) {
+    try { imageUrl = new URL(imageUrl, parsed).toString(); } catch { imageUrl = ''; }
+  }
+
+  return {
+    title: stdTitle.slice(0, 300),
+    description: stdDesc.slice(0, 600),
+    imageUrl,
+    siteName: (ogSite || parsed.hostname).slice(0, 200),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -95,8 +196,24 @@ async function serializePost(
     ? { title: doc.linkPreview.title ?? '', description: doc.linkPreview.description ?? '', imageUrl: doc.linkPreview.imageUrl ?? '', siteName: doc.linkPreview.siteName ?? '' }
     : null;
 
+  // CRIT-10 / HIGH-09: when this post is a repost, hydrate the original
+  // post so the feed/detail UI can render the nested content. If the original
+  // has been deleted or removed, originalPost will be null.
+  let originalPost: IPost | null = null;
+  if (doc.isRepost && doc.originalPostId) {
+    const orig = await Post.findOne({ _id: doc.originalPostId, isDeleted: false });
+    if (orig) {
+      // Recursion guard: never serialize a repost-of-a-repost beyond one level.
+      // We flatten so the embedded original is treated as a regular post.
+      const flat = orig.toObject() as IPostDocument;
+      flat.isRepost = false;
+      flat.originalPostId = null;
+      originalPost = await serializePost(flat, viewerId);
+    }
+  }
+
   return {
-    _id: doc._id.toString(),
+    _id: doc._id!.toString(),
     author,
     type: doc.type as PostType,
     visibility: 'public',
@@ -114,20 +231,23 @@ async function serializePost(
     isVerificationAnnouncement: doc.isVerificationAnnouncement ?? false,
     verificationBadge: null,
     isDeleted: doc.isDeleted ?? false,
-    isRepost: (doc as any).isRepost ?? false,
-    originalPostId: (doc as any).originalPostId?.toString() ?? null,
+    isRepost: doc.isRepost ?? false,
+    originalPostId: doc.originalPostId?.toString() ?? null,
+    originalPost,
     createdAt: doc.createdAt.toISOString(),
     updatedAt: doc.updatedAt.toISOString(),
   };
 }
 
 function toPostCard(post: IPost): IPostCard {
+  const fullLen = post.content?.length ?? 0;
   return {
     _id: post._id,
     author: post.author,
     type: post.type,
     visibility: post.visibility,
     content: post.content.slice(0, 300),
+    isTruncated: fullLen > 300,
     imageUrls: post.imageUrls,
     linkPreview: post.linkPreview ? { title: post.linkPreview.title, imageUrl: post.linkPreview.imageUrl, siteName: post.linkPreview.siteName } : null,
     hasPoll: !!post.pollOptions,
@@ -139,6 +259,8 @@ function toPostCard(post: IPost): IPostCard {
     repostCount: post.repostCount,
     isVerificationAnnouncement: post.isVerificationAnnouncement,
     verificationBadge: null,
+    isRepost: post.isRepost ?? false,
+    originalPost: post.originalPost ? toPostCard(post.originalPost) : null,
     createdAt: post.createdAt,
   };
 }
@@ -216,7 +338,7 @@ export async function createPost(authorId: string, input: CreatePostInput): Prom
 
   // Emit socket event so open feeds refresh
   try {
-    getIO().emit('new_post', { authorId, postId: doc._id.toString() });
+    getIO().emit('new_post', { authorId, postId: doc._id!.toString() });
   } catch { /* socket not initialised in tests */ }
 
   return serializePost(doc, authorId);
@@ -243,13 +365,16 @@ export async function deletePost(postId: string, userId: string): Promise<void> 
   if (doc.authorId.toString() !== userId) throw new AppError('Forbidden.', 403, true);
   doc.isDeleted = true;
   await doc.save();
+  // HIGH-17: bust the feed cache for the author so the deleted post does not
+  // continue serving from Redis for up to 5 minutes after deletion.
+  await bustFeedKeys([doc.authorId.toString()]);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 4 & 5. Reactions (upsert / remove)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const VALID_REACTIONS: ReactionType[] = ['like', 'celebrate', 'support', 'love', 'insightful', 'curious' as ReactionType];
+const VALID_REACTIONS: ReactionType[] = ['like', 'celebrate', 'support', 'love', 'insightful', 'curious', 'funny'];
 
 export async function upsertReaction(
   postId: string,
@@ -341,19 +466,67 @@ export async function addComment(
     parentCommentId: input.parentCommentId
       ? new Types.ObjectId(input.parentCommentId)
       : null,
-  } as never);
+  });
   await doc.save();
 
   const saved = doc.comments[doc.comments.length - 1];
   const author = await buildAuthor(userId);
+  // Non-null assertions safe: Mongoose guarantees _id and timestamps after .save().
   return {
-    _id: saved._id.toString(),
+    _id: saved._id!.toString(),
     authorId: userId,
     author,
     content: input.content.trim(),
     parentCommentId: input.parentCommentId ?? null,
-    createdAt: saved.createdAt.toISOString(),
+    createdAt: saved.createdAt!.toISOString(),
   };
+}
+
+// HIGH-07: delete a comment from a post. Author of the comment only.
+export async function deleteComment(
+  postId: string,
+  commentId: string,
+  userId: string,
+): Promise<void> {
+  const post = await Post.findOne({ _id: postId, isDeleted: false });
+  if (!post) throw new AppError('Post not found.', 404, true);
+  const comment = post.comments.find((c) => c._id!.toString() === commentId);
+  if (!comment) throw new AppError('Comment not found.', 404, true);
+  if (comment.authorId.toString() !== userId) {
+    throw new AppError('Only the comment author can delete this comment.', 403, true);
+  }
+  await Post.updateOne(
+    { _id: postId },
+    { $pull: { comments: { _id: new Types.ObjectId(commentId) } } },
+  );
+}
+
+// HIGH-08: toggle a like on a single comment. Returns the new like count and
+// whether the requesting user has now liked it.
+export async function toggleCommentLike(
+  postId: string,
+  commentId: string,
+  userId: string,
+): Promise<{ likeCount: number; hasLiked: boolean }> {
+  const post = await Post.findOne({ _id: postId, isDeleted: false });
+  if (!post) throw new AppError('Post not found.', 404, true);
+  const comment = post.comments.find((c) => c._id!.toString() === commentId);
+  if (!comment) throw new AppError('Comment not found.', 404, true);
+
+  const uid = new Types.ObjectId(userId);
+  const hadLiked = comment.likes.some((l) => l.toString() === userId);
+  if (hadLiked) {
+    await Post.updateOne(
+      { _id: postId, 'comments._id': new Types.ObjectId(commentId) },
+      { $pull: { 'comments.$.likes': uid } },
+    );
+    return { likeCount: comment.likes.length - 1, hasLiked: false };
+  }
+  await Post.updateOne(
+    { _id: postId, 'comments._id': new Types.ObjectId(commentId) },
+    { $addToSet: { 'comments.$.likes': uid } },
+  );
+  return { likeCount: comment.likes.length + 1, hasLiked: true };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -503,65 +676,82 @@ export async function getFeed(
     return { posts: [], page, hasMore: false, nextPage: null };
   }
 
-  // ── 3. Fetch raw candidates (72h window) ──────────────────────────────────
+  // ── 3. HIGH-03: score + paginate inside the aggregation pipeline.
+  // The previous implementation loaded 500 documents into Node.js per request,
+  // re-fetched the same 500 on every page, and returned an incorrect hasMore
+  // signal when more documents existed beyond the 500-doc window. The pipeline
+  // now scores in MongoDB and uses $facet for total + page in one round-trip.
   const since = new Date(Date.now() - FEED_WINDOW);
-  const candidates = await Post.find({
-    authorId: { $in: networkIds },
-    isDeleted: false,
-    createdAt: { $gte: since },
-  })
-    .sort({ createdAt: -1 })
-    .limit(500)  // fetch generous pool, then score
-    .lean<IPostDocument[]>();
-
-  // ── 4. Build author verified-skill lookup ─────────────────────────────────
-  const authorIds = [...new Set(candidates.map((p) => p.authorId.toString()))];
-  const authorDocs = await User.find({ _id: { $in: authorIds } })
-    .select('skills')
-    .lean<{ _id: Types.ObjectId; skills: { status: string }[] }[]>();
-
-  const authorVerifiedMap = new Map(
-    authorDocs.map((a) => [
-      a._id.toString(),
-      a.skills.some((s) => s.status === 'verified'),
-    ]),
-  );
-
-  // ── 5. Score each post ────────────────────────────────────────────────────
+  const connectionObjectIds = connectionIds.map((id) => new Types.ObjectId(id));
+  const followingObjectIds = followingIds.map((id) => new Types.ObjectId(id));
   const now = Date.now();
-
-  const scored = candidates.map((doc) => {
-    const hoursAge = (now - doc.createdAt.getTime()) / 3_600_000;
-    const recencyScore = Math.exp(-0.5 * hoursAge);
-
-    const likeCount = doc.likes?.length ?? 0;
-    const commentCount = doc.comments?.length ?? 0;
-    const repostCount = doc.reposts?.length ?? 0;
-    const engagementScore = Math.min((likeCount + commentCount * 2 + repostCount * 3) / 100, 1);
-
-    const aid = doc.authorId.toString();
-    const isConnection = connectionIds.includes(aid);
-    const isFollowing = followingIds.includes(aid);
-    const relationshipWeight = isConnection ? 2.0 : isFollowing ? 1.0 : 0.5;
-
-    const verifiedBonus = authorVerifiedMap.get(aid) ? 1.25 : 1.0;
-    const certBonus = doc.isVerificationAnnouncement ? 1.5 : 1.0;
-
-    const finalScore = recencyScore * (engagementScore + 0.1) * relationshipWeight * verifiedBonus * certBonus;
-
-    return { doc, finalScore };
-  });
-
-  // ── 6. Sort, paginate ─────────────────────────────────────────────────────
-  scored.sort((a, b) => b.finalScore - a.finalScore);
-
   const skip = (page - 1) * limit;
-  const paged = scored.slice(skip, skip + limit);
-  const hasMore = skip + limit < scored.length;
 
-  // ── 7. Serialize ──────────────────────────────────────────────────────────
+  // Resolve which authors have ≥1 verified skill (used for verifiedBonus).
+  const authorDocs = await User.find({
+    _id: { $in: networkIds },
+    'skills.status': 'verified',
+  })
+    .select('_id')
+    .lean<{ _id: Types.ObjectId }[]>();
+  const verifiedAuthorIds = authorDocs.map((a) => a._id);
+
+  // Typed as PipelineStage[] so Mongoose's aggregate() overload picks the right
+  // signature. Cast through `unknown` because TypeScript can't reconcile our
+  // literal stage definitions with the discriminated PipelineStage union
+  // without spelling out each stage's variant — these are well-formed at runtime.
+  const pipeline = ([
+    { $match: { authorId: { $in: networkIds }, isDeleted: false, createdAt: { $gte: since } } },
+    { $addFields: {
+      _hoursAge: { $divide: [{ $subtract: [now, '$createdAt'] }, 3_600_000] },
+      _likeCount: { $size: { $ifNull: ['$likes', []] } },
+      _commentCount: { $size: { $ifNull: ['$comments', []] } },
+      _repostCount: { $size: { $ifNull: ['$reposts', []] } },
+      _isConnection: { $in: ['$authorId', connectionObjectIds] },
+      _isFollowing: { $in: ['$authorId', followingObjectIds] },
+      _authorVerified: { $in: ['$authorId', verifiedAuthorIds] },
+    } },
+    { $addFields: {
+      _recencyScore: { $exp: { $multiply: [-0.5, '$_hoursAge'] } },
+      _engagementScore: {
+        $min: [
+          1,
+          { $divide: [
+            { $add: ['$_likeCount', { $multiply: ['$_commentCount', 2] }, { $multiply: ['$_repostCount', 3] }] },
+            100,
+          ] },
+        ],
+      },
+      _relationshipWeight: { $cond: ['$_isConnection', 2.0, { $cond: ['$_isFollowing', 1.0, 0.5] }] },
+      _verifiedBonus: { $cond: ['$_authorVerified', 1.25, 1.0] },
+      _certBonus: { $cond: [{ $eq: ['$isVerificationAnnouncement', true] }, 1.5, 1.0] },
+    } },
+    { $addFields: {
+      finalScore: {
+        $multiply: [
+          '$_recencyScore',
+          { $add: ['$_engagementScore', 0.1] },
+          '$_relationshipWeight',
+          '$_verifiedBonus',
+          '$_certBonus',
+        ],
+      },
+    } },
+    { $sort: { finalScore: -1 } },
+    { $facet: {
+      total: [{ $count: 'count' }],
+      page: [{ $skip: skip }, { $limit: limit }],
+    } },
+  ] as unknown) as Parameters<typeof Post.aggregate>[0];
+
+  const aggResult = await Post.aggregate<{ total: { count: number }[]; page: IPostDocument[] }>(pipeline);
+  const totalCount = aggResult[0]?.total?.[0]?.count ?? 0;
+  const pageDocs = aggResult[0]?.page ?? [];
+  const hasMore = skip + pageDocs.length < totalCount;
+
+  // ── 4. Serialize ──────────────────────────────────────────────────────────
   const serialized = await Promise.all(
-    paged.map((item) => serializePost(item.doc as unknown as IPostDocument, userId)),
+    pageDocs.map((doc) => serializePost(doc as IPostDocument, userId)),
   );
 
   const result: FeedResult = {
@@ -571,12 +761,12 @@ export async function getFeed(
     nextPage: hasMore ? page + 1 : null,
   };
 
-  // ── 8. Cache page 1 ───────────────────────────────────────────────────────
+  // ── 5. Cache page 1 ───────────────────────────────────────────────────────
   if (page === 1) {
     await redis.set(feedKey(userId), JSON.stringify(result), 'EX', FEED_TTL);
   }
 
-  logger.info(`[feed] Computed ${result.posts.length} posts for userId=${userId} page=${page}`);
+  logger.info(`[feed] Computed ${result.posts.length} posts for userId=${userId} page=${page} (total=${totalCount})`);
   return result;
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -621,7 +811,7 @@ export async function getComments(postId: string): Promise<ICommentOut[]> {
     comments.map(async (c: any) => {
       const author = await buildAuthor(c.authorId.toString());
       return {
-        _id:             c._id.toString(),
+        _id:             c._id!.toString(),
         authorId:        c.authorId.toString(),
         author,
         content:         c.content ?? '',

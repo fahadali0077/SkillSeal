@@ -12,7 +12,7 @@ function requireRedis(_req: Request, res: Response, next: NextFunction): void {
   }
   next();
 }
-import { startSession, submitAnswer, recordStrike, getSessionState, abandonSession } from '../services/assessment/session.service';
+import { startSession, recordStrike, getSessionState, abandonSession } from '../services/assessment/session.service';
 import { computeCompositeScore } from '../services/assessment/scoring.service';
 import { issueCertificate } from '../services/assessment/certificate.service';
 import { Session } from '../models/Session.model';
@@ -22,6 +22,7 @@ import { Verification } from '../models/Verification.model';
 import { Skill } from '../models/Skill.model';
 import mongoose from 'mongoose';
 import type { SkillTier } from '@SkillSeal/shared';
+import logger from '../utils/logger';
 const router = Router();
 router.use(authenticate);
 router.use(requireRedis);
@@ -34,7 +35,8 @@ function handle(err: unknown, res: Response) {
     sendError(res, err.message, err.statusCode, code);
   } else {
     const message = err instanceof Error ? err.message : String(err);
-    console.error('[assessment route] Unhandled error:', err);
+    // UX-19: structured logger replaces console.error.
+    logger.error('[assessment route] Unhandled error:', err);
     sendError(res, `Session error: ${message}`, 500, ApiErrorCode.INTERNAL_ERROR);
   }
 }
@@ -44,9 +46,9 @@ router.post('/abandon', async (req: AuthRequest, res: Response) => {
 router.post('/start', async (req: AuthRequest, res: Response) => {
   try { const { skillId, tier } = req.body as { skillId?: string; tier?: string }; if (!skillId || !tier) { sendError(res, 'skillId and tier required.', 400, ApiErrorCode.VALIDATION_ERROR); return; } const r = await startSession({ userId: req.user!.userId, skillId, tier: tier as SkillTier }); sendSuccess(res, r, 'Session started', 201); } catch (err) { handle(err, res); }
 });
-router.post('/:id/answer', async (req: AuthRequest, res: Response) => {
-  try { const r = await submitAnswer({ sessionId: req.params['id']!, ...req.body as Record<string, unknown> } as Parameters<typeof submitAnswer>[0]); sendSuccess(res, r, r.isComplete ? 'Session complete' : 'Answer recorded'); } catch (err) { handle(err, res); }
-});
+// HIGH-02: legacy POST /:id/answer route removed. All answer submissions go
+// through POST /api/v1/answers/submit (see answers.routes.ts) so field naming
+// (timeTakenMs, submittedAt) is consistent and validated in exactly one place.
 router.post('/:id/strike', async (req: AuthRequest, res: Response) => {
   try { const { eventType, details } = req.body as { eventType: string; details?: string }; const r = await recordStrike(req.params['id']!, eventType, details); sendSuccess(res, r, r.terminated ? 'Session terminated' : 'Strike recorded'); } catch (err) { handle(err, res); }
 });

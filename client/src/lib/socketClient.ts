@@ -1,7 +1,7 @@
 import { API_ORIGIN } from './apiBase';
 import { io, type Socket } from 'socket.io-client';
 let socket: Socket | null = null;
-export const SOCKET_EVENTS = { SESSION_ACTION:'session_action', NOTIFICATION:'notification', JOIN_ROOM:'join_room', NEW_MESSAGE:'new_message', TYPING:'typing', STOP_TYPING:'stop_typing', TYPING_START:'typing_start', TYPING_STOP:'typing_stop', USER_ONLINE:'user_online', USER_OFFLINE:'user_offline' } as const;
+export const SOCKET_EVENTS = { SESSION_ACTION:'session_action', NOTIFICATION:'notification', JOIN_ROOM:'join_room', NEW_MESSAGE:'new_message', TYPING:'typing', STOP_TYPING:'stop_typing', TYPING_START:'typing_start', TYPING_STOP:'typing_stop', USER_ONLINE:'user_online', USER_OFFLINE:'user_offline', READ_RECEIPT:'read_receipt' } as const;
 export function connectSocket(token:string):void{
   if(socket?.connected)return;
   socket=io(API_ORIGIN || '/',{auth:{token},transports:['websocket','polling'],reconnection:true,reconnectionAttempts:5,reconnectionDelay:2000});

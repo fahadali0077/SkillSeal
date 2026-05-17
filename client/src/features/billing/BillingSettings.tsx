@@ -18,13 +18,15 @@ export default function BillingSettings(){
           {billing.currentPeriodEnd&&<p className="text-sm text-gray-500 flex items-center gap-1.5 mt-2"><Calendar size={13}/>Next billing: {new Date(billing.currentPeriodEnd).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})}</p>}
           {billing.additionalCredits>0&&<p className="text-sm text-brand flex items-center gap-1.5 mt-1"><Zap size={13}/>{billing.additionalCredits} assessment credit{billing.additionalCredits!==1?'s':''} remaining</p>}
         </div>
-        {isPaid?(<button onClick={()=>portal.mutate()} disabled={portal.isPending} className="shrink-0 flex items-center gap-1.5 text-sm font-medium border border-gray-200 hover:border-brand text-gray-600 hover:text-brand px-4 py-2 rounded-xl">{portal.isPending?<Loader2 size={14} className="animate-spin"/>:<ExternalLink size={14}/>}Manage</button>):(<Link to="/pricing" className="shrink-0 flex items-center gap-1.5 text-sm font-semibold bg-brand text-white px-4 py-2 rounded-xl hover:bg-brand-dark"><Zap size={14}/>Upgrade</Link>)}
+        {/* BROKEN-01: Stripe integration is not yet wired — show a disabled
+           coming-soon affordance instead of buttons that hit a 503. */}
+        {isPaid?(<button disabled title="Subscription management launches soon" className="shrink-0 flex items-center gap-1.5 text-sm font-medium border border-gray-200 text-gray-400 px-4 py-2 rounded-xl cursor-not-allowed bg-gray-50"><ExternalLink size={14}/>Manage (coming soon)</button>):(<Link to="/pricing" className="shrink-0 flex items-center gap-1.5 text-sm font-semibold border border-amber-200 bg-amber-50 text-amber-700 px-4 py-2 rounded-xl"><Zap size={14}/>Plans launching soon</Link>)}
       </div>
       <div className="mt-5 pt-5 border-t border-gray-100 grid grid-cols-2 gap-2">
         {FEATURES.map(f=>{const enabled=billing.features[f.key];return(<div key={f.key} className={`flex items-center gap-2 text-sm ${enabled?'':'opacity-40'}`}>{enabled?<CheckCircle2 size={14} className="text-green-500 shrink-0"/>:<XCircle size={14} className="text-gray-300 shrink-0"/>}<span className={enabled?'text-gray-700':'text-gray-400'}>{f.label}</span></div>);})}
       </div>
     </div>
-    {!isPaid&&<div className="card p-5"><h3 className="font-semibold text-gray-900 text-sm mb-1 flex items-center gap-2"><ShieldCheck size={15} className="text-brand"/>Need more verifications?</h3><p className="text-sm text-gray-500 mb-4">Free plan includes 2/year. Buy credits or upgrade for unlimited access.</p><div className="flex gap-3"><Link to="/pricing" className="btn-primary text-sm">Upgrade to Pro</Link><Link to="/pricing" className="btn-secondary text-sm">Buy credit ($5)</Link></div></div>}
-    {isPaid&&<p className="text-xs text-gray-400 text-center">View invoices in the <button onClick={()=>portal.mutate()} className="text-brand hover:underline">Stripe customer portal</button>.</p>}
+    {!isPaid&&<div className="card p-5"><h3 className="font-semibold text-gray-900 text-sm mb-1 flex items-center gap-2"><ShieldCheck size={15} className="text-brand"/>Need more verifications?</h3><p className="text-sm text-gray-500 mb-4">Free plan includes 2/year. Paid plans launch soon.</p><div className="flex gap-3"><button disabled className="btn-primary text-sm opacity-50 cursor-not-allowed">Upgrade (coming soon)</button><button disabled className="btn-secondary text-sm opacity-50 cursor-not-allowed">Buy credit (coming soon)</button></div></div>}
+    {isPaid&&<p className="text-xs text-gray-400 text-center">Stripe customer portal launches soon — invoice access will be enabled then.</p>}
   </div>);
 }

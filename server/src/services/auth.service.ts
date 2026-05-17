@@ -75,9 +75,15 @@ function toPrivateUser(doc: IUserDocument): IUserPrivate {
   };
 }
 
-/** Redis key for brute-force tracking */
-function bruteKey(email: string): string {
-  return `${BRUTE_FORCE_PREFIX}${email.toLowerCase()}`;
+/**
+ * Redis key for brute-force tracking.
+ * SEC-02: keyed by BOTH IP and email so a single attacker can't lock out
+ * arbitrary users by spamming a username from a botnet, AND legitimate users
+ * can't be locked out by another tenant on the same NAT exit IP. Either axis
+ * alone reaches its limit independently and triggers the throttle.
+ */
+function bruteKey(ip: string, email: string): string {
+  return `${BRUTE_FORCE_PREFIX}${ip}:${email.toLowerCase()}`;
 }
 
 /** Validate password complexity */
@@ -159,6 +165,8 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
 export interface LoginInput {
   email: string;
   password: string;
+  // SEC-02: required so brute-force throttle can key on IP + email.
+  ip: string;
 }
 
 export interface LoginResult {
@@ -168,9 +176,9 @@ export interface LoginResult {
 }
 
 export async function login(input: LoginInput): Promise<LoginResult> {
-  const { email, password } = input;
+  const { email, password, ip } = input;
   const redis = getRedis();
-  const key = bruteKey(email);
+  const key = bruteKey(ip || 'unknown', email);
 
   // 1. Brute-force check
   const attempts = await redis.get(key);

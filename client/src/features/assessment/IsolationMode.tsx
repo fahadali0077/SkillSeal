@@ -29,21 +29,44 @@ export default function IsolationMode() {
   const resetAssessment = useAssessmentStore(s => s.resetAssessment);
   const autoSubmitRef = useRef<(() => void) | null>(null);
   const lastStrikeRef = useRef<number>(0);
+  // HIGH-11: track when the tab actually went hidden so we can report the
+  // real duration to the server instead of the hardcoded 0.
+  const hiddenAtRef = useRef<number | null>(null);
   const isActiveSession = status === 'active' || status === 'submitting';
-  const fireStrike = useCallback((eventType: string) => {
+  const fireStrike = useCallback((eventType: string, durationMs = 0) => {
     if (!isActiveSession) return;
     const now = Date.now(); if (now - lastStrikeRef.current < STRIKE_COOLDOWN_MS) return;
-    lastStrikeRef.current = now; void handleAntiCheatEvent(eventType, null, 0);
+    lastStrikeRef.current = now; void handleAntiCheatEvent(eventType, null, durationMs);
   }, [handleAntiCheatEvent, isActiveSession]);
   useEffect(() => {
     if (!isActiveSession) return;
-    const onVisibility = () => { if (document.visibilityState === 'hidden') fireStrike('tab-switch'); };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        // HIGH-11: stamp the time the tab went hidden. We don't fire the
+        // strike here — we wait until visibility returns so we can report
+        // the actual hidden duration.
+        hiddenAtRef.current = Date.now();
+      } else if (document.visibilityState === 'visible' && hiddenAtRef.current !== null) {
+        const elapsed = Date.now() - hiddenAtRef.current;
+        hiddenAtRef.current = null;
+        fireStrike('tab-switch', elapsed);
+      }
+    };
     const onBlur = () => fireStrike('window-blur');
     const blockPaste = (e: ClipboardEvent) => { e.preventDefault(); e.stopPropagation(); fireStrike('paste-attempt'); };
     const blockCtx = (e: MouseEvent) => e.preventDefault();
+    // HIGH-15: block keyboard shortcuts that would let the user copy/select/
+    // view source on the page during a monitored assessment.
+    const blockKeys = (e: KeyboardEvent) => {
+      const isMod = e.ctrlKey || e.metaKey;
+      if (isMod && (e.key === 'c' || e.key === 'C')) { e.preventDefault(); fireStrike('copy-attempt'); }
+      else if (isMod && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); fireStrike('select-all-attempt'); }
+      else if (isMod && (e.key === 'u' || e.key === 'U')) { e.preventDefault(); fireStrike('view-source-attempt'); }
+    };
     document.addEventListener('visibilitychange', onVisibility); window.addEventListener('blur', onBlur);
     document.addEventListener('paste', blockPaste, true); document.addEventListener('contextmenu', blockCtx);
-    return () => { document.removeEventListener('visibilitychange', onVisibility); window.removeEventListener('blur', onBlur); document.removeEventListener('paste', blockPaste, true); document.removeEventListener('contextmenu', blockCtx); };
+    document.addEventListener('keydown', blockKeys, true);
+    return () => { document.removeEventListener('visibilitychange', onVisibility); window.removeEventListener('blur', onBlur); document.removeEventListener('paste', blockPaste, true); document.removeEventListener('contextmenu', blockCtx); document.removeEventListener('keydown', blockKeys, true); };
   }, [isActiveSession, fireStrike]);
   useEffect(() => {
     if (!isActiveSession) return;

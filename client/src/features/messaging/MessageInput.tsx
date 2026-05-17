@@ -57,8 +57,10 @@ export default function MessageInput({ threadId, recipientId, disabled }: Props)
             if (absIdx !== -1) copy[absIdx] = { ...copy[absIdx], loading: false, uploaded };
             return copy;
           });
-        } catch {
-          toast.error(`Failed to upload ${entry.file.name}`);
+        } catch (err) {
+          // BROKEN-05: show specific timeout message instead of a generic
+          // "Failed to upload" so the user knows a retry is the right move.
+          toast.error(err instanceof Error ? err.message : `Failed to upload ${entry.file.name}`);
           setPending((prev) => prev.filter((p) => p.file !== entry.file));
         }
       }),

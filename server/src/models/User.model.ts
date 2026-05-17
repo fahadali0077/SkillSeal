@@ -137,6 +137,9 @@ export interface IUserDocument extends Document {
     compositeScore: number;
     issuedAt: Date;
   }>;
+  // HIGH-18: 30-day soft-delete fence. When non-null, a daily cron will
+  // permanently delete the user after this date.
+  scheduledDeletionAt: Date | null;
   // V2 reserved:
   // keystrokeSamples: any[];
   // typingProfile: Record<string, unknown>;
@@ -197,6 +200,9 @@ const UserSchema = new Schema<IUserDocument>(
       compositeScore: { type: Number, default: 0 },
       issuedAt: { type: Date },
     }],
+    // HIGH-18: when a user requests account deletion the timestamp 30 days
+    // ahead is stored here, and a cron permanently removes the user after.
+    scheduledDeletionAt: { type: Date, default: null },
     // V2 reserved (uncomment when ready):
     // keystrokeSamples: { type: [Schema.Types.Mixed], select: false },
     // typingProfile: { type: Schema.Types.Mixed, select: false },
@@ -209,6 +215,7 @@ const UserSchema = new Schema<IUserDocument>(
 UserSchema.index({ 'location.city': 1, 'location.country': 1 });
 UserSchema.index({ 'skills.skillId': 1, 'skills.status': 1 });
 UserSchema.index({ openToWork: 1, accountType: 1 });
+UserSchema.index({ scheduledDeletionAt: 1 });
 // SCHEMA BUG 1 — array field indexes for connection graph traversal and lookups
 UserSchema.index({ connections:  1 });
 UserSchema.index({ followers:    1 });

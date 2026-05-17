@@ -379,9 +379,23 @@ export async function followUser(followerId: string, targetId: string): Promise<
 }
 
 export async function unfollowUser(followerId: string, targetId: string): Promise<void> {
+  // HIGH-10: guard the decrements with a $gt: 0 condition so the counters
+  // never go negative if unfollowUser is called twice (network retry, double
+  // click, etc.). The $pull still runs even when the count is already 0,
+  // because we keep it in a single update document.
   await Promise.all([
-    User.findByIdAndUpdate(followerId, { $pull: { following: new Types.ObjectId(targetId) }, $inc: { followingCount: -1 } }),
-    User.findByIdAndUpdate(targetId,  { $pull: { followers: new Types.ObjectId(followerId) }, $inc: { followerCount: -1 } }),
+    User.findOneAndUpdate(
+      { _id: followerId, followingCount: { $gt: 0 } },
+      { $pull: { following: new Types.ObjectId(targetId) }, $inc: { followingCount: -1 } },
+    ),
+    User.findOneAndUpdate(
+      { _id: targetId, followerCount: { $gt: 0 } },
+      { $pull: { followers: new Types.ObjectId(followerId) }, $inc: { followerCount: -1 } },
+    ),
+    // Always pull regardless of count, in case counters were stale and the
+    // guarded update did nothing.
+    User.findByIdAndUpdate(followerId, { $pull: { following: new Types.ObjectId(targetId) } }),
+    User.findByIdAndUpdate(targetId, { $pull: { followers: new Types.ObjectId(followerId) } }),
   ]);
 }
 

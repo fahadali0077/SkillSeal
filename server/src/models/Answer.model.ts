@@ -41,14 +41,16 @@ const AnswerSchema = new Schema<IAnswerDocument>(
     isTimeout: { type: Boolean, default: false },
     isCorrect: { type: Boolean, default: null },        // null = not yet evaluated
 
-    // ── Scoring (0–1 normalised) ─────────────────────────────
+    // ── Scoring ──────────────────────────────────────────────
+    // conceptScore: 0–1 normalised (correctness fraction)
+    // aiScore:      0–100 authenticity percentage (higher = more human). See CRIT-06.
     conceptScore: { type: Number, default: 0, min: 0, max: 1 },
     aiScore: {
       type: Number,
       default: 0,
       min: 0,
-      max: 1,
-      // Only populated for micro-theory answers
+      max: 100,
+      // Only populated for micro-theory answers. 0-100 scale (higher = more human).
     },
 
     // ── Timing ──────────────────────────────────────────────

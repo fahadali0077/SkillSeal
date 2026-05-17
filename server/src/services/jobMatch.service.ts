@@ -11,6 +11,7 @@ import { User }  from '../models/User.model';
 import type { IUserDocument } from '../models/User.model';
 import { emitToUser, SOCKET_EVENTS } from '../socket/socket';
 import { getRedis } from '../config/redis';
+import { notify } from './notifications.service';
 import logger from '../utils/logger';
 
 const DIGEST_PREFIX = 'job_digest:';
@@ -64,6 +65,18 @@ export async function notifyJobMatch(jobId: string): Promise<void> {
           company: job.companyId.toString(),
         },
       });
+
+      // HIGH-12: persist to DB so users see job matches in the notifications
+      // panel and on next sign-in, not just while the socket is connected.
+      try {
+        await notify.jobMatch(candidate._id.toString(), {
+          jobId:   job._id.toString(),
+          title:   job.title,
+          company: job.companyId.toString(),
+        });
+      } catch (err) {
+        logger.warn(`[jobMatch] persist notification failed for user=${candidate._id}: ${(err as Error).message}`);
+      }
 
       // Queue for daily digest
       const digestKey = `${DIGEST_PREFIX}${candidate._id.toString()}`;

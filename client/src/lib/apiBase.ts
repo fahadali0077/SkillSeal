@@ -32,6 +32,29 @@ async function tryRefreshToken(): Promise<string | null> {
   return refreshPromise;
 }
 
+// HIGH-16: when a JWT refresh fails the user must see *something* — silently
+// rejecting every subsequent request gives no signal that they need to log
+// back in. This flag debounces the alert so we don't spam a dozen popups
+// when many requests fire simultaneously.
+let sessionExpiredShown = false;
+function notifySessionExpired(): void {
+  if (sessionExpiredShown) return;
+  sessionExpiredShown = true;
+  // alert() is intentional: it blocks the UI thread so the user sees it
+  // immediately even if many in-flight requests fail at once. Apps that
+  // need a styled modal can replace this with a router event or toast.
+  try { window.alert('Your session has expired. Please log in again.'); } catch { /* SSR/test */ }
+  try {
+    // Defer the navigation slightly so the alert finishes painting first.
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        const next = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?next=${next}`;
+      }
+    }, 50);
+  } catch { /* ignore */ }
+}
+
 /**
  * Shared fetch helper that attaches the Bearer token from the Zustand auth
  * store to every request, and silently refreshes the token on 401 (once).
@@ -62,9 +85,10 @@ export async function apiFetch<T>(url: string, init: RequestInit = {}): Promise<
     if (newToken) {
       res = await doFetch(newToken);          // retry with fresh token
     } else {
-      // Refresh failed — force logout so the user sees the login page
+      // HIGH-16: refresh failed. Force logout, notify the user, redirect to /login.
       const { useAuthStore: store } = await import('../features/auth/useAuth');
       await store.getState().logout();
+      notifySessionExpired();
       throw new Error('Session expired. Please log in again.');
     }
   }

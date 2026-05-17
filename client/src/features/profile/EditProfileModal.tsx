@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Plus, Trash2 } from 'lucide-react';
+import { X, Loader2, Plus, Trash2, Upload } from 'lucide-react';
 import type { IUserPublic, ILink } from '@SkillSeal/shared';
 import { useUpdateProfile } from './useProfile';
+import { API_ORIGIN } from '../../lib/apiBase';
 
 const profileSchema = z.object({
   headline: z.string().max(220).optional(),
@@ -22,9 +23,33 @@ const LINK_TYPES = ['github', 'linkedin', 'portfolio', 'twitter', 'other'] as co
 
 interface Props { profile: IUserPublic; onClose: () => void; }
 
+// HIGH-13 / BROKEN-04: shared media upload helper that calls one of the
+// /api/v1/users/me upload aliases with multipart/form-data.
+async function uploadMedia(file: File, endpoint: 'upload-photo' | 'upload-banner'): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const token = localStorage.getItem('accessToken') ?? '';
+  const res = await fetch(`${API_ORIGIN}/api/v1/users/me/${endpoint}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include',
+    body: formData,
+  });
+  if (!res.ok) throw new Error(`Upload failed (${res.status})`);
+  const json = await res.json();
+  return json?.data?.photoUrl ?? json?.data?.bannerUrl ?? '';
+}
+
 export default function EditProfileModal({ profile, onClose }: Props) {
   const updateProfile = useUpdateProfile(profile._id);
   const [links, setLinks] = useState<ILink[]>(profile.links ?? []);
+  const [photoUrl, setPhotoUrl] = useState<string>(profile.profilePhoto ?? '');
+  const [bannerUrl, setBannerUrl] = useState<string>(profile.bannerImage ?? '');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -43,6 +68,24 @@ export default function EditProfileModal({ profile, onClose }: Props) {
   const removeLink = (i: number) => setLinks((l) => l.filter((_, idx) => idx !== i));
   const updateLink = (i: number, field: keyof ILink, value: string) => {
     setLinks((l) => l.map((lk, idx) => idx === i ? { ...lk, [field]: value } : lk));
+  };
+
+  const handlePhotoPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setUploadError('Image must be under 5 MB.'); return; }
+    setUploadError(null); setUploadingPhoto(true);
+    try { setPhotoUrl(await uploadMedia(file, 'upload-photo')); }
+    catch (err) { setUploadError(err instanceof Error ? err.message : 'Upload failed'); }
+    finally { setUploadingPhoto(false); if (photoInputRef.current) photoInputRef.current.value = ''; }
+  };
+
+  const handleBannerPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setUploadError('Image must be under 5 MB.'); return; }
+    setUploadError(null); setUploadingBanner(true);
+    try { setBannerUrl(await uploadMedia(file, 'upload-banner')); }
+    catch (err) { setUploadError(err instanceof Error ? err.message : 'Upload failed'); }
+    finally { setUploadingBanner(false); if (bannerInputRef.current) bannerInputRef.current.value = ''; }
   };
 
   const onSubmit = async (data: ProfileForm) => {
@@ -79,6 +122,56 @@ export default function EditProfileModal({ profile, onClose }: Props) {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit as any)} className="px-6 py-5 space-y-5">
+            {/* HIGH-13 + BROKEN-04: photo + banner uploads */}
+            <div className="space-y-3">
+              {/* Banner preview */}
+              <div className="relative h-24 w-full rounded-lg bg-gradient-to-r from-brand/10 to-brand/30 overflow-hidden">
+                {bannerUrl && <img src={bannerUrl} alt="banner" className="absolute inset-0 w-full h-full object-cover" />}
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  disabled={uploadingBanner}
+                  className="absolute bottom-2 right-2 bg-white/90 hover:bg-white text-xs font-medium rounded-md px-2 py-1 flex items-center gap-1.5 shadow"
+                >
+                  {uploadingBanner ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                  {uploadingBanner ? 'Uploading…' : 'Change banner'}
+                </button>
+                <input
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleBannerPick}
+                />
+              </div>
+              {/* Avatar overlap */}
+              <div className="flex items-center gap-3 -mt-10 ml-2">
+                <div className="relative">
+                  {photoUrl
+                    ? <img src={photoUrl} alt="" className="w-16 h-16 rounded-full object-cover ring-4 ring-white" />
+                    : <div className="w-16 h-16 rounded-full bg-brand/10 ring-4 ring-white flex items-center justify-center font-bold text-brand">{profile.firstName?.[0]}</div>}
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="absolute -bottom-1 -right-1 bg-brand text-white rounded-full p-1.5 shadow"
+                    title="Change photo"
+                  >
+                    {uploadingPhoto ? <Loader2 size={10} className="animate-spin" /> : <Upload size={10} />}
+                  </button>
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handlePhotoPick}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-10">PNG, JPG, WebP. Max 5 MB.</p>
+              </div>
+              {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+            </div>
+
             {/* Headline */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Headline</label>

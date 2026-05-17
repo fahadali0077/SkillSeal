@@ -20,6 +20,9 @@ import type { IUserDocument } from '../models/User.model';
 import { Skill } from '../models/Skill.model';
 import { Connection } from '../models/Connection.model';
 import { Verification } from '../models/Verification.model';
+import { Job } from '../models/Job.model';
+import type { IJobDocument } from '../models/Job.model';
+import { computeMatchScore } from './jobs.service';
 import { AppError } from '../middleware/error.middleware';
 import { uploadBuffer } from '../config/cloudinary';
 import logger from '../utils/logger';
@@ -33,6 +36,25 @@ function generateCustomUrl(firstName: string, lastName: string): string {
   const hex = randomBytes(2).toString('hex'); // 4 chars
   const base = `${firstName}-${lastName}`.toLowerCase().replace(/[^a-z0-9-]/g, '');
   return `${base}-${hex}`;
+}
+
+/**
+ * SEC-03: ensure the auto-generated customUrl is unique. The base form
+ * `firstname-lastname-4hex` collides ~1 in 65k for the same name; this helper
+ * appends a numeric suffix (-2, -3, …) until a free slot is found, capped at
+ * 100 attempts so a poisoned namespace can't loop forever.
+ */
+async function generateUniqueCustomUrl(firstName: string, lastName: string, excludeUserId?: string): Promise<string> {
+  let candidate = generateCustomUrl(firstName, lastName);
+  for (let i = 2; i <= 100; i += 1) {
+    const filter: Record<string, unknown> = { customUrl: candidate };
+    if (excludeUserId) filter._id = { $ne: excludeUserId };
+    const taken = await User.findOne(filter).select('_id').lean();
+    if (!taken) return candidate;
+    candidate = `${generateCustomUrl(firstName, lastName).replace(/-[0-9a-f]{4}$/, '')}-${i}`;
+  }
+  // Fallback: timestamp suffix is guaranteed unique.
+  return `${firstName}-${lastName}-${Date.now()}`.toLowerCase().replace(/[^a-z0-9-]/g, '');
 }
 
 /** Resolve the viewer's connection status with the target user */
@@ -209,7 +231,8 @@ export async function updateProfile(
 
   // Auto-generate customUrl on first profile update if not set
   if (!user.customUrl) {
-    user.customUrl = generateCustomUrl(user.firstName, user.lastName);
+    // SEC-03: ensure the generated slug is unique before saving.
+    user.customUrl = await generateUniqueCustomUrl(user.firstName, user.lastName, userId);
   }
 
   // Validate / set customUrl if provided
@@ -374,20 +397,34 @@ export async function removeSkill(userId: string, skillId: string): Promise<IUse
 
   const entry = user.skills[idx];
 
-  // 30-day protection on verified skills
-  if (entry.status === 'verified' && entry.verificationId) {
+  // 30-day protection on verified or flagged skills.
+  // CRIT-07: a flagged skill must not be deletable instantly — that would
+  // erase AI-detection evidence and let the user re-test as if clean.
+  if ((entry.status === 'verified' || entry.status === 'flagged') && entry.verificationId) {
     const verification = await Verification.findById(entry.verificationId).lean();
     if (verification) {
       const ageMs = Date.now() - new Date(verification.issuedAt).getTime();
       const ageDays = ageMs / (1000 * 60 * 60 * 24);
       if (ageDays < 30) {
         throw new AppError(
-          `Verified skills cannot be removed within 30 days of verification. ${Math.ceil(30 - ageDays)} days remaining.`,
+          `Verified or flagged skills cannot be removed within 30 days of verification. ${Math.ceil(30 - ageDays)} days remaining.`,
           409,
           true,
         );
       }
     }
+  }
+
+  // BROKEN-12: also mark the associated Verification document as WITHDRAWN
+  // so recruiter audits can see the candidate intentionally retired the
+  // credential. Pull from verifiedSkillsSummary too so recruiter search and
+  // profile cards stop showing it immediately.
+  if (entry.verificationId) {
+    await Verification.findByIdAndUpdate(entry.verificationId, { status: 'WITHDRAWN' });
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { verifiedSkillsSummary: { skillId: entry.skillId } } },
+    );
   }
 
   user.skills.splice(idx, 1);
@@ -416,6 +453,25 @@ export async function uploadProfilePhoto(
   return { photoUrl: url };
 }
 
+/**
+ * HIGH-13: upload a banner image. Mirrors uploadProfilePhoto exactly so
+ * validation, storage path, and audit logging stay consistent.
+ */
+export async function uploadBannerImage(
+  userId: string,
+  buffer: Buffer,
+  mimetype: string,
+): Promise<{ bannerUrl: string }> {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (!allowed.includes(mimetype)) {
+    throw new AppError('Only JPEG, PNG, and WebP images are allowed.', 400, true);
+  }
+  const { url } = await uploadBuffer(buffer, 'SkillSeal/banners', `banner_${userId}`);
+  await User.findByIdAndUpdate(userId, { bannerImage: url });
+  logger.info(`[users] Banner image updated: userId=${userId}`);
+  return { bannerUrl: url };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 10 · Search / candidate discovery
 // ─────────────────────────────────────────────────────────────────────────────
@@ -428,6 +484,8 @@ export interface SearchQuery {
   openToWork?: boolean;
   page?: number;
   limit?: number;
+  /** HIGH-06: when provided, candidates are scored against this real job. */
+  jobId?: string;
 }
 
 export async function searchUsers(query: SearchQuery): Promise<{
@@ -473,6 +531,15 @@ export async function searchUsers(query: SearchQuery): Promise<{
     User.countDocuments(filter),
   ]);
 
+  // HIGH-06: if a real job context is provided, compute a proper match score
+  // against that job using jobs.service.computeMatchScore(). Otherwise the
+  // caller gets 0 — the naive "verifiedSkills.length * 20" heuristic was
+  // misleading because it implied a match against nothing.
+  let jobDoc: IJobDocument | null = null;
+  if (query.jobId && mongoose.Types.ObjectId.isValid(query.jobId)) {
+    jobDoc = await Job.findById(query.jobId).lean<IJobDocument>();
+  }
+
   // Enrich with verified skill badges
   const allSkillIds = [...new Set(docs.flatMap((d) => d.skills.map((s) => s.skillId.toString())))];
   const allSkills = await Skill.find({ _id: { $in: allSkillIds } }).lean();
@@ -490,7 +557,7 @@ export async function searchUsers(query: SearchQuery): Promise<{
   const verifDocs = await Verification.find({ _id: { $in: allVerifIds } }).lean();
   const verifMap = new Map(verifDocs.map((v) => [v._id.toString(), v]));
 
-  const candidates: ICandidateCard[] = docs.map((doc) => {
+  const candidates: ICandidateCard[] = await Promise.all(docs.map(async (doc) => {
     const verifiedSkills: IVerifiedSkillBadge[] = doc.skills
       .filter((s) => s.status === 'verified' && s.verificationId)
       .map((s) => {
@@ -511,8 +578,10 @@ export async function searchUsers(query: SearchQuery): Promise<{
     const latestExp = doc.experience?.[0] ?? null;
     const latestEdu = doc.education?.[0] ?? null;
 
-    // Naive match score: # of verified skills * 20, capped at 100
-    const matchScore = Math.min(100, verifiedSkills.length * 20);
+    // HIGH-06: use the real job-match algorithm when a job context is passed.
+    // No job context → matchScore is 0 (the previous heuristic implied a match
+    // against nothing, which was misleading to recruiters).
+    const matchScore = jobDoc ? await computeMatchScore(jobDoc, doc) : 0;
 
     return {
       userId: doc._id.toString(),
@@ -534,7 +603,7 @@ export async function searchUsers(query: SearchQuery): Promise<{
       hasApplied: false,
       isSaved: false,
     };
-  });
+  }));
 
   return { candidates, total, page, totalPages: Math.ceil(total / limit) };
 }

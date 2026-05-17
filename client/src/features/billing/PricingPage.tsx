@@ -36,15 +36,26 @@ export default function PricingPage(){
               <div className="flex items-end gap-1.5 mt-2"><span className="text-4xl font-bold text-gray-900">{price===0?'Free':`$${price}`}</span>{price>0&&<span className="text-gray-500 text-sm mb-1">/month</span>}</div>
               <AnimatePresence mode="wait">{annual&&price>0?(<motion.p key="a" initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}} className="text-xs text-gray-500 mt-1">${plan.yearlyTotal}/year annually{saving>0&&<span className="ml-1 text-green-600 font-semibold">(save {saving}%)</span>}</motion.p>):(<motion.p key="m" initial={{opacity:0}} animate={{opacity:1}} className="text-xs text-gray-400 mt-1">{price===0?'Always free':'Billed monthly'}</motion.p>)}</AnimatePresence>
             </div>
-            {isCurrent?(<div className="w-full py-2.5 text-center rounded-xl text-sm font-semibold bg-green-50 text-green-700 border border-green-200 mb-6">✓ Current plan</div>):plan.id==='free'?(<Link to="/register" className="block w-full py-2.5 text-center rounded-xl text-sm font-semibold border border-gray-200 hover:border-brand text-gray-700 hover:text-brand mb-6 transition-colors">{plan.cta}</Link>):(<button onClick={()=>{if(!isAuth){window.location.href='/register';return;}checkout.mutate(annual?plan.yearlyPlanId:plan.monthlyPlanId);}} disabled={checkout.isPending} className={`w-full py-2.5 rounded-xl text-sm font-semibold mb-6 flex items-center justify-center gap-2 transition-colors ${isHL?'bg-brand text-white hover:bg-brand-dark':'bg-gray-900 text-white hover:bg-gray-700'}`}>{checkout.isPending?<Loader2 size={15} className="animate-spin"/>:<Zap size={15}/>}{plan.cta}</button>)}
+            {isCurrent?(<div className="w-full py-2.5 text-center rounded-xl text-sm font-semibold bg-green-50 text-green-700 border border-green-200 mb-6">✓ Current plan</div>):plan.id==='free'?(<Link to="/register" className="block w-full py-2.5 text-center rounded-xl text-sm font-semibold border border-gray-200 hover:border-brand text-gray-700 hover:text-brand mb-6 transition-colors">{plan.cta}</Link>):(
+              /* BROKEN-01: Stripe checkout is not yet wired server-side; show
+                 a disabled "Coming Soon" pill instead of a 503-bound button. */
+              <button
+                type="button"
+                disabled
+                title="Paid plans launch soon — your free plan is fully featured for now"
+                className="w-full py-2.5 rounded-xl text-sm font-semibold mb-6 flex items-center justify-center gap-2 bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+              >
+                <Zap size={15}/> Coming soon
+              </button>
+            )}
             <ul className="space-y-2.5">{plan.features.map((f,i)=>(<li key={i} className={`flex items-start gap-2.5 text-sm ${f.i?'':'opacity-40'}`}><CheckCircle2 size={15} className={`shrink-0 mt-0.5 ${'h' in f&&f.h?'text-brand':f.i?'text-green-500':'text-gray-300'}`}/><span className={`${'h' in f&&f.h&&f.i?'font-medium text-gray-900':'text-gray-600'}`}>{f.text}</span></li>))}</ul>
           </div>
         </motion.div>);
       })}
     </div>
     <div className="mt-10 p-5 bg-gray-50 border border-gray-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div><p className="font-semibold text-gray-900 text-sm">Need one more verification?</p><p className="text-sm text-gray-500 mt-0.5">Buy individual assessment credits for <strong>$5 each</strong>.</p></div>
-      <Link to="/assessment" className="shrink-0 text-sm font-semibold text-brand border border-brand px-4 py-2 rounded-xl">Buy a credit →</Link>
+      <div><p className="font-semibold text-gray-900 text-sm">Need one more verification?</p><p className="text-sm text-gray-500 mt-0.5">Buy individual assessment credits for <strong>$5 each</strong>. <span className="text-amber-600">Coming soon.</span></p></div>
+      <button disabled className="shrink-0 text-sm font-semibold text-gray-400 border border-gray-200 bg-gray-50 px-4 py-2 rounded-xl cursor-not-allowed">Coming soon</button>
     </div>
     <p className="text-center text-xs text-gray-400 mt-8">14-day money-back guarantee. Cancel anytime. Prices in USD.</p>
   </div>);

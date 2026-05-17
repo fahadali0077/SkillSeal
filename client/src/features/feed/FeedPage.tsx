@@ -56,8 +56,8 @@ export default function FeedPage() {
             <div className="flex items-center gap-3">
               {/* Avatar */}
               <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center font-bold text-brand shrink-0 ring-2 ring-brand/10">
-                {user?.profilePhoto
-                  ? <img src={user.profilePhoto} alt="" className="w-full h-full object-cover rounded-full" />
+                {(user as { profilePhoto?: string } | null)?.profilePhoto
+                  ? <img src={(user as { profilePhoto?: string }).profilePhoto} alt="" className="w-full h-full object-cover rounded-full" />
                   : (user?.firstName?.[0] ?? 'U')}
               </div>
 

@@ -16,7 +16,7 @@ export interface IVerificationDocument extends Document {
   certificateHash: string;
   issuedAt: Date;
   expiresAt: Date;
-  status: 'VERIFIED' | 'FLAGGED' | 'EXPIRED' | 'REVOKED';
+  status: 'VERIFIED' | 'FLAGGED' | 'EXPIRED' | 'REVOKED' | 'WITHDRAWN';
   flagReason: string;
   createdAt: Date;
   updatedAt: Date;
@@ -55,7 +55,10 @@ const VerificationSchema = new Schema<IVerificationDocument>(
     expiresAt: { type: Date, required: true },
     status: {
       type: String,
-      enum: ['VERIFIED', 'FLAGGED', 'EXPIRED', 'REVOKED'],
+      // BROKEN-12: WITHDRAWN added — set when a candidate removes the
+      // associated skill from their profile. Distinct from REVOKED (admin)
+      // and EXPIRED (time-based) so audits show intent.
+      enum: ['VERIFIED', 'FLAGGED', 'EXPIRED', 'REVOKED', 'WITHDRAWN'],
       default: 'VERIFIED',
     },
     flagReason: { type: String, default: '' },

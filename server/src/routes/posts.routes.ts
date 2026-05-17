@@ -9,6 +9,7 @@ import { AppError } from '../middleware/error.middleware';
 import {
   createPost, getPost, deletePost,
   upsertReaction, removeReaction, addComment, repost, votePoll, getComments,
+  scrapeLinkPreview, deleteComment, toggleCommentLike,
 } from '../services/feed.service';
 
 const router = Router();
@@ -99,6 +100,32 @@ router.post('/:id/repost', authenticate, async (req: AuthRequest, res: Response)
     const { commentary } = req.body as { commentary?: string };
     const post = await repost(req.params['id']!, req.user!.userId, commentary);
     sendSuccess(res, post, 'Reposted', 201);
+  } catch (err) { handleError(err, res); }
+});
+
+// HIGH-04: POST /posts/scrape-link — fetch OG/meta tags for a URL.
+router.post('/scrape-link', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { url } = req.body as { url?: string };
+    if (!url) { sendError(res, 'url required', 400, ApiErrorCode.MISSING_REQUIRED_FIELD); return; }
+    const preview = await scrapeLinkPreview(url);
+    sendSuccess(res, preview, 'Link preview scraped');
+  } catch (err) { handleError(err, res); }
+});
+
+// HIGH-07: DELETE /posts/:id/comments/:commentId — author owner only.
+router.delete('/:id/comments/:commentId', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    await deleteComment(req.params['id']!, req.params['commentId']!, req.user!.userId);
+    sendSuccess(res, null, 'Comment deleted');
+  } catch (err) { handleError(err, res); }
+});
+
+// HIGH-08: POST /posts/:id/comments/:commentId/like — toggle like on comment.
+router.post('/:id/comments/:commentId/like', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await toggleCommentLike(req.params['id']!, req.params['commentId']!, req.user!.userId);
+    sendSuccess(res, result, 'Comment like toggled');
   } catch (err) { handleError(err, res); }
 });
 

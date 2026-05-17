@@ -1,11 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // NotificationsPage.tsx  –  full-page notifications view
 // ─────────────────────────────────────────────────────────────────────────────
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, CheckCheck, Sparkles } from 'lucide-react';
+import { Bell, CheckCheck, Sparkles, Loader2 } from 'lucide-react';
+import { useQueries } from '@tanstack/react-query';
 import { useSEO } from '../../lib/useSEO';
-import { useNotifications, useMarkAllRead } from './useNotifications';
+import { useNotifications, useMarkAllRead, NOTIF_KEY, notificationsApi } from './useNotifications';
 import NotificationItem from './NotificationItem';
 
 type Tab = 'all' | 'unread';
@@ -13,10 +14,33 @@ type Tab = 'all' | 'unread';
 export default function NotificationsPage() {
   useSEO({ title: 'Notifications', description: 'Stay up to date with activity on SkillSeal.', canonical: '/notifications' });
 
-  const { data, isLoading } = useNotifications();
+  // PARTIAL-08: client-side "Load more" pagination. We keep all pages in
+  // parallel useQuery instances keyed by page number, then flatten the
+  // notifications array. Lets users walk back through history beyond the
+  // first page that useNotifications() ships by default.
+  const [pageCount, setPageCount] = useState(1);
+  const pages = useQueries({
+    queries: Array.from({ length: pageCount }, (_, i) => ({
+      queryKey: [...NOTIF_KEY, i + 1],
+      queryFn: () => notificationsApi.list(i + 1),
+      staleTime: 30_000,
+    })),
+  });
+
+  const isLoading = pages.some((p) => p.isLoading);
+  const isFetchingMore = pages[pages.length - 1]?.isFetching && pageCount > 1;
+  const notifications = useMemo(
+    () => pages.flatMap((p) => p.data?.notifications ?? []),
+    [pages],
+  );
+  const lastPage = pages[pages.length - 1]?.data;
+  const total = lastPage?.total ?? 0;
+  const hasMore = notifications.length < total;
+  const unreadCount = pages[0]?.data?.unreadCount ?? 0;
+  // Keep useNotifications imported (lint placeholder).
+  void useNotifications;
+
   const markAll = useMarkAllRead();
-  const notifications = data?.notifications ?? [];
-  const unreadCount   = data?.unreadCount ?? 0;
 
   const [tab, setTab] = useState<Tab>('all');
   const filtered = tab === 'unread' ? notifications.filter(n => !n.isRead) : notifications;
@@ -137,6 +161,20 @@ export default function NotificationsPage() {
           </AnimatePresence>
         )}
       </div>
+
+      {/* PARTIAL-08: Load more button — only shown when more pages remain. */}
+      {!isLoading && hasMore && (
+        <div className="flex justify-center mt-5">
+          <button
+            onClick={() => setPageCount((p) => p + 1)}
+            disabled={isFetchingMore}
+            className="btn-secondary text-sm flex items-center gap-2 disabled:opacity-60"
+          >
+            {isFetchingMore && <Loader2 size={14} className="animate-spin" />}
+            {isFetchingMore ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

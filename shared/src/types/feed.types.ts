@@ -113,6 +113,9 @@ export interface IPost {
   isDeleted: boolean;
   isRepost: boolean;
   originalPostId: string | null;
+  // CRIT-10/HIGH-09: when isRepost is true, the fully serialized original post.
+  // null when the original is missing/deleted or this is not a repost.
+  originalPost: IPost | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -127,6 +130,9 @@ export interface IPostCard {
   type: PostType;
   visibility: PostVisibility;
   content: string;                    // truncated to 300 chars server-side
+  // HIGH-22: true when the full post content exceeds 300 chars and the client
+  // should show a "Read more →" link to the detail page.
+  isTruncated: boolean;
   imageUrls: string[];
   linkPreview: Pick<ILinkPreview, 'title' | 'imageUrl' | 'siteName'> | null;
   hasPoll: boolean;
@@ -138,5 +144,9 @@ export interface IPostCard {
   repostCount: number;
   isVerificationAnnouncement: boolean;
   verificationBadge: IVerificationBadge | null;
+  // CRIT-10/HIGH-09: repost metadata on the card so feed items can render the
+  // nested original post inline. originalPost is the same lightweight card.
+  isRepost: boolean;
+  originalPost: IPostCard | null;
   createdAt: string;
 }

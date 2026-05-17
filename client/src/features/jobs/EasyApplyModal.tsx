@@ -95,16 +95,35 @@ export default function EasyApplyModal({ job, onClose, onSuccess }: Props) {
             {job.requiredSkills.length > 0 && (
               <div>
                 <h3 className="font-semibold text-sm text-gray-700 mb-2">Required skills</h3>
+                {/* PARTIAL-09: differentiate verified (green shield) vs
+                    unverified/self-reported (gray) so recruiters reading the
+                    application see at a glance which skills are credentialed.
+                    Verification is derived client-side from the user's
+                    verifiedSkillsSummary on the auth store. */}
                 <div className="flex flex-wrap gap-2">
-                  {job.requiredSkills.map((skill) => (
-                    <span key={skill.skillId}
-                      className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                      {skill.skillName}
-                      <span className="text-gray-400">· {skill.tier}</span>
-                      {!skill.required && <span className="text-gray-400 text-[10px]">(optional)</span>}
-                    </span>
-                  ))}
+                  {job.requiredSkills.map((skill) => {
+                    const verified = ((user as { verifiedSkillsSummary?: { skillId: string }[] })?.verifiedSkillsSummary ?? [])
+                      .some((vs) => vs.skillId === skill.skillId);
+                    return (
+                      <span key={skill.skillId}
+                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border ${
+                          verified
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : 'bg-gray-100 text-gray-700 border-gray-200'
+                        }`}
+                        title={verified ? 'You have a verified credential for this skill' : 'Self-reported — not verified'}
+                      >
+                        {verified && <ShieldCheck size={11} className="shrink-0" />}
+                        {skill.skillName}
+                        <span className={verified ? 'text-green-500' : 'text-gray-400'}>· {skill.tier}</span>
+                        {!skill.required && <span className="text-gray-400 text-[10px]">(optional)</span>}
+                      </span>
+                    );
+                  })}
                 </div>
+                <p className="text-[11px] text-gray-400 mt-2 flex items-center gap-1.5">
+                  <ShieldCheck size={11} className="text-green-500" /> = verified credential
+                </p>
               </div>
             )}
 

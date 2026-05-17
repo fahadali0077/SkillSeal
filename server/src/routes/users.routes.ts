@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 import { ApiErrorCode } from '@SkillSeal/shared';
 import type { IExperience, IEducation } from '@SkillSeal/shared';
 import { authenticate, optionalAuth, requireRole, type AuthRequest } from '../middleware/auth.middleware';
@@ -12,13 +13,29 @@ import {
   getProfile, updateProfile, searchUsers, getCompleteness,
   addExperience, updateExperience, deleteExperience,
   addEducation, updateEducation, deleteEducation,
-  addSkill, removeSkill, uploadProfilePhoto,
+  addSkill, removeSkill, uploadProfilePhoto, uploadBannerImage,
 } from '../services/users.service';
 import { getConnectionDegree, followUser, unfollowUser } from '../services/connections.service';
 import { getPostsByUser } from '../services/feed.service';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+
+// SEC-01: tighter rate limiter on photo upload routes — 5 requests/min per
+// authenticated user. The global limiter is far more permissive; upload
+// endpoints need their own ceiling because each request stores a file on
+// Cloudinary and we don't want them used as a free image-host or for abuse.
+const photoUploadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request) => {
+    const auth = (req as AuthRequest).user;
+    return auth?.userId ?? req.ip ?? 'anon';
+  },
+  message: { success: false, message: 'Too many upload requests. Please wait a minute.' },
+});
 
 function handleError(err: unknown, res: Response): void {
   if (err instanceof AppError) {
@@ -147,9 +164,11 @@ router.delete('/:id/skills/:skillId', authenticate, async (req: AuthRequest, res
 });
 
 // ── Profile photo ─────────────────────────────────────────────────────────────
+// SEC-01: photoUploadLimiter applied directly to upload routes.
 router.post(
   '/:id/profile-photo',
   authenticate,
+  photoUploadLimiter,
   upload.single('photo'),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -157,6 +176,36 @@ router.post(
       if (!req.file) { sendError(res, 'No file uploaded', 400, ApiErrorCode.MISSING_REQUIRED_FIELD); return; }
       const result = await uploadProfilePhoto(req.user!.userId, req.file.buffer, req.file.mimetype);
       sendSuccess(res, result, 'Profile photo updated');
+    } catch (err) { handleError(err, res); }
+  },
+);
+
+// BROKEN-04 + HIGH-13: convenience aliases used by the client (no :id needed).
+router.post(
+  '/me/upload-photo',
+  authenticate,
+  photoUploadLimiter,
+  upload.single('file'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.file) { sendError(res, 'No file uploaded', 400, ApiErrorCode.MISSING_REQUIRED_FIELD); return; }
+      const result = await uploadProfilePhoto(req.user!.userId, req.file.buffer, req.file.mimetype);
+      sendSuccess(res, result, 'Profile photo updated');
+    } catch (err) { handleError(err, res); }
+  },
+);
+
+// HIGH-13: banner upload — same shape as profile photo.
+router.post(
+  '/me/upload-banner',
+  authenticate,
+  photoUploadLimiter,
+  upload.single('file'),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      if (!req.file) { sendError(res, 'No file uploaded', 400, ApiErrorCode.MISSING_REQUIRED_FIELD); return; }
+      const result = await uploadBannerImage(req.user!.userId, req.file.buffer, req.file.mimetype);
+      sendSuccess(res, result, 'Banner image updated');
     } catch (err) { handleError(err, res); }
   },
 );

@@ -2,12 +2,14 @@ import { useSEO } from '../../lib/useSEO';
 // ─────────────────────────────────────────────────────────────────────────────
 // MyApplicationsPage.tsx  –  candidate's applications grouped by status
 // ─────────────────────────────────────────────────────────────────────────────
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Briefcase, CheckCircle2, XCircle, Clock, Star, MessageSquare, Search, ArrowRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 import { useMyApplications } from './useJobs';
+import { on, SOCKET_EVENTS } from '../../lib/socketClient';
 import type { IApplicationOut } from './types';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; icon: React.ReactNode }> = {
@@ -70,6 +72,20 @@ export default function MyApplicationsPage() {
   useSEO({ title: 'My Applications', description: 'Track your job applications on SkillSeal.', canonical: '/applications' });
   const [activeTab, setActiveTab] = useState('all');
   const { data: apps = [], isLoading } = useMyApplications();
+  const qc = useQueryClient();
+
+  // PARTIAL-07: when the server pushes an application status update (sent
+  // by recruiter.service.ts upsertPipeline → notify.applicationStatus →
+  // SOCKET_EVENTS.NOTIFICATION), invalidate the cache so the new status
+  // shows up without a manual refresh.
+  useEffect(() => {
+    const off = on<{ type: string }>(SOCKET_EVENTS.NOTIFICATION, (payload) => {
+      if (payload?.type === 'application_status' || payload?.type === 'application_status_update') {
+        void qc.invalidateQueries({ queryKey: ['myApplications'] });
+      }
+    });
+    return off;
+  }, [qc]);
 
   const filtered = activeTab === 'all' ? apps : apps.filter((a) => a.status === activeTab);
 

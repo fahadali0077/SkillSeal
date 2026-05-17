@@ -7,6 +7,7 @@ import { Skill } from '../../models/Skill.model';
 import { Post } from '../../models/Post.model';
 import { env } from '../../config/env';
 import { computeCompositeScore } from './scoring.service';
+import { setCooldown, COOLDOWN_FAIL, COOLDOWN_PARTIAL } from './session.service';
 import { deleteSession } from '../../utils/redis';
 import { notify } from '../notifications.service';
 import logger from '../../utils/logger';
@@ -34,6 +35,7 @@ export async function issueCertificate(sessionId: string): Promise<{ status: str
   const baseSessionUpdate = {
     status:           'completed' as const,
     endTime:          new Date(),
+    durationMs:       Date.now() - session.startTime.getTime(),
     compositeScore,
     conceptScore:     scores.conceptScore,
     speedScore:       scores.speedScore,
@@ -48,6 +50,8 @@ export async function issueCertificate(sessionId: string): Promise<{ status: str
   if (compositeScore < 50) {
     await Session.findByIdAndUpdate(sessionId, baseSessionUpdate);
     await deleteSession(sessionId);
+    // CRIT-09: enforce the retake cooldown server-side.
+    await setCooldown(session.userId.toString(), session.skillId.toString(), COOLDOWN_FAIL);
     logger.info(`[cert] Not certified: userId=${session.userId} score=${compositeScore}`);
     return { status: 'not_certified', retakeAfterDays: 14 };
   }
@@ -56,6 +60,8 @@ export async function issueCertificate(sessionId: string): Promise<{ status: str
   if (compositeScore < 70) {
     await Session.findByIdAndUpdate(sessionId, baseSessionUpdate);
     await deleteSession(sessionId);
+    // CRIT-09: enforce the retake cooldown server-side.
+    await setCooldown(session.userId.toString(), session.skillId.toString(), COOLDOWN_PARTIAL);
     logger.info(`[cert] Partial pass: userId=${session.userId} score=${compositeScore}`);
     return { status: 'partial', retakeAfterDays: 7 };
   }
@@ -79,11 +85,18 @@ export async function issueCertificate(sessionId: string): Promise<{ status: str
     certificateId, certificateHash: certHash, issuedAt, expiresAt, status: certStatus,
   });
 
+  // HIGH-20: resolve the Skill BEFORE the User update so name and slug land
+  // in verifiedSkillsSummary. Previously they were empty strings and recruiter
+  // search by skillName silently missed every certificate.
+  const skill = await Skill.findById(session.skillId).lean<{ name: string; slug: string }>();
+
   await User.findByIdAndUpdate(session.userId, {
     $set: { 'skills.$[el].status': 'verified', 'skills.$[el].verificationId': verif._id },
     $push: {
       verifiedSkillsSummary: {
-        skillId: session.skillId, skillName: '', skillSlug: '',
+        skillId: session.skillId,
+        skillName: skill?.name ?? '',
+        skillSlug: skill?.slug ?? '',
         tier: finalTier || session.declaredTier, compositeScore, issuedAt,
       }
     },
@@ -96,7 +109,6 @@ export async function issueCertificate(sessionId: string): Promise<{ status: str
 
   await deleteSession(sessionId);
 
-  const skill = await Skill.findById(session.skillId).lean<{ name: string; slug: string }>();
   const user = await User.findById(session.userId).lean<{ firstName: string; lastName: string }>();
 
   // Feed post

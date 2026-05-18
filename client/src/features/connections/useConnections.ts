@@ -1,13 +1,16 @@
 import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { connectionsApi } from './connectionsApi';
 
 const BASE = `${API_ORIGIN}/api/v1/connections`;
 
 export const connKeys = {
-  pending:     () => ['connections', 'pending'] as const,
-  connections: () => ['connections', 'list']    as const,
-  suggestions: () => ['suggestions']            as const,
-  sent:        () => ['connections', 'sent']    as const,
+  pending:      () => ['connections', 'pending'] as const,
+  connections:  () => ['connections', 'list']    as const,
+  suggestions:  () => ['suggestions']            as const,
+  sent:         () => ['connections', 'sent']    as const,
+  peopleSearch: (q: string) => ['people-search', q] as const,
 };
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -157,5 +160,35 @@ export function useUnfollowUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['profile'] });
     },
+  });
+}
+
+// ── People search ─────────────────────────────────────────────────────────────
+// Used by the Network page's top-level search bar. Completely separate from
+// job search (jobs has its own /jobs?keyword=… search inside JobSearchPage).
+//
+// Debounces the keyword by 300 ms so we don't hammer the server while typing,
+// and short-circuits the query when q is empty or 1 char.
+
+function useDebounced<T>(value: T, delay = 300): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
+export function usePeopleSearch(q: string) {
+  const debouncedQ = useDebounced(q.trim(), 300);
+  const enabled = debouncedQ.length >= 2;
+  return useQuery({
+    queryKey: connKeys.peopleSearch(debouncedQ),
+    queryFn:  () => connectionsApi.peopleSearch(debouncedQ),
+    enabled,
+    staleTime: 30_000,
+    // Keep the previous results visible while a new query is in flight, so
+    // the list doesn't blank out on every keystroke after the debounce.
+    placeholderData: (prev) => prev,
   });
 }

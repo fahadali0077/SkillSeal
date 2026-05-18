@@ -43,6 +43,21 @@ export interface SuggestedUser {
   reason:          string;
 }
 
+export interface PeopleSearchResult {
+  userId:           string;
+  fullName:         string;
+  firstName:        string;
+  lastName:         string;
+  headline:         string;
+  profilePhoto:     string;
+  customUrl:        string;
+  connectionCount:  number;
+  mutualCount:      number;
+  connectionStatus: 'none' | 'pending' | 'accepted';
+  connectionId?:    string;
+  matchedOn:        'name' | 'headline' | 'skill';
+}
+
 // ── API object ────────────────────────────────────────────────────────────────
 
 export const connectionsApi = {
@@ -92,4 +107,15 @@ export const connectionsApi = {
 
   // PYMK suggestions
   suggestions: () => apiFetch<SuggestedUser[]>(`${SUGG_BASE}/people`),
+
+  // People search — separate from job search; matches name / headline / skill
+  peopleSearch: (q: string, page = 1, limit = 20) => {
+    const qs = new URLSearchParams({ q, page: String(page), limit: String(limit) });
+    return apiFetch<{
+      results:    PeopleSearchResult[];
+      total:      number;
+      page:       number;
+      totalPages: number;
+    }>(`${USER_BASE}/people-search?${qs}`);
+  },
 };

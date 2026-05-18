@@ -5,24 +5,24 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import mongoose, { Types } from 'mongoose';
-import { User } from '../models/User.model';
+import { User }            from '../models/User.model';
 import type { IUserDocument } from '../models/User.model';
-import { Connection } from '../models/Connection.model';
+import { Connection }      from '../models/Connection.model';
 import type { IConnectionDocument } from '../models/Connection.model';
-import { AppError } from '../middleware/error.middleware';
-import { getRedis } from '../config/redis';
+import { AppError }        from '../middleware/error.middleware';
+import { getRedis }        from '../config/redis';
 import { createNotification } from './notifications.service';
-import logger from '../utils/logger';
+import logger              from '../utils/logger';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-const WEEKLY_LIMIT = 100;
-const PENDING_LIMIT = 200;
-const NOTE_MAX = 300;
+const WEEKLY_LIMIT   = 100;
+const PENDING_LIMIT  = 200;
+const NOTE_MAX       = 300;
 
-function weeklyKey(userId: string) { return `conn:weekly:${userId}`; }
+function weeklyKey(userId: string)  { return `conn:weekly:${userId}`; }
 function suggestKey(userId: string) { return `suggestions:${userId}`; }
 
 async function assertNotSelf(a: string, b: string) {
@@ -36,7 +36,7 @@ async function assertNotBlocked(senderId: string, recipientId: string) {
   ]);
   if (!sender || !recipient) throw new AppError('User not found.', 404, true);
 
-  const senderBlocked = sender.blockedUsers?.some((id) => id.toString() === recipientId);
+  const senderBlocked    = sender.blockedUsers?.some((id) => id.toString() === recipientId);
   const recipientBlocked = recipient.blockedUsers?.some((id) => id.toString() === senderId);
   if (senderBlocked || recipientBlocked) {
     throw new AppError('Connection request cannot be sent.', 403, true);
@@ -54,25 +54,25 @@ async function bustSuggestions(...userIds: string[]) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface UserMini {
-  _id: string;
-  fullName: string;
-  firstName: string;
-  lastName: string;
-  headline: string;
+  _id:          string;
+  fullName:     string;
+  firstName:    string;
+  lastName:     string;
+  headline:     string;
   profilePhoto: string;
-  customUrl: string;
+  customUrl:    string;
   connectionCount: number;
 }
 
 async function toMini(doc: IUserDocument): Promise<UserMini> {
   return {
-    _id: doc._id.toString(),
-    fullName: `${doc.firstName} ${doc.lastName}`,
-    firstName: doc.firstName,
-    lastName: doc.lastName,
-    headline: doc.headline ?? '',
-    profilePhoto: doc.profilePhoto ?? '',
-    customUrl: doc.customUrl ?? '',
+    _id:             doc._id.toString(),
+    fullName:        `${doc.firstName} ${doc.lastName}`,
+    firstName:       doc.firstName,
+    lastName:        doc.lastName,
+    headline:        doc.headline ?? '',
+    profilePhoto:    doc.profilePhoto ?? '',
+    customUrl:       doc.customUrl ?? '',
     connectionCount: doc.connectionCount ?? doc.connections?.length ?? 0,
   };
 }
@@ -96,7 +96,7 @@ export async function sendRequest(
   // Already connected or pending?
   const existing = await Connection.findOne({
     $or: [
-      { requesterId: senderId, recipientId },
+      { requesterId: senderId,    recipientId },
       { requesterId: recipientId, recipientId: senderId },
     ],
     status: { $in: ['pending', 'accepted'] },
@@ -127,7 +127,7 @@ export async function sendRequest(
   }
 
   // Weekly send limit (100, stored in Redis with Sunday-midnight TTL)
-  const wKey = weeklyKey(senderId);
+  const wKey        = weeklyKey(senderId);
   const weeklyCount = parseInt((await redis.get(wKey)) ?? '0', 10);
   if (weeklyCount >= WEEKLY_LIMIT) {
     throw new AppError('Weekly connection request limit reached. Try again next week.', 429, true);
@@ -146,8 +146,8 @@ export async function sendRequest(
   ) ?? await Connection.create({
     requesterId: new Types.ObjectId(senderId),
     recipientId: new Types.ObjectId(recipientId),
-    status: 'pending',
-    note: note ? note.slice(0, NOTE_MAX) : '',
+    status:      'pending',
+    note:        note ? note.slice(0, NOTE_MAX) : '',
   });
 
   // Increment weekly counter; set TTL to next Sunday midnight if not set
@@ -162,13 +162,13 @@ export async function sendRequest(
 
   await createNotification(recipientId, 'connection_request', {
     fromUser: {
-      _id: senderId,
-      fullName: sender ? `${sender.firstName} ${sender.lastName}` : 'Someone',
+      _id:          senderId,
+      fullName:     sender ? `${sender.firstName} ${sender.lastName}` : 'Someone',
       profilePhoto: sender?.profilePhoto ?? '',
-      customUrl: sender?.customUrl ?? '',
+      customUrl:    sender?.customUrl    ?? '',
     },
     connectionId: conn._id.toString(),
-    message: 'sent you a connection request',
+    message:      'sent you a connection request',
   });
 
   // Bust PYMK cache for BOTH users — without this, the recipient still
@@ -183,7 +183,7 @@ export async function sendRequest(
 }
 
 function nextSundayMidnightUnix(): number {
-  const d = new Date();
+  const d   = new Date();
   const day = d.getUTCDay(); // 0 = Sunday
   d.setUTCDate(d.getUTCDate() + ((7 - day) % 7 || 7));
   d.setUTCHours(0, 0, 0, 0);
@@ -200,7 +200,7 @@ export async function acceptRequest(connectionId: string, recipientId: string): 
   if (conn.recipientId.toString() !== recipientId) throw new AppError('Forbidden.', 403, true);
   if (conn.status !== 'pending') throw new AppError('Request is no longer pending.', 409, true);
 
-  conn.status = 'accepted';
+  conn.status      = 'accepted';
   conn.respondedAt = new Date();
   await conn.save();
 
@@ -219,10 +219,10 @@ export async function acceptRequest(connectionId: string, recipientId: string): 
 
   await createNotification(rid, 'connection_accepted', {
     fromUser: {
-      _id: uid,
-      fullName: acceptor ? `${acceptor.firstName} ${acceptor.lastName}` : 'Someone',
+      _id:          uid,
+      fullName:     acceptor ? `${acceptor.firstName} ${acceptor.lastName}` : 'Someone',
       profilePhoto: acceptor?.profilePhoto ?? '',
-      customUrl: acceptor?.customUrl ?? '',
+      customUrl:    acceptor?.customUrl    ?? '',
     },
     connectionId,
     message: 'accepted your connection request',
@@ -242,7 +242,7 @@ export async function declineRequest(connectionId: string, recipientId: string):
   if (conn.recipientId.toString() !== recipientId) throw new AppError('Forbidden.', 403, true);
   if (conn.status !== 'pending') throw new AppError('Request is no longer pending.', 409, true);
 
-  conn.status = 'declined';
+  conn.status      = 'declined';
   conn.respondedAt = new Date();
   await conn.save();
 
@@ -284,8 +284,8 @@ export async function removeConnection(connectionId: string, actorId: string): P
 export async function removeConnectionByUserId(actorId: string, targetUserId: string): Promise<void> {
   const conn = await Connection.findOne({
     $or: [
-      { requesterId: actorId, recipientId: targetUserId },
-      { requesterId: targetUserId, recipientId: actorId },
+      { requesterId: actorId,      recipientId: targetUserId },
+      { requesterId: targetUserId, recipientId: actorId      },
     ],
   });
   if (!conn) throw new AppError('Connection not found.', 404, true);
@@ -294,7 +294,7 @@ export async function removeConnectionByUserId(actorId: string, targetUserId: st
   const uid = conn.recipientId.toString();
 
   // Capture state before deletion
-  const wasPending = conn.status === 'pending';
+  const wasPending   = conn.status === 'pending';
   const wasRequester = conn.requesterId.toString() === actorId;
 
   // For accepted connections, also decrement the denormalized counters.
@@ -311,8 +311,8 @@ export async function removeConnectionByUserId(actorId: string, targetUserId: st
   // Refund weekly limit if the requester is withdrawing their own pending request
   if (wasPending && wasRequester) {
     const redis = getRedis();
-    const wKey = weeklyKey(actorId);
-    const cur = parseInt((await redis.get(wKey)) ?? '0', 10);
+    const wKey  = weeklyKey(actorId);
+    const cur   = parseInt((await redis.get(wKey)) ?? '0', 10);
     if (cur > 0) await redis.decr(wKey);
   }
 
@@ -344,7 +344,7 @@ export async function blockUser(blockerId: string, targetId: string): Promise<vo
   if (existing) {
     await Promise.all([
       User.findByIdAndUpdate(blockerId, { $pull: { connections: new Types.ObjectId(targetId) }, $inc: { connectionCount: -1 } }),
-      User.findByIdAndUpdate(targetId, { $pull: { connections: new Types.ObjectId(blockerId) }, $inc: { connectionCount: -1 } }),
+      User.findByIdAndUpdate(targetId,  { $pull: { connections: new Types.ObjectId(blockerId) }, $inc: { connectionCount: -1 } }),
       Connection.findByIdAndDelete(existing._id),
     ]);
   } else {
@@ -381,7 +381,7 @@ export async function followUser(followerId: string, targetId: string): Promise<
   await assertNotSelf(followerId, targetId);
   await Promise.all([
     User.findByIdAndUpdate(followerId, { $addToSet: { following: new Types.ObjectId(targetId) }, $inc: { followingCount: 1 } }),
-    User.findByIdAndUpdate(targetId, { $addToSet: { followers: new Types.ObjectId(followerId) }, $inc: { followerCount: 1 } }),
+    User.findByIdAndUpdate(targetId,  { $addToSet: { followers: new Types.ObjectId(followerId) }, $inc: { followerCount: 1 } }),
   ]);
 }
 
@@ -426,8 +426,8 @@ export async function listConnections(
   if (search) {
     filter['$or'] = [
       { firstName: { $regex: search, $options: 'i' } },
-      { lastName: { $regex: search, $options: 'i' } },
-      { headline: { $regex: search, $options: 'i' } },
+      { lastName:  { $regex: search, $options: 'i' } },
+      { headline:  { $regex: search, $options: 'i' } },
     ];
   }
 
@@ -445,24 +445,24 @@ export async function listConnections(
 
 interface ConnRequestItem {
   connectionId: string;
-  user: UserMini;
-  note: string;
-  createdAt: string;
+  user:         UserMini;
+  note:         string;
+  createdAt:    string;
 }
 
 export async function getPendingRequests(userId: string): Promise<ConnRequestItem[]> {
   const conns = await Connection.find({ recipientId: userId, status: 'pending' })
     .sort({ createdAt: -1 }).limit(50).lean<IConnectionDocument[]>();
 
-  const ids = conns.map((c) => c.requesterId);
+  const ids  = conns.map((c) => c.requesterId);
   const users = await User.find({ _id: { $in: ids } }).lean<IUserDocument[]>();
-  const uMap = new Map(users.map((u) => [u._id.toString(), u]));
+  const uMap  = new Map(users.map((u) => [u._id.toString(), u]));
 
   return conns.map((c) => ({
     connectionId: c._id.toString(),
-    user: buildMini(uMap.get(c.requesterId.toString())),
-    note: c.note,
-    createdAt: c.createdAt.toISOString(),
+    user:         buildMini(uMap.get(c.requesterId.toString())),
+    note:         c.note,
+    createdAt:    c.createdAt.toISOString(),
   }));
 }
 
@@ -470,15 +470,15 @@ export async function getSentRequests(userId: string): Promise<ConnRequestItem[]
   const conns = await Connection.find({ requesterId: userId, status: 'pending' })
     .sort({ createdAt: -1 }).limit(50).lean<IConnectionDocument[]>();
 
-  const ids = conns.map((c) => c.recipientId);
-  const users = await User.find({ _id: { $in: ids } }).lean<IUserDocument[]>();
-  const uMap = new Map(users.map((u) => [u._id.toString(), u]));
+  const ids   = conns.map((c) => c.recipientId);
+  const users  = await User.find({ _id: { $in: ids } }).lean<IUserDocument[]>();
+  const uMap   = new Map(users.map((u) => [u._id.toString(), u]));
 
   return conns.map((c) => ({
     connectionId: c._id.toString(),
-    user: buildMini(uMap.get(c.recipientId.toString())),
-    note: c.note,
-    createdAt: c.createdAt.toISOString(),
+    user:         buildMini(uMap.get(c.recipientId.toString())),
+    note:         c.note,
+    createdAt:    c.createdAt.toISOString(),
   }));
 }
 

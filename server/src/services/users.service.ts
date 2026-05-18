@@ -640,3 +640,176 @@ export async function getCompleteness(userId: string): Promise<CompletenessResul
   const score = Object.values(sections).reduce((acc, s) => acc + s.earned, 0);
   return { score, sections };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// People search — general "find users by name / headline / skill" search used
+// by the Network page. Separate from searchUsers() above which is recruiter-
+// oriented (returns ICandidateCard with match scoring). This one returns a
+// lightweight UserMini-style shape with the viewer's connectionStatus included
+// so the ConnectionButton component can render the right state inline.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PeopleSearchResult {
+  userId:          string;
+  fullName:        string;
+  firstName:       string;
+  lastName:        string;
+  headline:        string;
+  profilePhoto:    string;
+  customUrl:       string;
+  connectionCount: number;
+  mutualCount:     number;
+  connectionStatus: 'none' | 'pending' | 'accepted';
+  connectionId?:   string;        // only set when viewer is RECIPIENT of pending
+  matchedOn:       'name' | 'headline' | 'skill';
+}
+
+/** Escape regex metacharacters in a user-supplied search string. */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export async function searchPeople(
+  viewerId: string,
+  q: string,
+  page = 1,
+  limit = 20,
+): Promise<{ results: PeopleSearchResult[]; total: number; page: number; totalPages: number }> {
+  const trimmed = q.trim();
+  if (trimmed.length < 2) {
+    return { results: [], total: 0, page: 1, totalPages: 0 };
+  }
+
+  const safeLimit = Math.min(50, Math.max(1, limit));
+  const safePage  = Math.max(1, page);
+  const skip      = (safePage - 1) * safeLimit;
+  const pattern   = escapeRegex(trimmed);
+  const rx        = { $regex: pattern, $options: 'i' };
+
+  // ── 1. Find skill IDs whose name matches the keyword ────────────────────
+  const matchingSkills = await Skill.find({ name: rx }).select('_id').lean();
+  const matchingSkillIds = matchingSkills.map((s) => s._id);
+
+  // ── 2. Build the main filter ────────────────────────────────────────────
+  const orClauses: FilterQuery<IUserDocument>[] = [
+    { firstName: rx },
+    { lastName: rx },
+    { headline: rx },
+  ];
+  if (matchingSkillIds.length > 0) {
+    orClauses.push({ 'skills.skillId': { $in: matchingSkillIds } });
+  }
+
+  const filter: FilterQuery<IUserDocument> = {
+    emailVerified: true,
+    _id: { $ne: new mongoose.Types.ObjectId(viewerId) },
+    $or: orClauses,
+  };
+
+  // ── 3. Run search + count + load viewer (for mutualCount) in parallel ───
+  const [docs, total, viewer] = await Promise.all([
+    User.find(filter)
+      .select('firstName lastName headline profilePhoto customUrl connections skills')
+      .sort({ 'connections.length': -1, _id: 1 }) // popular first as a proxy for relevance
+      .skip(skip)
+      .limit(safeLimit)
+      .lean<IUserDocument[]>(),
+    User.countDocuments(filter),
+    User.findById(viewerId).select('connections').lean<IUserDocument>(),
+  ]);
+
+  if (docs.length === 0) {
+    return { results: [], total, page: safePage, totalPages: Math.ceil(total / safeLimit) };
+  }
+
+  // ── 4. Batch-resolve connection statuses (1 query for all results) ──────
+  const resultIds = docs.map((d) => d._id);
+  const conns = await Connection.find({
+    $or: [
+      { requesterId: viewerId, recipientId: { $in: resultIds } },
+      { recipientId: viewerId, requesterId: { $in: resultIds } },
+    ],
+  }).lean();
+
+  // Map otherUserId → connection record
+  const connByUser = new Map<string, { _id: mongoose.Types.ObjectId; status: string; recipientId: mongoose.Types.ObjectId }>();
+  for (const c of conns) {
+    const other = c.requesterId.toString() === viewerId
+      ? c.recipientId.toString()
+      : c.requesterId.toString();
+    connByUser.set(other, c as never);
+  }
+
+  // ── 5. Mutual connections (intersect viewer.connections with each result) ─
+  const viewerConnSet = new Set(
+    (viewer?.connections ?? []).map((id) => id.toString()),
+  );
+
+  // ── 6. Shape the results ────────────────────────────────────────────────
+  const matchedSkillIdSet = new Set(matchingSkillIds.map((id) => id.toString()));
+  const lowerQ = trimmed.toLowerCase();
+
+  const results: PeopleSearchResult[] = docs.map((doc) => {
+    const uid = doc._id.toString();
+
+    // Connection status
+    let connectionStatus: 'none' | 'pending' | 'accepted' = 'none';
+    let connectionId: string | undefined;
+    const conn = connByUser.get(uid);
+    if (conn) {
+      if (conn.status === 'accepted') {
+        connectionStatus = 'accepted';
+        connectionId = conn._id.toString();
+      } else if (conn.status === 'pending') {
+        connectionStatus = 'pending';
+        // only expose id when viewer is the recipient (same rule as profile fetch)
+        if (conn.recipientId.toString() === viewerId) {
+          connectionId = conn._id.toString();
+        }
+      }
+      // declined/withdrawn → treated as 'none'
+    }
+
+    // Mutual count
+    const theirConns = (doc.connections ?? []).map((id) => id.toString());
+    let mutualCount = 0;
+    for (const id of theirConns) {
+      if (viewerConnSet.has(id)) mutualCount++;
+    }
+
+    // What matched? (for "Matched on X" hints in the UI)
+    let matchedOn: 'name' | 'headline' | 'skill' = 'name';
+    const nameMatches =
+      doc.firstName.toLowerCase().includes(lowerQ) ||
+      doc.lastName.toLowerCase().includes(lowerQ);
+    if (nameMatches) {
+      matchedOn = 'name';
+    } else if (doc.headline?.toLowerCase().includes(lowerQ)) {
+      matchedOn = 'headline';
+    } else if ((doc.skills ?? []).some((s) => matchedSkillIdSet.has(s.skillId.toString()))) {
+      matchedOn = 'skill';
+    }
+
+    return {
+      userId:          uid,
+      fullName:        `${doc.firstName} ${doc.lastName}`,
+      firstName:       doc.firstName,
+      lastName:        doc.lastName,
+      headline:        doc.headline ?? '',
+      profilePhoto:    doc.profilePhoto ?? '',
+      customUrl:       doc.customUrl ?? '',
+      connectionCount: doc.connections?.length ?? 0,
+      mutualCount,
+      connectionStatus,
+      ...(connectionId ? { connectionId } : {}),
+      matchedOn,
+    };
+  });
+
+  return {
+    results,
+    total,
+    page: safePage,
+    totalPages: Math.ceil(total / safeLimit),
+  };
+}

@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -122,12 +122,32 @@ function GlobalSearch({ isRecruiter }: { isRecruiter: boolean }) {
   const [q, setQ] = useState('');
   const [focused, setFocused] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Context-aware search: route + placeholder depend on which page you're on.
+  // - On /network → search PEOPLE (separate from job search entirely)
+  // - On /jobs → search JOBS
+  // - Anywhere else → default by role (recruiters → people, candidates → jobs)
+  const onNetwork = location.pathname.startsWith('/network');
+  const onJobs    = location.pathname.startsWith('/jobs');
+  const mode: 'people' | 'jobs' =
+    onNetwork ? 'people'
+    : onJobs  ? 'jobs'
+    : isRecruiter ? 'people'
+    : 'jobs';
+
+  const placeholder = mode === 'people' ? 'Search people…' : 'Search jobs…';
+
   const handle = (e: React.FormEvent) => {
     e.preventDefault();
-    if (q.trim()) {
-      navigate(isRecruiter ? `/network?search=${encodeURIComponent(q.trim())}` : `/jobs?keyword=${encodeURIComponent(q.trim())}`);
-      setQ(''); setFocused(false);
+    const value = q.trim();
+    if (!value) return;
+    if (mode === 'people') {
+      navigate(`/network?search=${encodeURIComponent(value)}`);
+    } else {
+      navigate(`/jobs?keyword=${encodeURIComponent(value)}`);
     }
+    setQ(''); setFocused(false);
   };
   return (
     <form onSubmit={handle} className="relative">
@@ -138,7 +158,7 @@ function GlobalSearch({ isRecruiter }: { isRecruiter: boolean }) {
           onChange={e => setQ(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder={isRecruiter ? 'Search candidates…' : 'Search jobs, people…'}
+          placeholder={placeholder}
           className="bg-transparent text-sm text-gray-800 placeholder:text-gray-400 outline-none w-52"
         />
       </div>

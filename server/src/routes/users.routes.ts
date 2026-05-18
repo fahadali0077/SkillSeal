@@ -10,7 +10,7 @@ import { authenticate, optionalAuth, requireRole, type AuthRequest } from '../mi
 import { sendSuccess, sendError } from '../utils/response';
 import { AppError } from '../middleware/error.middleware';
 import {
-  getProfile, updateProfile, searchUsers, getCompleteness,
+  getProfile, updateProfile, searchUsers, searchPeople, getCompleteness,
   addExperience, updateExperience, deleteExperience,
   addEducation, updateEducation, deleteEducation,
   addSkill, removeSkill, uploadProfilePhoto, uploadBannerImage,
@@ -64,6 +64,21 @@ router.get('/search', optionalAuth, async (req: AuthRequest, res: Response) => {
       limit: limit ? parseInt(limit, 10) : 20,
     });
     sendSuccess(res, result, 'Search results');
+  } catch (err) { handleError(err, res); }
+});
+
+// ── GET /users/people-search — general "find someone on the platform" search
+// used by the Network page. Matches first name, last name, headline, and
+// skill names. Returns viewer-relative connectionStatus so the inline button
+// can render Connect / Pending / Withdraw / Accept correctly.
+// MUST be declared before /:id below or Express will catch it as an :id.
+router.get('/people-search', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const q = (req.query['q'] as string) || '';
+    const page  = req.query['page']  ? parseInt(req.query['page']  as string, 10) : 1;
+    const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : 20;
+    const result = await searchPeople(req.user!.userId, q, page, limit);
+    sendSuccess(res, result, 'People search results');
   } catch (err) { handleError(err, res); }
 });
 

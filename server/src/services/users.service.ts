@@ -173,15 +173,36 @@ async function toPublicUser(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getProfile(
-  targetId: string,
+  targetIdOrCustomUrl: string,
   viewerId?: string,
 ): Promise<IUserPublic> {
-  if (!mongoose.Types.ObjectId.isValid(targetId)) {
-    throw new AppError('Invalid user ID.', 400, true);
+  // The whole app links to profiles via /profile/<customUrl || _id>, so this
+  // endpoint must accept either form. A 24-char hex string is treated as an
+  // _id; anything else is treated as a customUrl (which the User schema
+  // stores lowercased + trimmed, so we normalize the lookup the same way).
+  // Without this resolution, any user who set a customUrl on their account
+  // would get "Invalid user ID" when clicking their own avatar — because the
+  // navbar builds the URL from customUrl, but the API only accepted _ids.
+  //
+  // Using a strict /^[0-9a-fA-F]{24}$/ check rather than mongoose's looser
+  // ObjectId.isValid because the latter also returns true for any 12-char
+  // string, which would misroute 12-char customUrls to findById.
+  let doc: IUserDocument | null = null;
+  const isObjectId = /^[0-9a-fA-F]{24}$/.test(targetIdOrCustomUrl);
+
+  if (isObjectId) {
+    doc = await User.findById(targetIdOrCustomUrl).lean<IUserDocument>();
+  } else {
+    const slug = targetIdOrCustomUrl.trim().toLowerCase();
+    if (!slug) throw new AppError('Invalid user identifier.', 400, true);
+    doc = await User.findOne({ customUrl: slug }).lean<IUserDocument>();
   }
 
-  const doc = await User.findById(targetId).lean<IUserDocument>();
   if (!doc) throw new AppError('User not found.', 404, true);
+
+  // From here on, work with the resolved _id so downstream comparisons
+  // (isSelf, resolveConnectionStatus) operate on canonical ObjectIds.
+  const targetId = doc._id.toString();
 
   // Populate skill names from Skill collection
   const skillIds = doc.skills.map((s) => s.skillId);

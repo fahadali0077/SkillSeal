@@ -22,6 +22,7 @@ import notificationsRouter from './routes/notifications.routes';
 import privacyRouter from './routes/privacy.routes';
 import skillsRouter from './routes/skills.routes';
 import recruiterDashRouter from './routes/recruiter.routes';
+import adminRouter from './routes/admin.routes';
 import { errorHandler } from './middleware/error.middleware';
 import mongoose from 'mongoose';
 import { getRedis } from './config/redis';
@@ -105,6 +106,7 @@ app.use('/api/v1/companies', companiesRouter);
 app.use('/api/v1/notifications', notificationsRouter);
 app.use('/api/v1/privacy', privacyRouter);
 app.use('/api/v1/skills', skillsRouter);
+app.use('/api/v1/admin', adminRouter);
 
 // Root path — redirect uptime monitors / health checkers to /health.
 // Without this, any checker hitting "/" gets a 404 and reports the

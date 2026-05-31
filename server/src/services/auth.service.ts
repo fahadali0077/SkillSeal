@@ -5,6 +5,7 @@
 
 import bcrypt from 'bcryptjs';
 import type { IUserPublic, IUserPrivate } from '@SkillSeal/shared';
+import { ApiErrorCode } from '@SkillSeal/shared';
 import { User } from '../models/User.model';
 import type { IUserDocument } from '../models/User.model';
 import { getRedis } from '../config/redis';
@@ -215,8 +216,26 @@ export async function login(input: LoginInput): Promise<LoginResult> {
     throw new AppError('Please verify your email address before logging in.', 403, true);
   }
 
+  // 4b. ADMIN: block suspended accounts. The brute-force counter is cleared in
+  // step 5 only on a fully successful login, so suspended users still can't be
+  // used to probe the lockout window. tokenVersion was bumped at suspension
+  // time, so any previously-issued refresh tokens are already dead.
+  if (user.status === 'suspended') {
+    throw new AppError(
+      user.suspendedReason
+        ? `Your account has been suspended: ${user.suspendedReason}`
+        : 'Your account has been suspended. Please contact support.',
+      403,
+      true,
+      ApiErrorCode.ACCOUNT_SUSPENDED,
+    );
+  }
+
   // 5. Clear brute-force counter on success
   await redis.del(key);
+
+  // 5b. ADMIN: record last activity (fire-and-forget; never blocks login).
+  User.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } }).catch(() => { /* non-critical */ });
 
   // 6. Issue tokens
   const tokenPayload = {

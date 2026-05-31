@@ -73,6 +73,13 @@ export interface IUserDocument extends Document {
   email: string;
   passwordHash: string;
   role: 'candidate' | 'recruiter' | 'company_admin' | 'platform_admin';
+  // ADMIN: account moderation state. 'suspended' blocks login (see auth.service)
+  // and is set/cleared exclusively by a platform_admin via the admin module.
+  status: 'active' | 'suspended';
+  suspendedReason: string;
+  suspendedAt: Date | null;
+  // ADMIN: populated on every successful login so admins can see activity.
+  lastLoginAt: Date | null;
   emailVerified: boolean;
   firstName: string;
   lastName: string;
@@ -158,6 +165,15 @@ const UserSchema = new Schema<IUserDocument>(
       enum: ['candidate', 'recruiter', 'company_admin', 'platform_admin'],
       default: 'candidate',
     },
+    // ADMIN: moderation state — see IUserDocument for semantics.
+    status: {
+      type: String,
+      enum: ['active', 'suspended'],
+      default: 'active',
+    },
+    suspendedReason: { type: String, default: '' },
+    suspendedAt: { type: Date, default: null },
+    lastLoginAt: { type: Date, default: null },
     emailVerified: { type: Boolean, default: false },
     firstName: { type: String, trim: true, required: true },
     lastName: { type: String, trim: true, required: true },
@@ -216,6 +232,9 @@ UserSchema.index({ 'location.city': 1, 'location.country': 1 });
 UserSchema.index({ 'skills.skillId': 1, 'skills.status': 1 });
 UserSchema.index({ openToWork: 1, accountType: 1 });
 UserSchema.index({ scheduledDeletionAt: 1 });
+// ADMIN: role + status filtering and createdAt sorting power the admin user list.
+UserSchema.index({ role: 1, status: 1 });
+UserSchema.index({ createdAt: -1 });
 // SCHEMA BUG 1 — array field indexes for connection graph traversal and lookups
 UserSchema.index({ connections:  1 });
 UserSchema.index({ followers:    1 });

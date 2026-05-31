@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home, Users, Briefcase, MessageSquare, Bell, Search,
   LogOut, User, ShieldCheck, ChevronDown, LayoutDashboard,
-  PenSquare, CreditCard, ClipboardList,
+  PenSquare, CreditCard, ClipboardList, ShieldAlert,
 } from 'lucide-react';
 import { useAuthStore } from '../features/auth/useAuth';
 import NotificationBell from '../features/notifications/NotificationBell';
@@ -31,6 +31,13 @@ const RECRUITER_NAV = [
   { to: '/messages',   icon: <MessageSquare size={20} />,   label: 'Messages' },
 ];
 
+const ADMIN_NAV = [
+  { to: '/admin',      icon: <ShieldAlert size={20} />,     label: 'Admin' },
+  { to: '/feed',       icon: <Home size={20} />,            label: 'Feed' },
+  { to: '/network',    icon: <Users size={20} />,           label: 'Network' },
+  { to: '/jobs',       icon: <Briefcase size={20} />,       label: 'Jobs' },
+];
+
 function AvatarMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -38,6 +45,7 @@ function AvatarMenu() {
   const { user, logout } = useAuthStore();
   const role = user?.role ?? 'candidate';
   const isRecruiter = role === 'recruiter' || role === 'company_admin';
+  const isAdmin = role === 'platform_admin';
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -72,8 +80,8 @@ function AvatarMenu() {
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="font-semibold text-sm text-gray-900">{user?.firstName} {u?.lastName}</p>
               <p className="text-xs text-gray-500 truncate">{u?.headline ?? (isRecruiter ? 'Recruiter' : 'Candidate')}</p>
-              <span className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${isRecruiter ? 'bg-indigo-50 text-indigo-600' : 'bg-brand/10 text-brand'}`}>
-                {isRecruiter ? 'Recruiter' : 'Candidate'}
+              <span className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${isAdmin ? 'bg-red-50 text-red-600' : isRecruiter ? 'bg-indigo-50 text-indigo-600' : 'bg-brand/10 text-brand'}`}>
+                {isAdmin ? 'Platform admin' : isRecruiter ? 'Recruiter' : 'Candidate'}
               </span>
             </div>
 
@@ -81,6 +89,12 @@ function AvatarMenu() {
               <Link to={`/profile/${u?.customUrl || u?._id}`} onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 <User size={15} />View profile
               </Link>
+
+              {isAdmin && (
+                <Link to="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                  <ShieldAlert size={15} />Admin console
+                </Link>
+              )}
 
               {isRecruiter ? (
                 <>
@@ -172,7 +186,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { user, accessToken } = useAuthStore() as { user: typeof useAuthStore extends () => { user: infer U } ? U : unknown; accessToken: string | null; logout: () => Promise<void> };
   const role = (user as { role?: string })?.role ?? 'candidate';
   const isRecruiter = role === 'recruiter' || role === 'company_admin';
-  const navItems = isRecruiter ? RECRUITER_NAV : CANDIDATE_NAV;
+  const isAdmin = role === 'platform_admin';
+  const navItems = isAdmin ? ADMIN_NAV : isRecruiter ? RECRUITER_NAV : CANDIDATE_NAV;
   const unreadMessages = useUnreadCount();
 
   useEffect(() => { if (user && accessToken) connectSocket(accessToken); }, [accessToken]);
@@ -182,8 +197,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-4">
           {/* Logo */}
-          <Link to={isRecruiter ? '/recruiter' : '/assessment'} className="flex items-center gap-2 shrink-0">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isRecruiter ? 'bg-indigo-600' : 'bg-brand'}`}>
+          <Link to={isAdmin ? '/admin' : isRecruiter ? '/recruiter' : '/assessment'} className="flex items-center gap-2 shrink-0">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isAdmin ? 'bg-red-600' : isRecruiter ? 'bg-indigo-600' : 'bg-brand'}`}>
               <ShieldCheck size={18} className="text-white" />
             </div>
             <span className="font-bold text-gray-900 text-lg hidden sm:block">SkillSeal</span>
@@ -224,7 +239,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Right actions */}
           <div className="flex items-center gap-2 ml-auto">
-            {isRecruiter ? (
+            {isAdmin ? (
+              <Link
+                to="/admin"
+                className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-red-600 border border-red-300 rounded-full px-3 py-1.5 hover:bg-red-50"
+              >
+                <ShieldAlert size={13} />Admin
+              </Link>
+            ) : isRecruiter ? (
               <Link
                 to="/recruiter"
                 className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-indigo-600 border border-indigo-400 rounded-full px-3 py-1.5 hover:bg-indigo-50"

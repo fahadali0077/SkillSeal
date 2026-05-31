@@ -35,6 +35,7 @@ import AssessmentLanding from './features/assessment/AssessmentLanding';
 import IsolationMode from './features/assessment/IsolationMode';
 import RecruiterDashboard from './features/recruiter/RecruiterDashboard';
 import FullCandidateView from './features/recruiter/FullCandidateView';
+import AdminDashboard from './features/admin/AdminDashboard';
 import BillingSuccessPage from './features/billing/BillingSuccessPage';
 import BillingSettings from './features/billing/BillingSettings';
 import PostDetailPage from './pages/PostDetailPage';
@@ -44,6 +45,15 @@ import { useNotificationSocket } from './features/notifications/useNotifications
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuth = useIsAuthenticated();
   return isAuth ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+/** Gates routes to platform_admin only; everyone else is bounced to their role home. */
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const isAuth = useIsAuthenticated();
+  const user = useAuthStore(s => s.user);
+  if (!isAuth) return <Navigate to="/login" replace />;
+  if (user?.role !== 'platform_admin') return <Navigate to={homeRouteForRole(user?.role ?? 'candidate')} replace />;
+  return <>{children}</>;
 }
 
 /** Redirect logged-in users away from guest pages (login/register) to their role home */
@@ -118,6 +128,7 @@ export default function App() {
               <Route path="/assessment/active" element={<AssessmentActiveRoute />} />
               <Route path="/recruiter" element={<RecruiterDashboard />} />
               <Route path="/recruiter/candidates/:userId" element={<FullCandidateView />} />
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
               <Route path="/billing" element={<BillingSettings />} />
               {/* Role-based default redirect */}
               <Route path="/" element={<Navigate to={homeRouteForRole(user?.role ?? 'candidate')} replace />} />

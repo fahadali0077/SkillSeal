@@ -1,0 +1,254 @@
+import { Schema, model, Document, Types } from 'mongoose';
+
+// ── Embedded sub-schemas ──────────────────────────────────────
+
+const SkillEntrySchema = new Schema(
+  {
+    skillId: { type: Schema.Types.ObjectId, ref: 'Skill', required: true },
+    status: {
+      type: String,
+      enum: ['unverified', 'pending', 'verified', 'expired', 'flagged'],
+      default: 'unverified',
+    },
+    verificationId: { type: Schema.Types.ObjectId, ref: 'Verification', default: null },
+    addedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
+const LinkSchema = new Schema(
+  {
+    label: { type: String, trim: true },
+    url: { type: String, trim: true },
+    type: {
+      type: String,
+      enum: ['github', 'linkedin', 'portfolio', 'twitter', 'other'],
+      default: 'other',
+    },
+  },
+  { _id: false }
+);
+
+const StartDateSchema = new Schema({ month: Number, year: Number }, { _id: false });
+const EndDateSchema = new Schema(
+  { month: Number, year: Number, isCurrent: { type: Boolean, default: false } },
+  { _id: false }
+);
+
+const ExperienceSchema = new Schema(
+  {
+    title: { type: String, trim: true },
+    company: { type: String, trim: true },
+    companyId: { type: Schema.Types.ObjectId, ref: 'Company', default: null },
+    employmentType: {
+      type: String,
+      enum: ['full-time', 'part-time', 'contract', 'freelance', 'internship', 'volunteer', 'other'],
+    },
+    startDate: StartDateSchema,
+    endDate: EndDateSchema,
+    location: { type: String, trim: true },
+    description: { type: String, maxlength: 2000 },
+    skillsUsed: [{ type: Schema.Types.ObjectId, ref: 'Skill' }],
+  },
+  { _id: true }
+);
+
+const EducationSchema = new Schema(
+  {
+    institution: { type: String, trim: true },
+    degree: { type: String, trim: true },
+    field: { type: String, trim: true },
+    startYear: Number,
+    endYear: Number,
+    inProgress: { type: Boolean, default: false },
+    grade: { type: String, trim: true },
+    description: { type: String, maxlength: 1000 },
+  },
+  { _id: true }
+);
+
+// ── Main interface ─────────────────────────────────────────────
+
+export interface IUserDocument extends Document {
+  email: string;
+  passwordHash: string;
+  role: 'candidate' | 'recruiter' | 'company_admin' | 'platform_admin';
+  // ADMIN: account moderation state. 'suspended' blocks login (see auth.service)
+  // and is set/cleared exclusively by a platform_admin via the admin module.
+  status: 'active' | 'suspended';
+  suspendedReason: string;
+  suspendedAt: Date | null;
+  // ADMIN: populated on every successful login so admins can see activity.
+  lastLoginAt: Date | null;
+  emailVerified: boolean;
+  firstName: string;
+  lastName: string;
+  headline: string;
+  summary: string;
+  location: { city?: string; country?: string };
+  profilePhoto: string;
+  bannerImage: string;
+  customUrl: string;
+  openToWork: boolean;
+  isHiring: boolean;
+  accountType: 'free' | 'pro' | 'recruiter';
+  connections: Types.ObjectId[];
+  followers: Types.ObjectId[];
+  following: Types.ObjectId[];
+  blockedUsers: Types.ObjectId[];
+  // Denormalized counters — kept in sync by connections.service.ts
+  // so profile cards never need to load the full arrays just to show a count.
+  connectionCount: number;
+  followerCount:   number;
+  followingCount:  number;
+  skills: {
+    skillId: Types.ObjectId;
+    status: 'unverified' | 'pending' | 'verified' | 'expired' | 'flagged';
+    verificationId: Types.ObjectId | null;
+    addedAt: Date;
+  }[];
+  links: { label: string; url: string; type: string }[];
+  experience: {
+    title: string;
+    company: string;
+    companyId: Types.ObjectId | null;
+    employmentType: string;
+    startDate: { month: number; year: number };
+    endDate: { month: number; year: number; isCurrent: boolean };
+    location: string;
+    description: string;
+    skillsUsed: Types.ObjectId[];
+  }[];
+  education: {
+    institution: string;
+    degree: string;
+    field: string;
+    startYear: number;
+    endYear: number;
+    inProgress: boolean;
+    grade: string;
+    description: string;
+  }[];
+  tokenVersion: number;
+  // Billing
+  stripeCustomerId?: string;
+  subscriptionStatus?: string;
+  currentPeriodEnd?: Date;
+  additionalAssessmentCredits: number;
+  // Denormalized for fast recruiter search
+  verifiedSkillsSummary: Array<{
+    skillId: unknown;
+    skillName: string;
+    skillSlug: string;
+    tier: string;
+    compositeScore: number;
+    issuedAt: Date;
+  }>;
+  // HIGH-18: 30-day soft-delete fence. When non-null, a daily cron will
+  // permanently delete the user after this date.
+  scheduledDeletionAt: Date | null;
+  // V2 reserved:
+  // keystrokeSamples: any[];
+  // typingProfile: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ── Schema ────────────────────────────────────────────────────
+
+const UserSchema = new Schema<IUserDocument>(
+  {
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, required: true, select: false },
+    role: {
+      type: String,
+      enum: ['candidate', 'recruiter', 'company_admin', 'platform_admin'],
+      default: 'candidate',
+    },
+    // ADMIN: moderation state — see IUserDocument for semantics.
+    status: {
+      type: String,
+      enum: ['active', 'suspended'],
+      default: 'active',
+    },
+    suspendedReason: { type: String, default: '' },
+    suspendedAt: { type: Date, default: null },
+    lastLoginAt: { type: Date, default: null },
+    emailVerified: { type: Boolean, default: false },
+    firstName: { type: String, trim: true, required: true },
+    lastName: { type: String, trim: true, required: true },
+    headline: { type: String, trim: true, maxlength: 220, default: '' },
+    summary: { type: String, trim: true, maxlength: 2600, default: '' },
+    location: {
+      city: { type: String, trim: true },
+      country: { type: String, trim: true },
+    },
+    profilePhoto: { type: String, default: '' },
+    bannerImage: { type: String, default: '' },
+    customUrl: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
+    openToWork: { type: Boolean, default: false },
+    isHiring: { type: Boolean, default: false },
+    accountType: { type: String, enum: ['free', 'pro', 'recruiter'], default: 'free' },
+    connections: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    followers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    following: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    blockedUsers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    // Denormalized counters — updated atomically alongside the arrays.
+    connectionCount: { type: Number, default: 0, min: 0 },
+    followerCount:   { type: Number, default: 0, min: 0 },
+    followingCount:  { type: Number, default: 0, min: 0 },
+    skills: [SkillEntrySchema],
+    links: [LinkSchema],
+    experience: [ExperienceSchema],
+    education: [EducationSchema],
+    tokenVersion: { type: Number, default: 0 },
+    // Billing
+    stripeCustomerId: { type: String, select: false },
+    subscriptionStatus: { type: String, default: '' },
+    currentPeriodEnd: { type: Date },
+    additionalAssessmentCredits: { type: Number, default: 0 },
+    // Denormalized verified skills for recruiter search
+    verifiedSkillsSummary: [{
+      skillId: { type: Schema.Types.ObjectId, ref: 'Skill' },
+      skillName: { type: String, default: '' },
+      skillSlug: { type: String, default: '' },
+      tier: { type: String, default: '' },
+      compositeScore: { type: Number, default: 0 },
+      issuedAt: { type: Date },
+    }],
+    // HIGH-18: when a user requests account deletion the timestamp 30 days
+    // ahead is stored here, and a cron permanently removes the user after.
+    scheduledDeletionAt: { type: Date, default: null },
+    // V2 reserved (uncomment when ready):
+    // keystrokeSamples: { type: [Schema.Types.Mixed], select: false },
+    // typingProfile: { type: Schema.Types.Mixed, select: false },
+  },
+  { timestamps: true }
+);
+
+// ── Indexes ───────────────────────────────────────────────────
+
+UserSchema.index({ 'location.city': 1, 'location.country': 1 });
+UserSchema.index({ 'skills.skillId': 1, 'skills.status': 1 });
+UserSchema.index({ openToWork: 1, accountType: 1 });
+UserSchema.index({ scheduledDeletionAt: 1 });
+// ADMIN: role + status filtering and createdAt sorting power the admin user list.
+UserSchema.index({ role: 1, status: 1 });
+UserSchema.index({ createdAt: -1 });
+// SCHEMA BUG 1 — array field indexes for connection graph traversal and lookups
+UserSchema.index({ connections:  1 });
+UserSchema.index({ followers:    1 });
+UserSchema.index({ following:    1 });
+UserSchema.index({ blockedUsers: 1 });
+// Compound name index for listConnections search-by-name queries
+UserSchema.index({ firstName: 1, lastName: 1 });
+// customUrl already has a unique index from the field definition;
+// no additional index needed — the unique constraint covers the query planner.
+
+// ── Virtual: fullName ─────────────────────────────────────────
+
+UserSchema.virtual('fullName').get(function (this: IUserDocument) {
+  return `${this.firstName} ${this.lastName}`;
+});
+
+export const User = model<IUserDocument>('User', UserSchema);

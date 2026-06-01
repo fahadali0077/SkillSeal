@@ -1,0 +1,35 @@
+{
+  "name": "SkillSeal-project",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev --workspace=client",
+    "dev:server": "npm run dev --workspace=server",
+    "dev": "concurrently -n client,server -c cyan,yellow \"npm run dev:client\" \"npm run dev:server\"",
+    "build:shared": "npm run build --workspace=shared",
+    "build:server": "npm run build --workspace=server",
+    "build:client": "npm run build --workspace=client",
+    "build": "npm run build:shared && npm run build:server",
+    "start": "node server/dist/index.js",
+    "build:all": "npm run build:shared && npm run build:server && npm run build:client",
+    "build:prod": "npm run build:shared && npm run build:prod --workspace=server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "overrides": {
+    "vite": "5.4.21",
+    "@vitejs/plugin-react": "4.3.4",
+    "vitest": "2.1.9",
+    "esbuild": "0.21.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

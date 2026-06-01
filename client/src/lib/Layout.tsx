@@ -75,7 +75,7 @@ function AvatarMenu() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.96 }}
             transition={{ type: 'spring', damping: 24, stiffness: 320 }}
-            className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 min-w-[210px] py-1.5 overflow-hidden"
+            className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 w-[230px] max-w-[calc(100vw-1.5rem)] py-1.5 overflow-y-auto max-h-[calc(100vh-5rem)]"
           >
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="font-semibold text-sm text-gray-900">{user?.firstName} {u?.lastName}</p>

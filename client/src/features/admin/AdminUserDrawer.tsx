@@ -157,7 +157,7 @@ export default function AdminUserDrawer({ userId, onClose }: { userId: string; o
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirm(null)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]" />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92%] max-w-md bg-white rounded-2xl shadow-2xl p-5 sm:p-6">
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92%] max-w-md bg-white rounded-2xl shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
               <h3 className="text-lg font-bold text-gray-900 mb-1">Suspend account</h3>
               <p className="text-sm text-gray-600 mb-4">The user will be logged out immediately and blocked from signing in. They'll see the reason below on their next login attempt.</p>
               <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (shown to the user)…" rows={3} className="input mb-4 resize-none" />

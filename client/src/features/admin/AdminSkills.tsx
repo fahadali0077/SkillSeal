@@ -95,12 +95,12 @@ export default function AdminSkills() {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[92%] max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-gray-100">
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[92%] max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-gray-100 shrink-0">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2"><ShieldCheck size={18} className="text-brand" />{editing ? 'Edit skill' : 'New skill'}</h3>
                 <button onClick={close} className="btn-ghost p-2"><X size={16} /></button>
               </div>
-              <div className="p-4 sm:p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="p-4 sm:p-5 space-y-4 flex-1 min-h-0 overflow-y-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2">
                     <label className="text-xs font-medium text-gray-500 mb-1 block">Name</label>
@@ -135,7 +135,7 @@ export default function AdminSkills() {
                 </div>
                 {editing && <p className="text-xs text-gray-400">Slug (<code>{editing.slug}</code>) can't be changed after creation to keep certificate links stable.</p>}
               </div>
-              <div className="bg-gray-50 px-4 sm:px-5 py-3.5 flex justify-end gap-2 border-t border-gray-100">
+              <div className="bg-gray-50 px-4 sm:px-5 py-3.5 flex justify-end gap-2 border-t border-gray-100 shrink-0">
                 <button onClick={close} className="btn-secondary text-sm">Cancel</button>
                 <button onClick={save} disabled={saving} className="btn-primary text-sm">{saving ? 'Saving…' : editing ? 'Save changes' : 'Create skill'}</button>
               </div>

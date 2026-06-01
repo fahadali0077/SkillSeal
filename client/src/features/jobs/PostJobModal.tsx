@@ -81,15 +81,15 @@ export default function PostJobModal({ onClose }: Props) {
         <motion.div
           initial={{ y: 32, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 32, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8"
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
             <h2 className="font-bold text-gray-900 flex items-center gap-2"><Briefcase size={18} className="text-brand" /> Post a Job</h2>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><X size={18} /></button>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit as any)} className="px-6 py-5 space-y-5 max-h-[75vh] overflow-y-auto">
+          <form onSubmit={handleSubmit(onSubmit as any)} className="px-6 py-5 space-y-5 flex-1 min-h-0 overflow-y-auto">
             {/* Company + Title */}
             <div className="grid grid-cols-2 gap-4">
               <div>

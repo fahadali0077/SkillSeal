@@ -59,10 +59,10 @@ export default function NotificationBell() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.97 }}
             transition={{ type: 'spring', damping: 24, stiffness: 320 }}
-            className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 w-[360px] overflow-hidden"
+            className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 w-[360px] max-w-[calc(100vw-1.5rem)] overflow-hidden flex flex-col max-h-[min(520px,calc(100vh-5rem))]"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-transparent">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-transparent shrink-0">
               <div className="flex items-center gap-2">
                 <Bell size={15} className="text-brand" />
                 <h3 className="font-semibold text-gray-900 text-sm">Notifications</h3>
@@ -75,7 +75,7 @@ export default function NotificationBell() {
             </div>
 
             {/* List */}
-            <div className="max-h-[420px] overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               <NotificationList />
             </div>
 
@@ -83,7 +83,7 @@ export default function NotificationBell() {
             <Link
               to="/notifications"
               onClick={() => setOpen(false)}
-              className="flex items-center justify-center gap-1.5 py-3 text-sm font-semibold text-brand hover:bg-brand/5 border-t border-gray-100 transition-colors"
+              className="flex items-center justify-center gap-1.5 py-3 text-sm font-semibold text-brand hover:bg-brand/5 border-t border-gray-100 transition-colors shrink-0"
             >
               View all notifications
               <ArrowRight size={13} />

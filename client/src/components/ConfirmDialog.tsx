@@ -55,25 +55,25 @@ export default function ConfirmDialog({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ duration: 0.15 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[92%] max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[92%] max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]"
           >
             <button
               onClick={onCancel}
               disabled={loading}
-              className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 z-10"
             >
               <X size={16} />
             </button>
 
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto min-h-0">
               <div className={`w-12 h-12 rounded-full ${v.iconBg} flex items-center justify-center mb-4`}>
                 <AlertTriangle size={22} className={v.iconColor} />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-1">{title}</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-1 pr-8">{title}</h3>
               {message && <p className="text-sm text-gray-600 leading-relaxed">{message}</p>}
             </div>
 
-            <div className="bg-gray-50 px-6 py-4 flex items-center justify-end gap-2 border-t border-gray-100">
+            <div className="bg-gray-50 px-6 py-4 flex items-center justify-end gap-2 border-t border-gray-100 shrink-0">
               <button onClick={onCancel} disabled={loading} className="btn-secondary text-sm py-2 px-4">
                 {cancelLabel}
               </button>

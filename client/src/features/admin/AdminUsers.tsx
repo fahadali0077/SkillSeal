@@ -58,42 +58,42 @@ export default function AdminUsers() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50/70 border-b border-gray-100">
-                <th className="px-4 py-3 font-semibold">User</th>
-                <th className="px-4 py-3 font-semibold">Role</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold hidden md:table-cell">Connections</th>
-                <th className="px-4 py-3 font-semibold hidden md:table-cell">Last login</th>
-                <th className="px-4 py-3 font-semibold hidden lg:table-cell">Joined</th>
+                <th className="px-3 sm:px-4 py-3 font-semibold">User</th>
+                <th className="px-3 sm:px-4 py-3 font-semibold">Role</th>
+                <th className="px-3 sm:px-4 py-3 font-semibold">Status</th>
+                <th className="px-3 sm:px-4 py-3 font-semibold hidden md:table-cell">Connections</th>
+                <th className="px-3 sm:px-4 py-3 font-semibold hidden md:table-cell">Last login</th>
+                <th className="px-3 sm:px-4 py-3 font-semibold hidden lg:table-cell">Joined</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {isLoading && Array.from({ length: 8 }).map((_, i) => (
-                <tr key={i}><td colSpan={6} className="px-4 py-3"><div className="h-8 skeleton rounded-lg" /></td></tr>
+                <tr key={i}><td colSpan={6} className="px-3 sm:px-4 py-3"><div className="h-8 skeleton rounded-lg" /></td></tr>
               ))}
-              {isError && <tr><td colSpan={6} className="px-4 py-10 text-center text-red-600">{(error as Error)?.message ?? 'Failed to load users.'}</td></tr>}
+              {isError && <tr><td colSpan={6} className="px-3 sm:px-4 py-10 text-center text-red-600">{(error as Error)?.message ?? 'Failed to load users.'}</td></tr>}
               {data && data.items.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                <tr><td colSpan={6} className="px-3 sm:px-4 py-12 text-center text-gray-400">
                   <UsersIcon size={32} className="mx-auto mb-2 opacity-30" />No users match these filters.
                 </td></tr>
               )}
               {data?.items.map((u) => (
                 <tr key={u._id} onClick={() => setSelected(u._id)} className="hover:bg-brand/5 cursor-pointer transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
+                  <td className="px-3 sm:px-4 py-3 max-w-0 sm:max-w-none">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       {u.profilePhoto
                         ? <img src={u.profilePhoto} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
                         : <div className="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center text-brand font-semibold text-xs shrink-0">{u.firstName[0]}{u.lastName[0]}</div>}
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="font-medium text-gray-900 truncate">{u.firstName} {u.lastName}</p>
                         <p className="text-xs text-gray-400 truncate">{u.email}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
-                  <td className="px-4 py-3"><StatusBadge status={u.status} /></td>
-                  <td className="px-4 py-3 text-gray-600 hidden md:table-cell">{u.connectionCount}</td>
-                  <td className="px-4 py-3 text-gray-500 hidden md:table-cell">{timeAgo(u.lastLoginAt)}</td>
-                  <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">{new Date(u.createdAt).toLocaleDateString()}</td>
+                  <td className="px-3 sm:px-4 py-3 whitespace-nowrap"><RoleBadge role={u.role} /></td>
+                  <td className="px-3 sm:px-4 py-3 whitespace-nowrap"><StatusBadge status={u.status} /></td>
+                  <td className="px-3 sm:px-4 py-3 text-gray-600 hidden md:table-cell">{u.connectionCount}</td>
+                  <td className="px-3 sm:px-4 py-3 text-gray-500 hidden md:table-cell whitespace-nowrap">{timeAgo(u.lastLoginAt)}</td>
+                  <td className="px-3 sm:px-4 py-3 text-gray-500 hidden lg:table-cell whitespace-nowrap">{new Date(u.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

@@ -27,14 +27,14 @@ function StatCard({ icon, label, value, sub, tone = 'brand' }: {
     amber: 'bg-amber-50 text-amber-600', red: 'bg-red-50 text-red-600', indigo: 'bg-indigo-50 text-indigo-600',
   };
   return (
-    <div className="card p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1.5">{value}</p>
-          {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    <div className="card p-3.5 sm:p-5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide truncate">{label}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-1.5 truncate">{value}</p>
+          {sub && <p className="text-[11px] sm:text-xs text-gray-400 mt-1 truncate">{sub}</p>}
         </div>
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tones[tone]}`}>{icon}</div>
+        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${tones[tone]}`}>{icon}</div>
       </div>
     </div>
   );
@@ -45,8 +45,8 @@ export default function AdminOverview() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 8 }).map((_, i) => <div key={i} className="card p-5 h-24 skeleton" />)}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {Array.from({ length: 8 }).map((_, i) => <div key={i} className="card p-3.5 sm:p-5 h-20 sm:h-24 skeleton" />)}
       </div>
     );
   }
@@ -61,7 +61,7 @@ export default function AdminOverview() {
   return (
     <div className="space-y-6">
       {/* KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard icon={<Users size={20} />} label="Total users" value={data.users.total.toLocaleString()} sub={`${data.users.newLast7d} new this week`} />
         <StatCard icon={<UserPlus size={20} />} label="New (30 days)" value={data.users.newLast30d.toLocaleString()} sub={`${data.users.newLast7d} in last 7 days`} tone="green" />
         <StatCard icon={<AlertTriangle size={20} />} label="Suspended" value={data.users.suspended.toLocaleString()} sub="accounts blocked" tone={data.users.suspended ? 'red' : 'brand'} />
@@ -73,9 +73,9 @@ export default function AdminOverview() {
       </div>
 
       {/* Signup trend */}
-      <div className="card p-5">
+      <div className="card p-4 sm:p-5">
         <h3 className="font-semibold text-gray-800 text-sm mb-4 flex items-center gap-2"><Activity size={16} className="text-brand" />New signups · last 30 days</h3>
-        <div className="h-56">
+        <div className="h-48 sm:h-56">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data.signupTrend} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
               <defs>
@@ -95,10 +95,10 @@ export default function AdminOverview() {
       </div>
 
       {/* Breakdown charts */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="card p-5">
+      <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
+        <div className="card p-4 sm:p-5">
           <h3 className="font-semibold text-gray-800 text-sm mb-4 flex items-center gap-2"><Users size={16} className="text-brand" />Users by role</h3>
-          <div className="h-56">
+          <div className="h-48 sm:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={roleData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}>
@@ -118,9 +118,9 @@ export default function AdminOverview() {
           </div>
         </div>
 
-        <div className="card p-5">
+        <div className="card p-4 sm:p-5">
           <h3 className="font-semibold text-gray-800 text-sm mb-4 flex items-center gap-2"><Layers size={16} className="text-brand" />Verifications by status</h3>
-          <div className="h-56">
+          <div className="h-48 sm:h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />

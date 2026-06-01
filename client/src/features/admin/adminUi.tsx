@@ -30,13 +30,16 @@ export function VerifBadge({ status }: { status: string }) {
 export function Pagination({ page, totalPages, total, onChange }: {
   page: number; totalPages: number; total: number; onChange: (p: number) => void;
 }) {
-  if (totalPages <= 1) return <p className="text-xs text-gray-400 px-1 py-3">{total} result{total === 1 ? '' : 's'}</p>;
+  if (totalPages <= 1) return <p className="text-xs text-gray-400 px-3 py-3">{total} result{total === 1 ? '' : 's'}</p>;
   return (
-    <div className="flex items-center justify-between px-1 py-3">
-      <p className="text-xs text-gray-500">Page {page} of {totalPages} · {total} total</p>
-      <div className="flex items-center gap-1">
-        <button onClick={() => onChange(page - 1)} disabled={page <= 1} className="btn-ghost p-2 disabled:opacity-40"><ChevronLeft size={16} /></button>
-        <button onClick={() => onChange(page + 1)} disabled={page >= totalPages} className="btn-ghost p-2 disabled:opacity-40"><ChevronRight size={16} /></button>
+    <div className="flex items-center justify-between gap-2 px-3 py-3">
+      <p className="text-xs text-gray-500 truncate">
+        <span className="hidden sm:inline">Page </span>{page}<span className="hidden sm:inline"> of</span><span className="sm:hidden">/</span>{totalPages}
+        <span className="hidden sm:inline"> · {total} total</span>
+      </p>
+      <div className="flex items-center gap-1 shrink-0">
+        <button onClick={() => onChange(page - 1)} disabled={page <= 1} className="btn-ghost p-2 disabled:opacity-40" aria-label="Previous page"><ChevronLeft size={16} /></button>
+        <button onClick={() => onChange(page + 1)} disabled={page >= totalPages} className="btn-ghost p-2 disabled:opacity-40" aria-label="Next page"><ChevronRight size={16} /></button>
       </div>
     </div>
   );

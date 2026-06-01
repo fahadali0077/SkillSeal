@@ -49,24 +49,24 @@ export default function AdminUserDrawer({ userId, onClose }: { userId: string; o
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl overflow-y-auto"
       >
-        <div className="sticky top-0 bg-white/90 backdrop-blur border-b border-gray-100 px-5 py-3.5 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white/90 backdrop-blur border-b border-gray-100 px-4 sm:px-5 py-3.5 flex items-center justify-between z-10">
           <h2 className="font-bold text-gray-900">User details</h2>
           <button onClick={onClose} className="btn-ghost p-2"><X size={18} /></button>
         </div>
 
         {isLoading || !user ? (
-          <div className="p-5 space-y-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-12 skeleton rounded-xl" />)}</div>
+          <div className="p-4 sm:p-5 space-y-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-12 skeleton rounded-xl" />)}</div>
         ) : (
-          <div className="p-5 space-y-5">
+          <div className="p-4 sm:p-5 space-y-5">
             {/* Identity */}
             <div className="flex items-center gap-3">
               {user.profilePhoto
-                ? <img src={user.profilePhoto} alt="" className="w-14 h-14 rounded-full object-cover" />
-                : <div className="w-14 h-14 rounded-full bg-brand/10 flex items-center justify-center text-brand font-bold text-lg">{user.firstName[0]}{user.lastName[0]}</div>}
-              <div className="min-w-0">
+                ? <img src={user.profilePhoto} alt="" className="w-14 h-14 rounded-full object-cover shrink-0" />
+                : <div className="w-14 h-14 rounded-full bg-brand/10 flex items-center justify-center text-brand font-bold text-lg shrink-0">{user.firstName[0]}{user.lastName[0]}</div>}
+              <div className="min-w-0 flex-1">
                 <p className="font-bold text-gray-900 truncate">{user.firstName} {user.lastName}</p>
-                <p className="text-sm text-gray-500 truncate flex items-center gap-1"><Mail size={13} />{user.email}</p>
-                <div className="flex items-center gap-1.5 mt-1">
+                <p className="text-sm text-gray-500 truncate flex items-center gap-1"><Mail size={13} className="shrink-0" /><span className="truncate">{user.email}</span></p>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1">
                   <RoleBadge role={user.role} />
                   <StatusBadge status={user.status} />
                   {user.emailVerified && <span className="badge-info"><BadgeCheck size={11} />Verified</span>}
@@ -74,9 +74,9 @@ export default function AdminUserDrawer({ userId, onClose }: { userId: string; o
               </div>
             </div>
 
-            {user.headline && <p className="text-sm text-gray-600">{user.headline}</p>}
+            {user.headline && <p className="text-sm text-gray-600 break-words">{user.headline}</p>}
             {(user.location.city || user.location.country) && (
-              <p className="text-sm text-gray-500 flex items-center gap-1"><MapPin size={13} />{[user.location.city, user.location.country].filter(Boolean).join(', ')}</p>
+              <p className="text-sm text-gray-500 flex items-start gap-1"><MapPin size={13} className="shrink-0 mt-0.5" /><span>{[user.location.city, user.location.country].filter(Boolean).join(', ')}</span></p>
             )}
 
             {/* Meta grid */}
@@ -124,9 +124,9 @@ export default function AdminUserDrawer({ userId, onClose }: { userId: string; o
               ) : (
                 <div className="space-y-1.5">
                   {user.verifications.map((v) => (
-                    <div key={v._id} className="flex items-center justify-between text-sm py-1.5 px-2 rounded-lg hover:bg-gray-50">
-                      <span className="text-gray-700">{v.skillName} <span className="text-gray-400">· {v.tier}</span></span>
-                      <span className="flex items-center gap-2"><span className="text-gray-500 text-xs">{v.compositeScore}%</span><VerifBadge status={v.status} /></span>
+                    <div key={v._id} className="flex items-center justify-between gap-2 text-sm py-1.5 px-2 rounded-lg hover:bg-gray-50">
+                      <span className="text-gray-700 truncate min-w-0">{v.skillName} <span className="text-gray-400">· {v.tier}</span></span>
+                      <span className="flex items-center gap-2 shrink-0"><span className="text-gray-500 text-xs">{v.compositeScore}%</span><VerifBadge status={v.status} /></span>
                     </div>
                   ))}
                 </div>
@@ -157,7 +157,7 @@ export default function AdminUserDrawer({ userId, onClose }: { userId: string; o
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirm(null)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]" />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92%] max-w-md bg-white rounded-2xl shadow-2xl p-6">
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92%] max-w-md bg-white rounded-2xl shadow-2xl p-5 sm:p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-1">Suspend account</h3>
               <p className="text-sm text-gray-600 mb-4">The user will be logged out immediately and blocked from signing in. They'll see the reason below on their next login attempt.</p>
               <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (shown to the user)…" rows={3} className="input mb-4 resize-none" />

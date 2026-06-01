@@ -23,21 +23,22 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>('overview');
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="flex items-center gap-3 mb-5 sm:mb-6">
+        <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
           <ShieldAlert size={20} className="text-red-600" />
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Admin Console</h1>
-          <p className="text-sm text-gray-500">Platform health, user moderation, and the skill catalog</p>
+        <div className="min-w-0">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900">Admin Console</h1>
+          <p className="text-xs sm:text-sm text-gray-500 truncate">Platform health, moderation, and the skill catalog</p>
         </div>
       </div>
 
-      <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
+      {/* Tab bar — bleeds to screen edges on mobile so horizontal scroll feels natural */}
+      <div className="flex gap-1 mb-5 sm:mb-6 border-b border-gray-200 overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
         {TABS.map((t) => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
               tab === t.id ? 'border-brand text-brand' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
             {t.icon}{t.label}
           </button>

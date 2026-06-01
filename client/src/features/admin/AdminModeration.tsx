@@ -31,26 +31,31 @@ function JobsPanel() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50/70 border-b border-gray-100">
-              <th className="px-4 py-3 font-semibold">Title</th>
-              <th className="px-4 py-3 font-semibold hidden md:table-cell">Company</th>
-              <th className="px-4 py-3 font-semibold hidden lg:table-cell">Recruiter</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+              <th className="px-3 sm:px-4 py-3 font-semibold">Title</th>
+              <th className="px-3 sm:px-4 py-3 font-semibold hidden md:table-cell">Company</th>
+              <th className="px-3 sm:px-4 py-3 font-semibold hidden lg:table-cell">Recruiter</th>
+              <th className="px-3 sm:px-4 py-3 font-semibold">Status</th>
+              <th className="px-3 sm:px-4 py-3 font-semibold text-right">Actions</th>
             </tr></thead>
             <tbody className="divide-y divide-gray-50">
-              {isLoading && Array.from({ length: 6 }).map((_, i) => <tr key={i}><td colSpan={5} className="px-4 py-3"><div className="h-8 skeleton rounded-lg" /></td></tr>)}
-              {data && data.items.length === 0 && <tr><td colSpan={5} className="px-4 py-12 text-center text-gray-400"><Briefcase size={32} className="mx-auto mb-2 opacity-30" />No jobs found.</td></tr>}
+              {isLoading && Array.from({ length: 6 }).map((_, i) => <tr key={i}><td colSpan={5} className="px-3 sm:px-4 py-3"><div className="h-8 skeleton rounded-lg" /></td></tr>)}
+              {data && data.items.length === 0 && <tr><td colSpan={5} className="px-3 sm:px-4 py-12 text-center text-gray-400"><Briefcase size={32} className="mx-auto mb-2 opacity-30" />No jobs found.</td></tr>}
               {data?.items.map((j) => (
                 <tr key={j._id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3"><p className="font-medium text-gray-900">{j.title}</p><p className="text-xs text-gray-400">{j.employmentType} · {j.workType}{j.location ? ` · ${j.location}` : ''}</p></td>
-                  <td className="px-4 py-3 text-gray-600 hidden md:table-cell">{j.companyName}</td>
-                  <td className="px-4 py-3 text-gray-600 hidden lg:table-cell">{j.recruiterName}</td>
-                  <td className="px-4 py-3"><span className={j.status === 'active' ? 'badge-success' : j.status === 'closed' ? 'badge-neutral' : 'badge-warning'}>{j.status}</span></td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-3 sm:px-4 py-3 max-w-0 sm:max-w-none">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{j.title}</p>
+                      <p className="text-xs text-gray-400 truncate">{j.employmentType} · {j.workType}{j.location ? ` · ${j.location}` : ''}</p>
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-4 py-3 text-gray-600 hidden md:table-cell truncate max-w-[200px]">{j.companyName}</td>
+                  <td className="px-3 sm:px-4 py-3 text-gray-600 hidden lg:table-cell truncate max-w-[180px]">{j.recruiterName}</td>
+                  <td className="px-3 sm:px-4 py-3"><span className={j.status === 'active' ? 'badge-success' : j.status === 'closed' ? 'badge-neutral' : 'badge-warning'}>{j.status}</span></td>
+                  <td className="px-3 sm:px-4 py-3 text-right">
                     {j.status === 'active' ? (
-                      <button onClick={() => update(j._id, 'closed')} className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:bg-amber-50 px-2.5 py-1.5 rounded-lg"><XCircle size={13} />Close</button>
+                      <button onClick={() => update(j._id, 'closed')} className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:bg-amber-50 px-2.5 py-1.5 rounded-lg"><XCircle size={13} /><span className="hidden sm:inline">Close</span></button>
                     ) : (
-                      <button onClick={() => update(j._id, 'active')} className="inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:bg-green-50 px-2.5 py-1.5 rounded-lg"><CheckCircle2 size={13} />Reopen</button>
+                      <button onClick={() => update(j._id, 'active')} className="inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:bg-green-50 px-2.5 py-1.5 rounded-lg"><CheckCircle2 size={13} /><span className="hidden sm:inline">Reopen</span></button>
                     )}
                   </td>
                 </tr>
@@ -90,22 +95,22 @@ function PostsPanel() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="text-left text-xs text-gray-500 uppercase tracking-wide bg-gray-50/70 border-b border-gray-100">
-              <th className="px-4 py-3 font-semibold">Author</th>
-              <th className="px-4 py-3 font-semibold">Content</th>
-              <th className="px-4 py-3 font-semibold hidden md:table-cell">Engagement</th>
-              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+              <th className="px-3 sm:px-4 py-3 font-semibold">Author</th>
+              <th className="px-3 sm:px-4 py-3 font-semibold">Content</th>
+              <th className="px-3 sm:px-4 py-3 font-semibold hidden md:table-cell">Engagement</th>
+              <th className="px-3 sm:px-4 py-3 font-semibold text-right">Actions</th>
             </tr></thead>
             <tbody className="divide-y divide-gray-50">
-              {isLoading && Array.from({ length: 6 }).map((_, i) => <tr key={i}><td colSpan={4} className="px-4 py-3"><div className="h-8 skeleton rounded-lg" /></td></tr>)}
-              {data && data.items.length === 0 && <tr><td colSpan={4} className="px-4 py-12 text-center text-gray-400"><FileText size={32} className="mx-auto mb-2 opacity-30" />No posts found.</td></tr>}
+              {isLoading && Array.from({ length: 6 }).map((_, i) => <tr key={i}><td colSpan={4} className="px-3 sm:px-4 py-3"><div className="h-8 skeleton rounded-lg" /></td></tr>)}
+              {data && data.items.length === 0 && <tr><td colSpan={4} className="px-3 sm:px-4 py-12 text-center text-gray-400"><FileText size={32} className="mx-auto mb-2 opacity-30" />No posts found.</td></tr>}
               {data?.items.map((p) => (
                 <tr key={p._id} className={`hover:bg-gray-50 transition-colors ${p.isDeleted ? 'opacity-50' : ''}`}>
-                  <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{p.authorName}</td>
-                  <td className="px-4 py-3 text-gray-600 max-w-xs"><p className="truncate">{p.content || <span className="italic text-gray-400">({p.type})</span>}</p></td>
-                  <td className="px-4 py-3 text-gray-500 hidden md:table-cell whitespace-nowrap">{p.likeCount} likes · {p.commentCount} comments</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-3 sm:px-4 py-3 font-medium text-gray-900 whitespace-nowrap max-w-[120px] sm:max-w-none truncate">{p.authorName}</td>
+                  <td className="px-3 sm:px-4 py-3 text-gray-600 max-w-[160px] sm:max-w-xs"><p className="truncate">{p.content || <span className="italic text-gray-400">({p.type})</span>}</p></td>
+                  <td className="px-3 sm:px-4 py-3 text-gray-500 hidden md:table-cell whitespace-nowrap">{p.likeCount} likes · {p.commentCount} comments</td>
+                  <td className="px-3 sm:px-4 py-3 text-right">
                     {p.isDeleted ? <span className="badge-neutral">Removed</span> : (
-                      <button onClick={() => setTarget(p._id)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg"><Trash2 size={13} />Remove</button>
+                      <button onClick={() => setTarget(p._id)} className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:bg-red-50 px-2.5 py-1.5 rounded-lg"><Trash2 size={13} /><span className="hidden sm:inline">Remove</span></button>
                     )}
                   </td>
                 </tr>

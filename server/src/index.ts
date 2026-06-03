@@ -1,8 +1,7 @@
 import 'dotenv/config';
+import https from 'https';
 
 // ── Catch anything that slips past the bootstrap try/catch ──────────────────
-// process.stdout.write is SYNCHRONOUS — it flushes before the process exits,
-// unlike logger.error() (Winston is async and may not flush before process.exit)
 process.on('uncaughtException', (err) => {
   process.stdout.write(`\n[FATAL] uncaughtException: ${err.stack ?? err.message}\n`);
   process.exit(1);
@@ -21,13 +20,27 @@ import logger from './utils/logger';
 
 const PORT = process.env.PORT || 5000;
 
-// Synchronous print — guaranteed to appear in Render logs before any async work
+// ── Keep-alive ping (prevents Render free tier 15-min sleep) ─────────────────
+const KEEP_ALIVE_URL = process.env.SELF_PING_URL || process.env.RENDER_EXTERNAL_URL;
+if (process.env.NODE_ENV === 'production' && KEEP_ALIVE_URL) {
+  setInterval(() => {
+    https
+      .get(`${KEEP_ALIVE_URL}/api/health`, (res) => {
+        process.stdout.write(`[ping] Self-ping status: ${res.statusCode}\n`);
+      })
+      .on('error', (e) => {
+        process.stdout.write(`[ping] Self-ping failed: ${e.message}\n`);
+      });
+  }, 7 * 60 * 1000); // every 7 min — safely under the 15-min idle threshold
+  process.stdout.write(`[boot] Keep-alive ping enabled → ${KEEP_ALIVE_URL}/api/health\n`);
+}
+
 process.stdout.write(`[boot] Starting SkillSeal API  NODE_ENV=${process.env.NODE_ENV}  PORT=${PORT}\n`);
-process.stdout.write(`[boot] MONGODB_URI  = ${process.env.MONGODB_URI  ? '✓ set' : '✗ MISSING'}\n`);
-process.stdout.write(`[boot] REDIS_URL    = ${process.env.REDIS_URL    ? '✓ set' : '✗ MISSING'}\n`);
+process.stdout.write(`[boot] MONGODB_URI  = ${process.env.MONGODB_URI ? '✓ set' : '✗ MISSING'}\n`);
+process.stdout.write(`[boot] REDIS_URL    = ${process.env.REDIS_URL ? '✓ set' : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] GEMINI_API_KEY = ${process.env.GEMINI_API_KEY ? '✓ set' : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] CLOUDINARY_URL = ${process.env.CLOUDINARY_URL ? '✓ set' : '✗ MISSING'}\n`);
-process.stdout.write(`[boot] JWT_ACCESS_SECRET  = ${process.env.JWT_ACCESS_SECRET  ? `✓ (${process.env.JWT_ACCESS_SECRET.length} chars)` : '✗ MISSING'}\n`);
+process.stdout.write(`[boot] JWT_ACCESS_SECRET  = ${process.env.JWT_ACCESS_SECRET ? `✓ (${process.env.JWT_ACCESS_SECRET.length} chars)` : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] JWT_REFRESH_SECRET = ${process.env.JWT_REFRESH_SECRET ? `✓ (${process.env.JWT_REFRESH_SECRET.length} chars)` : '✗ MISSING'}\n`);
 
 async function bootstrap() {
@@ -56,11 +69,8 @@ async function bootstrap() {
     });
 
   } catch (err: unknown) {
-    // Use synchronous stdout.write so the error is GUARANTEED to appear in
-    // Render logs before process.exit() terminates the process
     const message = err instanceof Error ? err.stack ?? err.message : String(err);
     process.stdout.write(`\n[FATAL] Bootstrap failed:\n${message}\n\n`);
-    // Give the async logger 500ms to flush any buffered messages
     await new Promise((resolve) => setTimeout(resolve, 500));
     process.exit(1);
   }

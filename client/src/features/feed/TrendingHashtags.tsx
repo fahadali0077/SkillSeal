@@ -8,7 +8,7 @@ export default function TrendingHashtags() {
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-100 to-amber-50 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-paper-sunk flex items-center justify-center">
           <TrendingUp size={15} className="text-amber-600" />
         </div>
         <h3 className="font-semibold text-gray-900 text-sm">Trending in your network</h3>

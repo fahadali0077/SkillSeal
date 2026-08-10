@@ -11,12 +11,12 @@ export default function CertificateDetailModal({skill,isOwner,onClose}:Props){
   const publicUrl=`${window.location.origin}/verify/${skill.verificationId}`;
   const liUrl=`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(publicUrl)}`;
   const isExpired=skill.status==='EXPIRED'||new Date(skill.expiresAt)<new Date();
-  const scoreColor=skill.compositeScore>=70?'#22c55e':skill.compositeScore>=50?'#f59e0b':'#ef4444';
+  const scoreColor=skill.compositeScore>=70?'#1D7A4C':skill.compositeScore>=50?'#A8710F':'#A3221B';
   const copyId=()=>navigator.clipboard.writeText(skill.certificateId).then(()=>{setIdCopied(true);setTimeout(()=>setIdCopied(false),2000);});
   const copyUrl=()=>navigator.clipboard.writeText(publicUrl).then(()=>{setUrlCopied(true);setTimeout(()=>setUrlCopied(false),2000);});
-  return(<AnimatePresence><motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={e=>e.target===e.currentTarget&&onClose()}>
+  return(<AnimatePresence><motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={e=>e.target===e.currentTarget&&onClose()}>
     <motion.div initial={{y:24,opacity:0,scale:0.97}} animate={{y:0,opacity:1,scale:1}} exit={{y:24,opacity:0,scale:0.97}} transition={{type:'spring',damping:24,stiffness:300}} className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
-      <div className={`bg-gradient-to-r ${TIER_COLORS[skill.tier]??TIER_COLORS.beginner} p-6 relative shrink-0`}>
+      <div className={`bg-paper-sunk ${TIER_COLORS[skill.tier]??TIER_COLORS.beginner} p-6 relative shrink-0`}>
         <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white"><X size={16}/></button>
         <div className="flex items-center gap-3"><div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center shrink-0"><ShieldCheck size={28} className="text-white"/></div><div className="min-w-0"><p className="text-white/70 text-xs font-semibold uppercase tracking-wider">Verified Certificate</p><h2 className="text-white text-xl font-bold break-words">{skill.skillName}</h2><p className="text-white/80 text-sm capitalize">{TIER_LABELS[skill.tier]??skill.tier} Level</p></div></div>
       </div>
@@ -30,7 +30,7 @@ export default function CertificateDetailModal({skill,isOwner,onClose}:Props){
         {skill.certificateId&&<div><p className="text-xs text-gray-400 mb-1">Certificate ID</p><div className="flex items-center gap-2"><code className="flex-1 font-mono text-sm text-gray-700 tracking-widest bg-gray-50 rounded-lg px-2 py-1.5">{skill.certificateId}</code><button onClick={copyId} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">{idCopied?<CheckCheck size={14} className="text-green-500"/>:<Copy size={14}/>}</button></div></div>}
         <div className="flex gap-2 pt-1">
           <button onClick={copyUrl} className="flex-1 flex items-center justify-center gap-1.5 text-sm font-medium border border-gray-200 hover:border-brand text-gray-600 hover:text-brand py-2 rounded-xl">{urlCopied?<><CheckCheck size={14} className="text-green-500"/>Copied!</>:<><Share2 size={14}/>Copy link</>}</button>
-          <a href={liUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 text-sm font-medium bg-[#0a66c2] hover:bg-[#004182] text-white py-2 rounded-xl"><ExternalLink size={14}/>LinkedIn</a>
+          <a href={liUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 text-sm font-medium bg-[#12233A] hover:bg-[#0A1520] text-white py-2 rounded-xl"><ExternalLink size={14}/>LinkedIn</a>
           <Link to={`/verify/${skill.verificationId}`} target="_blank" className="px-3 flex items-center justify-center text-gray-400 hover:text-brand border border-gray-200 rounded-xl hover:border-brand"><ExternalLink size={14}/></Link>
         </div>
       </div>

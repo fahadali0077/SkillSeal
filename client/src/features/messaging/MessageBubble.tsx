@@ -123,7 +123,7 @@ export default function MessageBubble({ message, isOwn, threadId }: Props) {
                       <button
                         key={emoji}
                         onClick={() => setReactionOpen(false)}
-                        className="text-xl hover:scale-125 transition-transform"
+                        className="text-xl transition-transform"
                       >
                         {emoji}
                       </button>

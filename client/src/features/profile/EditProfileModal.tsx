@@ -104,7 +104,7 @@ export default function EditProfileModal({ profile, onClose }: Props) {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 p-4 overflow-y-auto"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
@@ -125,7 +125,7 @@ export default function EditProfileModal({ profile, onClose }: Props) {
             {/* HIGH-13 + BROKEN-04: photo + banner uploads */}
             <div className="space-y-3">
               {/* Banner preview */}
-              <div className="relative h-24 w-full rounded-lg bg-gradient-to-r from-brand/10 to-brand/30 overflow-hidden">
+              <div className="relative h-24 w-full rounded-lg bg-paper-sunk overflow-hidden">
                 {bannerUrl && <img src={bannerUrl} alt="banner" className="absolute inset-0 w-full h-full object-cover" />}
                 <button
                   type="button"
@@ -148,8 +148,8 @@ export default function EditProfileModal({ profile, onClose }: Props) {
               <div className="flex items-center gap-3 -mt-10 ml-2">
                 <div className="relative">
                   {photoUrl
-                    ? <img src={photoUrl} alt="" className="w-16 h-16 rounded-full object-cover ring-4 ring-white" />
-                    : <div className="w-16 h-16 rounded-full bg-brand/10 ring-4 ring-white flex items-center justify-center font-bold text-brand">{profile.firstName?.[0]}</div>}
+                    ? <img src={photoUrl} alt="" className="w-16 h-16 rounded-full object-cover ring-1 ring-white" />
+                    : <div className="w-16 h-16 rounded-full bg-brand/10 ring-1 ring-white flex items-center justify-center font-bold text-brand">{profile.firstName?.[0]}</div>}
                   <button
                     type="button"
                     onClick={() => photoInputRef.current?.click()}

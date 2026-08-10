@@ -49,13 +49,13 @@ export default function NotificationsPage() {
     <div className="max-w-3xl mx-auto px-4 py-6">
 
       {/* ── Gradient hero ───────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-brand-light to-indigo-600 text-white p-5 sm:p-6 mb-5">
+      <div className="relative overflow-hidden rounded-2xl bg-paper-sunk text-white p-5 sm:p-6 mb-5">
         <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0 relative">
+            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0 relative">
               <Bell size={22} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-brand">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-seal-600 text-paper text-[10px] font-medium font-mono rounded-sm flex items-center justify-center border border-brand">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
@@ -74,7 +74,7 @@ export default function NotificationsPage() {
             <button
               onClick={() => markAll.mutate()}
               disabled={markAll.isPending}
-              className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur text-white font-medium text-xs px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white font-medium text-xs px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
             >
               <CheckCheck size={13} /> Mark all read
             </button>
@@ -101,7 +101,7 @@ export default function NotificationsPage() {
             >
               {t.label}
               {t.count > 0 && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm tabular-nums ${
                   isActive ? 'bg-white/25' : 'bg-gray-200 text-gray-600'
                 }`}>
                   {t.count}
@@ -128,7 +128,7 @@ export default function NotificationsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-10 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-paper-sunk flex items-center justify-center">
               {tab === 'unread' ? (
                 <Sparkles size={26} className="text-amber-500" />
               ) : (

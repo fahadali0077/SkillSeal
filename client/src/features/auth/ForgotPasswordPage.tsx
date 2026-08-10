@@ -33,11 +33,11 @@ export default function ForgotPasswordPage() {
   if (submitted) {
     return (
       <AuthShell
-        marketingTitle={<>Reset sent.<br /><span className="bg-gradient-to-r from-blue-300 via-indigo-300 to-purple-300 bg-clip-text text-transparent">Check your inbox.</span></>}
+        marketingTitle={<>Reset sent.<br /><span className=" text-ink-900">Check your inbox.</span></>}
         marketingBody="If an account exists with that email, you'll get a reset link within a minute. The link expires in 1 hour."
       >
         <div className="card p-6 sm:p-8 text-center">
-          <div className="w-20 h-20 mx-auto mb-5 bg-gradient-to-br from-green-100 to-green-50 rounded-2xl flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl flex items-center justify-center">
             <CheckCircle2 size={36} className="text-green-500" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Check your email</h2>
@@ -55,7 +55,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthShell
-      marketingTitle={<>Forgot it?<br /><span className="bg-gradient-to-r from-blue-300 via-indigo-300 to-purple-300 bg-clip-text text-transparent">No problem.</span></>}
+      marketingTitle={<>Forgot it?<br /><span className=" text-ink-900">No problem.</span></>}
       marketingBody="Enter the email you signed up with. We'll send a secure reset link if an account exists."
     >
       <div className="card p-6 sm:p-8">

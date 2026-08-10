@@ -89,7 +89,7 @@ export default function PeopleSearchResults({ q }: Props) {
                   className="w-12 h-12 rounded-full object-cover bg-gray-100"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand/20 to-indigo-200 flex items-center justify-center font-semibold text-brand text-sm">
+                <div className="w-12 h-12 rounded-full bg-paper-sunk flex items-center justify-center font-semibold text-brand text-sm">
                   {r.firstName.charAt(0)}{r.lastName.charAt(0)}
                 </div>
               )}

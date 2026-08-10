@@ -116,7 +116,7 @@ export default function CreatePostModal({ onClose }: Props) {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
@@ -298,7 +298,7 @@ export default function CreatePostModal({ onClose }: Props) {
                     <button
                       key={d}
                       onClick={() => setPollDuration(d)}
-                      className={`text-xs px-2.5 py-1 rounded-full border transition-colors
+                      className={`text-xs px-2.5 py-1 rounded-sm border transition-colors
                         ${pollDuration === d ? 'border-brand text-brand bg-blue-50' : 'border-gray-200 text-gray-500'}`}
                     >
                       {d}d

@@ -54,7 +54,7 @@ export default function UserPostsSection({ userId, isOwner }: Props) {
           {isOwner && (
             <button
               onClick={() => setCreateOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-brand border border-brand rounded-full px-3 py-1.5 hover:bg-blue-50 transition-colors"
+              className="flex items-center gap-1.5 text-xs font-semibold text-brand border border-brand rounded-sm px-3 py-1.5 hover:bg-blue-50 transition-colors"
             >
               <PenLine size={13} /> New Post
             </button>

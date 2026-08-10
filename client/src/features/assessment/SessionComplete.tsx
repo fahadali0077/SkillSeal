@@ -56,12 +56,12 @@ export default function SessionComplete({ sessionId, skillName, declaredTier, ce
     return () => { cancelled = true; };
   }, [sessionId]);
   const scores = report?.scores; const target = scores?.compositeScore ?? 0; const display = useCountUp(target, 1500, !loading && !!scores);
-  const passed = target >= 70; const partial = target >= 50 && target < 70; const statusColor = passed ? '#22c55e' : partial ? '#f59e0b' : '#ef4444';
+  const passed = target >= 70; const partial = target >= 50 && target < 70; const statusColor = passed ? '#1D7A4C' : partial ? '#A8710F' : '#A3221B';
   const R = 70, circ = 2 * Math.PI * R;
   const tierLabel = { beginner: 'Beginner', intermediate: 'Mid Level', advanced: 'Advanced', expert: 'Expert' }[report?.finalTier ?? declaredTier] ?? 'Verified';
   if (loading) return <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4"><motion.div animate={{ rotate: 360 }} transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}><Loader2 size={40} className="text-brand" /></motion.div><p className="text-gray-400 text-sm">Computing your results…</p></div>;
   if (fetchErr || !scores) return <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center"><AlertTriangle size={40} className="text-amber-400" /><p className="text-white font-semibold text-lg">Results temporarily unavailable</p><p className="text-gray-400 text-sm max-w-sm">{fetchErr}</p><Link to="/profile" onClick={onReset} className="flex items-center gap-2 bg-white text-gray-900 font-semibold px-5 py-2.5 rounded-xl">Go to profile <ArrowRight size={15} /></Link></div>;
-  const BARS = [{ label: 'Concept accuracy', value: scores.conceptScore, color: '#3b82f6', delay: 0.30 }, { label: 'Response speed', value: scores.speedScore, color: '#8b5cf6', delay: 0.40 }, { label: 'Consistency', value: scores.consistencyScore, color: '#06b6d4', delay: 0.50 }, { label: 'Integrity', value: scores.behaviorScore, color: '#10b981', delay: 0.60 }, { label: 'AI authenticity', value: scores.aiScore, color: '#f59e0b', delay: 0.70 }];
+  const BARS = [{ label: 'Concept accuracy', value: scores.conceptScore, color: '#23384F', delay: 0.30 }, { label: 'Response speed', value: scores.speedScore, color: '#4A5F79', delay: 0.40 }, { label: 'Consistency', value: scores.consistencyScore, color: '#7C8DA1', delay: 0.50 }, { label: 'Integrity', value: scores.behaviorScore, color: '#1D7A4C', delay: 0.60 }, { label: 'AI authenticity', value: scores.aiScore, color: '#A8710F', delay: 0.70 }];
   const publicUrl = `${window.location.origin}/verify/${report?.verificationId}`;
   const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(publicUrl)}&title=${encodeURIComponent(`I earned a Verified ${tierLabel} ${skillName} badge on SkillSeal!`)}`;
   const copyId = () => navigator.clipboard.writeText(certId).then(() => { setIdCopied(true); setTimeout(() => setIdCopied(false), 2000); });
@@ -73,7 +73,7 @@ export default function SessionComplete({ sessionId, skillName, declaredTier, ce
           <p className="text-gray-500 text-xs uppercase tracking-widest">{skillName} · <span className="capitalize">{declaredTier}</span></p>
           <div className="flex justify-center">
             <div className="relative inline-flex items-center justify-center">
-              <svg width="168" height="168" viewBox="0 0 168 168" className="-rotate-90"><circle cx="84" cy="84" r={R} fill="none" stroke="#1f2937" strokeWidth="12" /><motion.circle cx="84" cy="84" r={R} fill="none" stroke={statusColor} strokeWidth="12" strokeLinecap="round" strokeDasharray={circ} initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ * (1 - target / 100) }} transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }} /></svg>
+              <svg width="168" height="168" viewBox="0 0 168 168" className="-rotate-90"><circle cx="84" cy="84" r={R} fill="none" stroke="#12233A" strokeWidth="12" /><motion.circle cx="84" cy="84" r={R} fill="none" stroke={statusColor} strokeWidth="12" strokeLinecap="round" strokeDasharray={circ} initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ * (1 - target / 100) }} transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }} /></svg>
               <div className="absolute flex flex-col items-center justify-center"><span className="text-4xl font-bold tabular-nums" style={{ color: statusColor }}>{display}</span><span className="text-gray-500 text-sm">/100</span></div>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function SessionComplete({ sessionId, skillName, declaredTier, ce
             <div className="px-5 py-4"><p className="text-gray-600 text-xs mb-1">Certificate ID</p><div className="flex items-center gap-2"><code className="font-mono text-sm text-blue-300 tracking-widest flex-1">{certId || report?.verificationId}</code><button onClick={copyId} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400">{idCopied ? <CheckCheck size={14} className="text-green-400" /> : <Copy size={14} />}</button></div></div>
             <div className="px-5 pb-4 flex gap-2">
               <button onClick={copyUrl} className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium bg-white/10 hover:bg-white/20 text-gray-300 py-2 rounded-xl">{urlCopied ? <><CheckCheck size={13} className="text-green-400" />Copied!</> : <><Share2 size={13} />Copy public link</>}</button>
-              <a href={liUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium bg-[#0a66c2] text-white py-2 rounded-xl"><ExternalLink size={13} />LinkedIn</a>
+              <a href={liUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium bg-[#12233A] text-white py-2 rounded-xl"><ExternalLink size={13} />LinkedIn</a>
             </div>
           </motion.div>
         )}

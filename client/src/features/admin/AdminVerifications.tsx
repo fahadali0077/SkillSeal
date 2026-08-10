@@ -104,7 +104,7 @@ export default function AdminVerifications() {
       <AnimatePresence>
         {revokeTarget && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setRevokeTarget(null)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setRevokeTarget(null)} className="fixed inset-0 bg-black/40 z-50" />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[92%] max-w-md bg-white rounded-2xl shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4"><ShieldOff size={22} className="text-red-600" /></div>

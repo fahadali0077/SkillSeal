@@ -30,7 +30,7 @@ function IntegrityBadge({ level }: { level: IntegrityLevel }) {
   }[level];
 
   return (
-    <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${cfg.cls}`}>
+    <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-sm border ${cfg.cls}`}>
       {cfg.icon}
       {cfg.label}
     </span>
@@ -103,12 +103,12 @@ export default function CandidateCard({
               {candidate.fullName}
             </Link>
             {candidate.connectionDegree !== 'none' && (
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${DEGREE_LABELS[candidate.connectionDegree]}`}>
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-sm border ${DEGREE_LABELS[candidate.connectionDegree]}`}>
                 {candidate.connectionDegree}
               </span>
             )}
             {candidate.openToWork && (
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-sm bg-green-50 text-green-700 border border-green-200">
                 Open to work
               </span>
             )}
@@ -132,7 +132,7 @@ export default function CandidateCard({
           {candidate.verifiedSkills.map(skill => (
             <div
               key={skill.skillId}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-full border border-blue-200 bg-blue-50"
+              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-sm border border-blue-200 bg-blue-50"
             >
               <ShieldCheck size={10} className="text-brand shrink-0" />
               <span className="font-medium text-gray-800">{skill.skillName}</span>

@@ -41,7 +41,7 @@ export default function EasyApplyModal({ job, onClose, onSuccess }: Props) {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
@@ -106,7 +106,7 @@ export default function EasyApplyModal({ job, onClose, onSuccess }: Props) {
                       .some((vs) => vs.skillId === skill.skillId);
                     return (
                       <span key={skill.skillId}
-                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border ${
+                        className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-sm border ${
                           verified
                             ? 'bg-green-50 text-green-700 border-green-200'
                             : 'bg-gray-100 text-gray-700 border-gray-200'

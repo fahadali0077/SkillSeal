@@ -13,10 +13,10 @@ const ROLE_LABELS: Record<string, string> = {
   company_admin: 'Company admins', platform_admin: 'Platform admins',
 };
 const ROLE_COLORS: Record<string, string> = {
-  candidate: '#0a66c2', recruiter: '#6366f1', company_admin: '#f59e0b', platform_admin: '#ef4444',
+  candidate: '#12233A', recruiter: '#6366f1', company_admin: '#A8710F', platform_admin: '#A3221B',
 };
 const STATUS_COLORS: Record<string, string> = {
-  VERIFIED: '#10b981', FLAGGED: '#f59e0b', EXPIRED: '#9ca3af', REVOKED: '#ef4444', WITHDRAWN: '#6b7280',
+  VERIFIED: '#1D7A4C', FLAGGED: '#A8710F', EXPIRED: '#94A6BA', REVOKED: '#A3221B', WITHDRAWN: '#4A5F79',
 };
 
 function StatCard({ icon, label, value, sub, tone = 'brand' }: {
@@ -80,15 +80,15 @@ export default function AdminOverview() {
             <AreaChart data={data.signupTrend} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
               <defs>
                 <linearGradient id="signupFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0a66c2" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="#0a66c2" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#12233A" stopOpacity={0.25} />
+                  <stop offset="100%" stopColor="#12233A" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} tickFormatter={(d: string) => d.slice(5)} interval={4} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={28} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #e5e7eb' }} labelFormatter={(d) => `Date: ${d}`} />
-              <Area type="monotone" dataKey="count" name="Signups" stroke="#0a66c2" strokeWidth={2} fill="url(#signupFill)" />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94A6BA' }} tickFormatter={(d: string) => d.slice(5)} interval={4} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94A6BA' }} axisLine={false} tickLine={false} width={28} />
+              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #E6E0D6' }} labelFormatter={(d) => `Date: ${d}`} />
+              <Area type="monotone" dataKey="count" name="Signups" stroke="#12233A" strokeWidth={2} fill="url(#signupFill)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -102,16 +102,16 @@ export default function AdminOverview() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={roleData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                  {roleData.map((d) => <Cell key={d.role} fill={ROLE_COLORS[d.role] ?? '#9ca3af'} />)}
+                  {roleData.map((d) => <Cell key={d.role} fill={ROLE_COLORS[d.role] ?? '#94A6BA'} />)}
                 </Pie>
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #e5e7eb' }} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #E6E0D6' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2 justify-center">
             {roleData.map((d) => (
               <span key={d.role} className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ background: ROLE_COLORS[d.role] ?? '#9ca3af' }} />
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: ROLE_COLORS[d.role] ?? '#94A6BA' }} />
                 {d.name} · {d.value}
               </span>
             ))}
@@ -124,11 +124,11 @@ export default function AdminOverview() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={28} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #e5e7eb' }} cursor={{ fill: '#f9fafb' }} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94A6BA' }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#94A6BA' }} axisLine={false} tickLine={false} width={28} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #E6E0D6' }} cursor={{ fill: '#F7F4EF' }} />
                 <Bar dataKey="value" name="Count" radius={[6, 6, 0, 0]}>
-                  {statusData.map((d) => <Cell key={d.status} fill={STATUS_COLORS[d.status] ?? '#9ca3af'} />)}
+                  {statusData.map((d) => <Cell key={d.status} fill={STATUS_COLORS[d.status] ?? '#94A6BA'} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

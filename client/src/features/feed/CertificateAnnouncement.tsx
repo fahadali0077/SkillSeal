@@ -29,7 +29,7 @@ export default function CertificateAnnouncement({ badge, authorName }: Props) {
       className={`mt-3 rounded-2xl border border-blue-100 overflow-hidden ${tier.bg}`}
     >
       {/* Header bar */}
-      <div className={`bg-gradient-to-r ${tier.color} px-5 py-3 flex items-center gap-3`}>
+      <div className={`bg-paper-sunk ${tier.color} px-5 py-3 flex items-center gap-3`}>
         <Trophy size={22} className="text-white shrink-0" />
         <div>
           <p className="text-white font-bold text-sm">{authorName} just got verified!</p>
@@ -55,7 +55,7 @@ export default function CertificateAnnouncement({ badge, authorName }: Props) {
               ))}
               <span className="text-xs text-gray-500 ml-1">{score}/100</span>
             </div>
-            <span className={`inline-block text-xs font-semibold mt-1 px-2 py-0.5 rounded-full bg-white ${tier.text}`}>
+            <span className={`inline-block text-xs font-semibold mt-1 px-2 py-0.5 rounded-sm bg-white ${tier.text}`}>
               {tier.label}
             </span>
           </div>

@@ -17,14 +17,14 @@ export default function PublicVerifyPage() {
       : 'Verify a SkillSeal skill certificate. Confirm that a candidate has proven their skills through AI-powered contextual assessment.',
     canonical: `/verify/${certificateId}`,
   });
-  return (<div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col">
+  return (<div className="min-h-screen bg-paper-sunk flex flex-col">
     <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-2"><div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center"><ShieldCheck size={18} className="text-white" /></div><span className="font-bold text-gray-900">SkillSeal · Certificate Verification</span></header>
     <main className="flex-1 flex items-center justify-center px-4 py-12">
       {isLoading && <div className="flex flex-col items-center gap-3 text-gray-400"><motion.div animate={{ rotate: 360 }} transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}><RefreshCw size={32} /></motion.div><p className="text-sm">Verifying certificate…</p></div>}
       {error && <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="max-w-sm w-full text-center"><div className="w-20 h-20 rounded-full bg-red-50 border border-red-200 flex items-center justify-center mx-auto mb-4"><ShieldX size={36} className="text-red-500" /></div><h1 className="text-xl font-bold text-gray-900 mb-2">Certificate Not Found</h1><p className="text-gray-500 text-sm">This certificate ID doesn't exist or may have been revoked.</p></motion.div>}
       {cert && (() => {
         const ui = STATUS_UI[cert.status] ?? STATUS_UI.VERIFIED; return (<motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', damping: 22 }} className="max-w-md w-full">
-          <div className={`bg-white rounded-3xl border-2 shadow-xl overflow-hidden ${ui.border}`}>
+          <div className={`bg-white rounded-3xl border shadow-xl overflow-hidden ${ui.border}`}>
             <div className={`${ui.bg} px-6 py-8 text-center`}><motion.div initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', delay: 0.1 }} className="flex justify-center mb-3">{ui.icon}</motion.div><h1 className={`text-2xl font-bold ${ui.color}`}>{ui.label}</h1></div>
             <div className="px-6 py-6 space-y-4">
               <div><p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Certificate holder</p><p className="text-xl font-bold text-gray-900 mt-0.5">{cert.name}</p></div>

@@ -64,9 +64,9 @@ export default function NetworkPage() {
     <div className="max-w-5xl mx-auto px-4 py-6">
 
       {/* ── Gradient hero ───────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand via-brand-light to-indigo-600 text-white p-5 sm:p-6 mb-5">
+      <div className="relative overflow-hidden rounded-2xl bg-paper-sunk text-white p-5 sm:p-6 mb-5">
         <div className="relative z-10 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
             <Users size={22} />
           </div>
           <div>
@@ -87,7 +87,7 @@ export default function NetworkPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search people by name, headline, or skill…"
-            className="w-full bg-gray-50 hover:bg-white focus:bg-white border border-transparent hover:border-gray-200 focus:border-brand focus:ring-4 focus:ring-brand/10 rounded-xl pl-10 pr-10 py-2.5 text-sm outline-none transition-all"
+            className="w-full bg-gray-50 hover:bg-white focus:bg-white border border-transparent hover:border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand/10 rounded-xl pl-10 pr-10 py-2.5 text-sm outline-none transition-all"
           />
           {searchInput && (
             <button
@@ -130,7 +130,7 @@ export default function NetworkPage() {
                 <span className="hidden sm:inline">{t.label}</span>
                 <span className="sm:hidden">{t.label.split(' ')[0]}</span>
                 {t.badge !== undefined && t.badge > 0 && (
-                  <span className={`ml-0.5 text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 ${
+                  <span className={`ml-0.5 text-[10px] font-bold rounded-sm min-w-[18px] h-[18px] flex items-center justify-center px-1 ${
                     tab === t.id ? 'bg-white text-brand' : 'bg-red-500 text-white'
                   }`}>
                     {t.badge}
@@ -155,7 +155,7 @@ export default function NetworkPage() {
                   </div>
 
                   <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-                    <div className="card p-5 bg-gradient-to-br from-blue-50/60 to-indigo-50/60 border-blue-100">
+                    <div className="card p-5 bg-paper-sunk border-blue-100">
                       <div className="flex items-center gap-2.5 mb-4">
                         <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
                           <Users size={15} className="text-brand" />
@@ -164,7 +164,7 @@ export default function NetworkPage() {
                       </div>
                       <ul className="space-y-3 text-xs text-gray-600">
                         <li className="flex items-start gap-2.5">
-                          <span className="mt-0.5 w-6 h-6 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm">1st</span>
+                          <span className="mt-0.5 w-6 h-6 rounded-full bg-seal-600 text-paper text-[10px] font-medium font-mono flex items-center justify-center shrink-0 shadow-sm">1st</span>
                           <span className="leading-relaxed pt-0.5">People you're directly connected with</span>
                         </li>
                         <li className="flex items-start gap-2.5">

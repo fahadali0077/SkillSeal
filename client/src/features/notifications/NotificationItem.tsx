@@ -119,16 +119,16 @@ export default function NotificationItem({ notification }: { notification: INoti
           <img
             src={fromUser.profilePhoto}
             alt=""
-            className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm"
+            className="w-10 h-10 rounded-full object-cover ring-1 ring-paper-card shadow-sm"
           />
         ) : (
-          <div className={`w-10 h-10 rounded-full ${fallbackBg} flex items-center justify-center ring-2 ring-white shadow-sm`}>
+          <div className={`w-10 h-10 rounded-full ${fallbackBg} flex items-center justify-center ring-1 ring-paper-card shadow-sm`}>
             {ICONS[notification.type] ?? <Bell size={16} className="text-gray-400" />}
           </div>
         )}
         {/* Type icon overlay — only shown when there's a real avatar */}
         {fromUser?.profilePhoto && (
-          <span className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 ${fallbackBg} rounded-full ring-2 ring-white flex items-center justify-center shadow-sm`}>
+          <span className={`absolute -bottom-0.5 -right-0.5 w-5 h-5 ${fallbackBg} rounded-full ring-1 ring-paper-card flex items-center justify-center shadow-sm`}>
             {ICONS[notification.type] ?? <Bell size={10} className="text-gray-400" />}
           </span>
         )}
@@ -144,7 +144,7 @@ export default function NotificationItem({ notification }: { notification: INoti
       </div>
 
       {!notification.isRead && (
-        <div className="w-2 h-2 rounded-full bg-brand mt-2 shrink-0 shadow-[0_0_0_3px_rgba(37,99,235,0.15)]" />
+        <div className="w-2 h-2 rounded-full bg-brand mt-2 shrink-0 shadow-[0_0_0_3px_rgba(14,26,43,0.06)]" />
       )}
     </Link>
   );

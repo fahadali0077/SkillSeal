@@ -30,12 +30,12 @@ export default function CompanyPage() {
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div
-          className="h-32 bg-gradient-to-r from-blue-600 to-indigo-600"
+          className="h-32 bg-paper-sunk"
           style={data.coverImage ? { backgroundImage: `url(${data.coverImage})`, backgroundSize: 'cover' } : {}}
         />
         <div className="px-6 pb-6">
           <div className="flex items-end gap-4 -mt-8">
-            <div className="w-20 h-20 rounded-xl bg-white shadow border-2 border-white flex items-center justify-center overflow-hidden">
+            <div className="w-20 h-20 rounded-xl bg-white shadow border border-white flex items-center justify-center overflow-hidden">
               {data.logo ? (
                 <img src={data.logo} alt={data.name} className="w-full h-full object-cover" />
               ) : (
@@ -102,7 +102,7 @@ export default function CompanyPage() {
               <h3 className="text-sm font-semibold text-gray-700 mb-3">Specialties</h3>
               <div className="flex flex-wrap gap-2">
                 {data.specialties.map((s: string) => (
-                  <span key={s} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">{s}</span>
+                  <span key={s} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-sm">{s}</span>
                 ))}
               </div>
             </div>

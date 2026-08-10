@@ -18,11 +18,11 @@ function Avatar({ src, name, isOnline }: { src: string; name: string; isOnline: 
   return (
     <div className="relative shrink-0">
       {src
-        ? <img src={src} alt={name} className="w-11 h-11 rounded-full object-cover ring-2 ring-white" />
-        : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center font-bold text-brand ring-2 ring-white">{name[0]}</div>
+        ? <img src={src} alt={name} className="w-11 h-11 rounded-full object-cover ring-1 ring-paper-card" />
+        : <div className="w-11 h-11 rounded-full bg-paper-sunk flex items-center justify-center font-bold text-brand ring-1 ring-paper-card">{name[0]}</div>
       }
       {isOnline && (
-        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-white" />
       )}
     </div>
   );
@@ -62,7 +62,7 @@ export default function ThreadList({ activeThreadId, onSelect, onCompose }: Prop
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search messages…"
-            className="w-full bg-gray-50 hover:bg-white focus:bg-white border border-transparent hover:border-gray-200 focus:border-brand focus:ring-4 focus:ring-brand/10 rounded-lg pl-8 pr-8 py-2 text-sm outline-none transition-all"
+            className="w-full bg-gray-50 hover:bg-white focus:bg-white border border-transparent hover:border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand/10 rounded-lg pl-8 pr-8 py-2 text-sm outline-none transition-all"
           />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded">
@@ -144,7 +144,7 @@ export default function ThreadList({ activeThreadId, onSelect, onCompose }: Prop
                       {thread.lastMessage?.content ?? 'No messages yet'}
                     </p>
                     {hasUnread && (
-                      <span className="ml-2 min-w-[18px] h-[18px] bg-brand text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shrink-0 tabular-nums">
+                      <span className="ml-2 min-w-[18px] h-[18px] bg-seal-600 text-paper text-[10px] font-medium font-mono rounded-sm flex items-center justify-center px-1 shrink-0 tabular-nums">
                         {thread.unreadCount > 9 ? '9+' : thread.unreadCount}
                       </span>
                     )}

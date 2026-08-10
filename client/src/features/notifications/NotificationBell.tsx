@@ -45,7 +45,7 @@ export default function NotificationBell() {
           <>
             {/* Pulsing ring behind the badge */}
             <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] rounded-full bg-red-400/40 animate-ping pointer-events-none" />
-            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-white">
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-seal-600 text-paper text-[10px] font-medium font-mono rounded-sm flex items-center justify-center px-1 ring-1 ring-paper-card">
               {count > 99 ? '99+' : count}
             </span>
           </>
@@ -62,13 +62,13 @@ export default function NotificationBell() {
             className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 w-[360px] max-w-[calc(100vw-1.5rem)] overflow-hidden flex flex-col max-h-[min(520px,calc(100vh-5rem))]"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-brand/5 to-transparent shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-paper-sunk shrink-0">
               <div className="flex items-center gap-2">
                 <Bell size={15} className="text-brand" />
                 <h3 className="font-semibold text-gray-900 text-sm">Notifications</h3>
               </div>
               {hasUnread && (
-                <span className="text-[10px] font-bold uppercase tracking-wide text-red-500 bg-red-50 px-2 py-0.5 rounded-full border border-red-100 tabular-nums">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-red-500 bg-red-50 px-2 py-0.5 rounded-sm border border-red-100 tabular-nums">
                   {count} new
                 </span>
               )}

@@ -74,7 +74,7 @@ export default function ConnectionsList() {
               <Link to={`/profile/${c.customUrl || c._id}`} className="shrink-0">
                 {c.profilePhoto
                   ? <img src={c.profilePhoto} alt={`${c.firstName} ${c.lastName}`} className="w-11 h-11 rounded-full object-cover ring-2 ring-gray-50 group-hover:ring-brand/20 transition-all" />
-                  : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center text-brand font-bold ring-2 ring-gray-50 group-hover:ring-brand/20 transition-all">
+                  : <div className="w-11 h-11 rounded-full bg-paper-sunk flex items-center justify-center text-brand font-bold ring-2 ring-gray-50 group-hover:ring-brand/20 transition-all">
                       {c.firstName[0]}
                     </div>
                 }

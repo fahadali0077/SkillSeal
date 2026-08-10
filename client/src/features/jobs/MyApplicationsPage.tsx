@@ -33,12 +33,12 @@ function AppCard({ app }: { app: IApplicationOut }) {
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="card p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition-all duration-200 hover:border-brand/30 hover:-translate-y-0.5"
+      className="card p-4 sm:p-5 flex items-center gap-3 sm:gap-4 transition-all duration-200 hover:border-brand/30"
       style={{ transitionProperty: 'box-shadow, transform, border-color' }}
     >
       {app.companyLogo
         ? <img src={app.companyLogo} alt={app.companyName} className="w-12 h-12 rounded-xl object-contain border border-gray-100 bg-white shrink-0" />
-        : <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center text-brand font-bold shrink-0">
+        : <div className="w-12 h-12 rounded-xl bg-paper-sunk flex items-center justify-center text-brand font-bold shrink-0">
             {app.companyName[0]}
           </div>
       }
@@ -60,7 +60,7 @@ function AppCard({ app }: { app: IApplicationOut }) {
         </div>
       )}
 
-      <div className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border shrink-0 ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+      <div className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-sm border shrink-0 ${cfg.bg} ${cfg.color} ${cfg.border}`}>
         {cfg.icon}
         <span className="hidden sm:inline">{cfg.label}</span>
       </div>
@@ -101,10 +101,10 @@ export default function MyApplicationsPage() {
     <div className="max-w-4xl mx-auto px-4 py-6">
 
       {/* ── Gradient hero with pipeline stats ─────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-brand to-blue-700 text-white p-5 sm:p-6 mb-5">
+      <div className="relative overflow-hidden rounded-2xl bg-paper-sunk text-white p-5 sm:p-6 mb-5">
         <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
               <Briefcase size={22} />
             </div>
             <div>
@@ -150,7 +150,7 @@ export default function MyApplicationsPage() {
             >
               <span>{tab === 'all' ? 'All' : STATUS_CONFIG[tab]?.label ?? tab}</span>
               {count > 0 && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${isActive ? 'bg-white/25' : 'bg-gray-200 text-gray-600'}`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm tabular-nums ${isActive ? 'bg-white/25' : 'bg-gray-200 text-gray-600'}`}>
                   {count}
                 </span>
               )}
@@ -175,7 +175,7 @@ export default function MyApplicationsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="card p-10 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-paper-sunk flex items-center justify-center">
             <Briefcase size={28} className="text-brand" />
           </div>
           <p className="font-bold text-gray-900 mb-1">

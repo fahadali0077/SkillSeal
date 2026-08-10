@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Circle } from 'lucide-react';
 import { useCompleteness } from './useProfile';
 
 export default function ProfileCompletenessBar({ userId }: { userId: string }) {
@@ -7,38 +6,30 @@ export default function ProfileCompletenessBar({ userId }: { userId: string }) {
   if (isLoading || !data) return null;
 
   const { score, sections } = data;
-  const color = score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-brand' : 'bg-amber-500';
 
   return (
     <div className="card p-4 mb-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold text-gray-800">Profile strength</span>
-        <span className="text-sm font-bold text-brand">{score}%</span>
+      <div className="flex items-baseline justify-between mb-3">
+        <span className="label">Profile strength</span>
+        <span className="font-mono text-lg leading-none text-ink-900 tabular-nums">{score}%</span>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full bg-gray-100 rounded-full h-2 mb-4 overflow-hidden">
+      {/* A hairline measure, not a candy bar. */}
+      <div className="w-full h-0.5 bg-paper-line mb-4 overflow-hidden">
         <motion.div
-          className={`h-2 rounded-full ${color}`}
+          className="h-full bg-ink-800"
           initial={{ width: 0 }}
           animate={{ width: `${score}%` }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
+          transition={{ duration: 0.4, ease: [0.2, 0, 0, 1] }}
         />
       </div>
 
-      {/* Section checklist */}
-      <ul className="space-y-1.5">
+      <ul className="space-y-2">
         {Object.entries(sections).map(([key, { earned, max, label }]) => (
-          <li key={key} className="flex items-center justify-between text-sm">
-            <span className={`flex items-center gap-2 ${earned ? 'text-gray-700' : 'text-gray-400'}`}>
-              {earned
-                ? <CheckCircle2 size={14} className="text-green-500 shrink-0" />
-                : <Circle      size={14} className="text-gray-300 shrink-0"  />
-              }
-              {label}
-            </span>
-            <span className={`text-xs font-medium ${earned ? 'text-green-600' : 'text-gray-300'}`}>
-              +{max}
+          <li key={key} className="flex items-center justify-between gap-3 text-sm">
+            <span className={earned ? 'text-ink-700' : 'text-ink-400'}>{label}</span>
+            <span className={`font-mono text-[11px] tracking-[0.06em] uppercase tabular-nums ${earned ? 'text-pass' : 'text-ink-400'}`}>
+              {earned ? 'done' : `+${max}`}
             </span>
           </li>
         ))}

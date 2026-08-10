@@ -67,7 +67,7 @@ export default function JobFilters() {
             <button
               key={wt}
               onClick={() => toggle('workType', wt)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors capitalize
+              className={`text-xs px-3 py-1.5 rounded-sm border transition-colors capitalize
                 ${params.get('workType') === wt ? 'bg-brand text-white border-brand' : 'border-gray-200 text-gray-600 hover:border-brand hover:text-brand'}`}
             >
               {wt}

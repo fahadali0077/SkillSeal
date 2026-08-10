@@ -55,7 +55,7 @@ export default function FeedPage() {
           <div className="card p-4 sm:p-5">
             <div className="flex items-center gap-3">
               {/* Avatar */}
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center font-bold text-brand shrink-0 ring-2 ring-brand/10">
+              <div className="w-11 h-11 rounded-full bg-paper-sunk flex items-center justify-center font-bold text-brand shrink-0 ring-2 ring-brand/10">
                 {(user as { profilePhoto?: string } | null)?.profilePhoto
                   ? <img src={(user as { profilePhoto?: string }).profilePhoto} alt="" className="w-full h-full object-cover rounded-full" />
                   : (user?.firstName?.[0] ?? 'U')}
@@ -130,7 +130,7 @@ export default function FeedPage() {
 
           {!isLoading && !isError && allPosts.length === 0 && (
             <div className="card p-10 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-paper-sunk flex items-center justify-center">
                 <Rss size={28} className="text-brand" />
               </div>
               <p className="font-bold text-gray-900 mb-1">Your feed is empty</p>
@@ -164,7 +164,7 @@ export default function FeedPage() {
               </div>
             )}
             {!hasNextPage && allPosts.length > 0 && (
-              <div className="flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 px-3 py-1.5 rounded-sm">
                 <Sparkles size={11} className="text-amber-500" /> You're all caught up
               </div>
             )}

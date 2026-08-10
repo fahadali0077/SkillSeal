@@ -44,12 +44,12 @@ export default function AdminUserDrawer({ userId, onClose }: { userId: string; o
   return (
     <>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onClose} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
+        onClick={onClose} className="fixed inset-0 bg-black/40 z-40" />
       <motion.div
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md bg-white shadow-2xl overflow-y-auto"
       >
-        <div className="sticky top-0 bg-white/90 backdrop-blur border-b border-gray-100 px-4 sm:px-5 py-3.5 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white/90 border-b border-gray-100 px-4 sm:px-5 py-3.5 flex items-center justify-between z-10">
           <h2 className="font-bold text-gray-900">User details</h2>
           <button onClick={onClose} className="btn-ghost p-2"><X size={18} /></button>
         </div>
@@ -155,7 +155,7 @@ export default function AdminUserDrawer({ userId, onClose }: { userId: string; o
       <AnimatePresence>
         {confirm === 'suspend' && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirm(null)} className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirm(null)} className="fixed inset-0 bg-black/40 z-[60]" />
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
               className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92%] max-w-md bg-white rounded-2xl shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
               <h3 className="text-lg font-bold text-gray-900 mb-1">Suspend account</h3>

@@ -53,7 +53,7 @@ export default function PendingRequestsList() {
             <Link to={`/profile/${r.user.customUrl || r.user._id}`} className="shrink-0">
               {r.user.profilePhoto
                 ? <img src={r.user.profilePhoto} alt={r.user.fullName} className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-50 group-hover:ring-brand/20 transition-all" />
-                : <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center text-brand font-bold ring-2 ring-gray-50 group-hover:ring-brand/20 transition-all">
+                : <div className="w-12 h-12 rounded-full bg-paper-sunk flex items-center justify-center text-brand font-bold ring-2 ring-gray-50 group-hover:ring-brand/20 transition-all">
                     {r.user.fullName[0]}
                   </div>
               }
@@ -79,15 +79,15 @@ export default function PendingRequestsList() {
               <button
                 onClick={() => accept.mutate(r.connectionId)}
                 disabled={accept.isPending}
-                className="inline-flex items-center justify-center gap-1.5 bg-brand text-white text-xs font-semibold px-3 py-2 rounded-xl hover:bg-brand-dark active:scale-[0.98] transition-all disabled:opacity-50"
-                style={{ boxShadow: '0 1px 2px rgba(37,99,235,0.2)' }}
+                className="inline-flex items-center justify-center gap-1.5 bg-brand text-white text-xs font-semibold px-3 py-2 rounded-xl hover:bg-brand-dark active:scale-[0.99] transition-all disabled:opacity-50"
+                style={{ boxShadow: '0 1px 2px rgba(14,26,43,0.06)' }}
               >
                 <UserCheck size={13} /> Accept
               </button>
               <button
                 onClick={() => decline.mutate(r.connectionId)}
                 disabled={decline.isPending}
-                className="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 bg-white px-3 py-2 rounded-xl hover:bg-gray-50 hover:border-gray-300 active:scale-[0.98] transition-all disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-gray-600 border border-gray-200 bg-white px-3 py-2 rounded-xl hover:bg-gray-50 hover:border-gray-300 active:scale-[0.99] transition-all disabled:opacity-50"
               >
                 Ignore
               </button>

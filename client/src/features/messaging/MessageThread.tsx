@@ -88,7 +88,7 @@ export default function MessageThread({ thread, onBack }: Props) {
             : <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center font-bold text-brand">{participant.fullName[0]}</div>
           }
           {participant.isOnline && (
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border border-white" />
           )}
         </div>
 
@@ -129,7 +129,7 @@ export default function MessageThread({ thread, onBack }: Props) {
             <div key={msg._id}>
               {showDate && (
                 <div className="flex justify-center my-3">
-                  <span className="text-xs text-gray-400 bg-gray-50 rounded-full px-3 py-1">
+                  <span className="text-xs text-gray-400 bg-gray-50 rounded-sm px-3 py-1">
                     {new Date(msg.createdAt).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
                   </span>
                 </div>

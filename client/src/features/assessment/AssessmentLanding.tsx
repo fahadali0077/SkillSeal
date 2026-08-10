@@ -22,25 +22,35 @@ const TIERS = [
 
 const TIER_ORDER: SkillTier[] = ['beginner', 'intermediate', 'advanced', 'expert'];
 
-const RULES = [
-  { icon: <Monitor size={15} />, text: 'Stay on this tab throughout' },
-  { icon: <Eye     size={15} />, text: 'No copy-pasting — clipboard is monitored' },
-  { icon: <Wifi    size={15} />, text: 'Ensure stable internet connection' },
-  { icon: <AlertTriangle size={15} />, text: '3 violations will terminate your session' },
+// Stated as terms of examination, not as a warning toast. Same content —
+// the register is what changed.
+const CONDITIONS = [
+  'The session runs full-screen. Leaving this tab is recorded.',
+  'The clipboard is monitored; pasted answers are flagged.',
+  'Three violations end the session. The attempt stays on your record.',
+  'Answers are checked for AI assistance and reported to recruiters.',
 ];
 
+// A plain instrument table replaces the emoji list.
 const Q_DIST = [
-  { type: 'Multiple Choice', count: 14, time: '60s each',  icon: '📝' },
-  { type: 'Scenario-based',  count:  4, time: '120s each', icon: '🔍' },
-  { type: 'Written theory',  count:  2, time: '150s each', icon: '✍️' },
+  { type: 'Multiple choice', count: 14, time: '60s' },
+  { type: 'Scenario',        count:  4, time: '120s' },
+  { type: 'Written theory',  count:  2, time: '150s' },
 ];
 
+// Tier escalates by weight and contrast, not by hue — this avoids the
+// purple/amber rainbow the old badges fell into.
 function tierColor(tier: string) {
-  return { beginner: 'text-green-600 bg-green-50 border-green-200', intermediate: 'text-blue-600 bg-blue-50 border-blue-200', advanced: 'text-purple-600 bg-purple-50 border-purple-200', expert: 'text-amber-600 bg-amber-50 border-amber-200' }[tier] ?? 'text-gray-600 bg-gray-50 border-gray-200';
+  return {
+    beginner:     'text-ink-400 bg-paper-sunk border-paper-line font-normal',
+    intermediate: 'text-ink-500 bg-paper-sunk border-paper-rule font-medium',
+    advanced:     'text-ink-800 bg-paper-card border-ink-300 font-semibold',
+    expert:       'text-paper bg-ink-800 border-ink-800 font-semibold',
+  }[tier] ?? 'text-ink-500 bg-paper-sunk border-paper-line';
 }
 
 function scoreColor(score: number) {
-  return score >= 70 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
+  return score >= 70 ? '#1D7A4C' : score >= 50 ? '#A8710F' : '#A3221B';
 }
 
 // ── Skill attempt card (certified or failed) ──────────────────────────────────
@@ -71,7 +81,7 @@ function VerifiedCard({ v, onRetake, onDelete, deleting }: {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-gray-900 text-sm">{v.skillName}</span>
-          <span className={`text-[11px] font-semibold capitalize px-2 py-0.5 rounded-full border ${tierColor(v.tier)}`}>
+          <span className={`text-[11px] font-semibold capitalize px-2 py-0.5 rounded-sm border ${tierColor(v.tier)}`}>
             {v.tier}
           </span>
           {verified   && <span className="text-[11px] text-green-600 font-medium flex items-center gap-0.5"><ShieldCheck size={11} /> Verified</span>}
@@ -218,10 +228,10 @@ export default function AssessmentLanding() {
     <div className="max-w-5xl mx-auto px-4 py-8">
 
       {/* ── Compact gradient hero ──────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand to-brand-light text-white p-6 mb-6">
+      <div className="relative overflow-hidden rounded-2xl bg-paper-sunk text-white p-6 mb-6">
         <div className="relative z-10 flex items-start justify-between gap-6 flex-wrap">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
               <ShieldCheck size={24} />
             </div>
             <div>
@@ -437,7 +447,7 @@ export default function AssessmentLanding() {
                   <p className="text-xs font-semibold text-gray-500 mb-2">Your current badges for {selectedSkill.name}</p>
                   <div className="flex flex-wrap gap-2">
                     {skillVerifs.map(v => (
-                      <span key={v.verificationId} className={`text-[11px] font-semibold capitalize px-2.5 py-1 rounded-full border ${
+                      <span key={v.verificationId} className={`text-[11px] font-semibold capitalize px-2.5 py-1 rounded-sm border ${
                         v.isExpired ? 'text-gray-400 bg-gray-100 border-gray-200 line-through' : tierColor(v.tier)
                       }`}>
                         {v.isExpired ? '⚠️' : '✓'} {v.tier} · {v.compositeScore}/100
@@ -467,12 +477,12 @@ export default function AssessmentLanding() {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-900 capitalize">{tier.label}</p>
                           {isVerified && (
-                            <span className="text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-sm">
                               ✓ Verified · {existing!.compositeScore}/100
                             </span>
                           )}
                           {isExpired && (
-                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-sm">
                               Expired — Renew
                             </span>
                           )}
@@ -492,79 +502,91 @@ export default function AssessmentLanding() {
         {/* ── STEP 3: PREFLIGHT ──────────────────────────────────────── */}
         {step === 'preflight' && selectedSkill && selectedTier && (
           <motion.div key="preflight" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-4 mb-6">
               <button onClick={() => setStep('tier')}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-lg transition-colors">
-                <ArrowLeft size={14} />Back
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 hover:text-ink-900 transition-colors">
+                <ArrowLeft size={15} />Back
               </button>
-              <h2 className="font-semibold text-gray-900">Review before starting</h2>
+              <span className="label">Step 3 of 3 · Review</span>
             </div>
 
-            <div className="bg-gradient-to-r from-brand to-brand-light rounded-2xl p-5 text-white">
-              <p className="opacity-80 text-sm mb-1">You are about to verify</p>
-              <p className="text-2xl font-bold">
-                {selectedSkill.name} <span className="capitalize text-white/80">· {selectedTier}</span>
-              </p>
+            {/* The declaration itself — the one elevated object on this page. */}
+            <div className="card-raised p-6 sm:p-7">
+              <p className="label">You are about to sit</p>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mt-3">
+                <h2 className="font-display text-[34px] leading-none text-ink-900">{selectedSkill.name}</h2>
+                <span className="text-lg font-semibold text-ink-500 capitalize">{selectedTier} tier</span>
+              </div>
               {(() => {
                 const prev = verifications.find(v => v.skillId === selectedSkill._id && v.tier === selectedTier);
                 if (!prev) return null;
                 return (
-                  <p className="mt-2 text-sm text-white/70 flex items-center gap-1.5">
-                    <RefreshCw size={13} />
-                    {prev.isExpired ? `Renewing expired badge (was ${prev.compositeScore}/100)` : `Upgrading from ${prev.compositeScore}/100`}
+                  <p className="mt-3 font-mono text-[11px] tracking-[0.06em] uppercase text-ink-400 flex items-center gap-1.5">
+                    <RefreshCw size={12} />
+                    {prev.isExpired
+                      ? `Renewing lapsed credential · was ${prev.compositeScore}/100`
+                      : `Upgrading · was ${prev.compositeScore}/100`}
                   </p>
                 );
               })()}
-            </div>
 
-            <div className="card p-5">
-              <h3 className="font-semibold text-sm text-gray-700 mb-3">What to expect — 20 questions</h3>
-              <div className="space-y-2.5">
-                {Q_DIST.map(q => (
-                  <div key={q.type} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{q.icon}</span>
-                      <span className="text-sm text-gray-700">{q.type}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-gray-400">
-                      <span>{q.count} questions</span>
-                      <span className="flex items-center gap-1"><Clock size={10} />{q.time}</span>
-                    </div>
-                  </div>
-                ))}
+              {/* Instrument */}
+              <div className="mt-7 pt-5 border-t border-paper-line">
+                <p className="label mb-3">Instrument · 20 questions</p>
+                <table className="w-full">
+                  <tbody className="divide-y divide-paper-line">
+                    {Q_DIST.map(q => (
+                      <tr key={q.type}>
+                        <td className="py-2.5 text-sm text-ink-700">{q.type}</td>
+                        <td className="py-2.5 text-right font-mono text-sm text-ink-900 tabular-nums whitespace-nowrap">
+                          {q.count} × {q.time}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
 
-            <div className="card p-5 border-orange-100 bg-orange-50">
-              <h3 className="font-semibold text-sm text-orange-800 mb-3 flex items-center gap-2">
-                <AlertTriangle size={15} />Important rules
-              </h3>
-              <ul className="space-y-2">
-                {RULES.map((r, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-orange-700">
-                    <span className="mt-0.5 shrink-0">{r.icon}</span>{r.text}
-                  </li>
-                ))}
-              </ul>
-            </div>
+              {/* Conditions of examination */}
+              <div className="mt-6 pt-5 border-t border-paper-line">
+                <p className="label mb-3">Conditions of examination</p>
+                <ul className="space-y-2.5">
+                  {CONDITIONS.map((c, i) => (
+                    <li key={i} className="flex gap-3 text-sm leading-relaxed text-ink-700">
+                      <span className="font-mono text-[11px] text-ink-400 tabular-nums pt-0.5 shrink-0">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      {c}
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" className="mt-1 accent-brand" checked={agreed} onChange={e => setAgreed(e.target.checked)} />
-              <span className="text-sm text-gray-700">I understand the rules and confirm I am completing this independently.</span>
-            </label>
+              <label className="flex items-start gap-3 mt-7 pt-5 border-t border-paper-line cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 w-4 h-4 accent-seal-600 shrink-0"
+                  checked={agreed}
+                  onChange={e => setAgreed(e.target.checked)}
+                />
+                <span className="text-sm leading-relaxed text-ink-700">
+                  I confirm I am sitting this assessment independently and without assistance.
+                </span>
+              </label>
+            </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">{error}</div>
+              <div className="p-3.5 bg-fail-tint border border-fail-line rounded text-sm text-fail">{error}</div>
             )}
 
             <button
               onClick={handleStart}
               disabled={!agreed || isStarting}
-              className="btn-primary w-full flex items-center justify-center gap-2 py-3 text-base"
+              className="btn-seal w-full py-3.5 text-base"
             >
               {isStarting
                 ? <><Loader2 size={18} className="animate-spin" />Preparing…</>
-                : <><ShieldCheck size={18} />Start Assessment</>}
+                : 'Begin monitored session'}
             </button>
           </motion.div>
         )}

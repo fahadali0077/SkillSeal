@@ -1,80 +1,159 @@
 import { motion } from 'framer-motion';
-import { ShieldCheck, Share2, ExternalLink, Trophy } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Share2, ArrowUpRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { IUserPublic } from '@SkillSeal/shared';
+import type { IUserPublic, ISkillEntry } from '@SkillSeal/shared';
+import SealMark from '../../components/SealMark';
+import { enterAt } from '../../lib/motion';
 
-const TIER_COLOR: Record<string, string> = {
-  beginner: 'bg-gray-100 text-gray-700',
-  intermediate: 'bg-blue-50 text-blue-700',
-  advanced: 'bg-purple-50 text-purple-700',
-  expert: 'bg-amber-50 text-amber-700',
+// A credential is a record, not a badge: it carries an ID, an issue date, an
+// expiry, a score and an integrity reading. Anything the API supplies is
+// printed; anything it doesn't is simply left off the row.
+type Credential = ISkillEntry & {
+  tier?: string;
+  score?: number;
+  issuedAt?: string;
+  expiresAt?: string;
+  integrity?: 'clean' | 'flagged';
 };
 
-export default function CertificationsSection({ profile }: { profile: IUserPublic }) {
-  const verified = profile.skills.filter((s) => s.status === 'verified' && s.verificationId);
+const EXPIRING_DAYS = 30;
 
-  if (verified.length === 0) return null;
+function fmtDate(iso?: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+}
+
+function daysUntil(iso?: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso).getTime();
+  if (Number.isNaN(d)) return null;
+  return Math.ceil((d - Date.now()) / 86_400_000);
+}
+
+/** SKL-2F91-A7C4-0Q — a credential you can read down a phone line. */
+function credentialId(raw: string | null) {
+  if (!raw) return null;
+  const hex = raw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  if (hex.length < 10) return `SKL-${hex}`;
+  return `SKL-${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 10)}`;
+}
+
+export default function CertificationsSection({ profile }: { profile: IUserPublic }) {
+  const sealed = (profile.skills as Credential[]).filter(
+    s => s.status === 'verified' && s.verificationId,
+  );
+
+  if (sealed.length === 0) return null;
 
   const shareUrl = (skillName: string) =>
     `${window.location.origin}/verify/${profile._id}?skill=${encodeURIComponent(skillName)}`;
 
   const handleShare = async (skillName: string) => {
-    const url = shareUrl(skillName);
     try {
-      await navigator.clipboard.writeText(url);
-      toast.success('Verification link copied!');
+      await navigator.clipboard.writeText(shareUrl(skillName));
+      toast.success('Verification link copied');
     } catch {
-      toast.error('Could not copy link');
+      toast.error('Could not copy the link');
     }
   };
 
-  return (
-    <section className="card p-5">
-      <h2 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
-        <Trophy size={16} className="text-amber-500" /> Verified Skills
-      </h2>
+  const expiringCount = sealed.filter(s => {
+    const d = daysUntil(s.expiresAt);
+    return d !== null && d <= EXPIRING_DAYS && d >= 0;
+  }).length;
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {verified.map((skill, i) => (
-          <motion.div
-            key={skill.skillId}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            className="border border-blue-100 rounded-xl p-4 bg-gradient-to-br from-blue-50 to-white"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={18} className="text-brand shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-sm text-gray-900">{skill.skillName}</p>
-                  <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full mt-0.5 ${TIER_COLOR['intermediate']}`}>
-                    Verified
-                  </span>
+  return (
+    <section className="card overflow-hidden">
+      <header className="flex items-end justify-between gap-4 px-5 pt-5 pb-4 border-b border-paper-line">
+        <div>
+          <h2 className="font-display text-[22px] leading-none text-ink-900">Sealed credentials</h2>
+          <p className="label mt-2">
+            {sealed.length} active{expiringCount > 0 && ` · ${expiringCount} expiring`}
+          </p>
+        </div>
+        <Link to="/assessment" className="text-sm font-semibold text-seal-600 hover:text-seal-700 whitespace-nowrap">
+          Verify another →
+        </Link>
+      </header>
+
+      <ul className="divide-y divide-paper-line">
+        {sealed.map((skill, i) => {
+          const id = credentialId(skill.verificationId);
+          const issued = fmtDate(skill.issuedAt ?? skill.addedAt);
+          const expires = fmtDate(skill.expiresAt);
+          const left = daysUntil(skill.expiresAt);
+          const expiringSoon = left !== null && left <= EXPIRING_DAYS && left >= 0;
+
+          return (
+            <motion.li key={skill.skillId} {...enterAt(i)} className="px-5 py-4">
+              <div className="flex items-start gap-4">
+                <SealMark size={28} tone={expiringSoon ? 'ink' : 'seal'} className="mt-0.5 shrink-0" />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                    <h3 className="font-display text-[19px] leading-none text-ink-900">{skill.skillName}</h3>
+                    {skill.tier && (
+                      <span className="text-sm font-semibold text-ink-500 capitalize">{skill.tier}</span>
+                    )}
+                    {expiringSoon && (
+                      <span className="badge-warning">Expires in {left} days</span>
+                    )}
+                  </div>
+
+                  <p className="credential-id mt-2 truncate">
+                    {id}
+                    {issued && <> · issued {issued}</>}
+                    {expires && <> · valid to {expires}</>}
+                  </p>
                 </div>
+
+                {/* Score is the measured part of the record, so it is mono. */}
+                {typeof skill.score === 'number' && (
+                  <div className="shrink-0 text-right pl-2">
+                    <span className="font-mono text-2xl leading-none text-ink-900 tabular-nums">{skill.score}</span>
+                    <span className="font-mono text-xs text-ink-400">/100</span>
+                    {skill.integrity && (
+                      <p className={`label mt-1.5 ${skill.integrity === 'clean' ? 'text-pass' : 'text-warn'}`}>
+                        Integrity {skill.integrity}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => handleShare(skill.skillName)}
-                  className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-brand transition-colors"
-                  aria-label="Share verification"
-                >
-                  <Share2 size={14} />
-                </button>
+
+              <div className="flex items-center gap-4 mt-3 pl-[44px]">
                 <a
                   href={shareUrl(skill.skillName)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-1.5 rounded-lg hover:bg-blue-100 text-gray-400 hover:text-brand transition-colors"
-                  aria-label="Open verification"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-ink-700 hover:text-ink-900"
                 >
-                  <ExternalLink size={14} />
+                  Verify <ArrowUpRight size={13} />
                 </a>
+                <button
+                  onClick={() => handleShare(skill.skillName)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-500 hover:text-ink-900"
+                >
+                  <Share2 size={13} /> Copy link
+                </button>
+                {expiringSoon && (
+                  <Link to="/assessment" className="text-xs font-semibold text-ink-700 hover:text-ink-900 ml-auto">
+                    Renew
+                  </Link>
+                )}
               </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+            </motion.li>
+          );
+        })}
+      </ul>
+
+      <footer className="px-5 py-3.5 bg-paper-sunk border-t border-paper-line">
+        <p className="text-xs text-ink-500">
+          Anyone with the link can confirm these credentials without an account.
+        </p>
+      </footer>
     </section>
   );
 }

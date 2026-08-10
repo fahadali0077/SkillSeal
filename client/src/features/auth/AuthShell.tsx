@@ -29,7 +29,7 @@ export default function AuthShell({ children, marketingTitle, marketingBody }: P
     <div className="min-h-screen bg-gray-50 grid lg:grid-cols-2">
 
       {/* ── LEFT: brand & marketing panel (desktop only) ──────────────── */}
-      <div className="hidden lg:flex relative overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 text-white p-10 xl:p-14 flex-col justify-between">
+      <div className="hidden lg:flex relative overflow-hidden text-white p-10 xl:p-14 flex-col justify-between">
 
         {/* Grid pattern */}
         <div
@@ -54,7 +54,7 @@ export default function AuthShell({ children, marketingTitle, marketingBody }: P
         {/* Logo */}
         <div className="relative">
           <Link to="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-brand to-brand-dark rounded-xl flex items-center justify-center shadow-lg shadow-brand/40 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-brand/40 group- transition-transform">
               <ShieldCheck size={20} className="text-white" />
             </div>
             <span className="font-bold text-xl tracking-tight">SkillSeal</span>
@@ -67,7 +67,7 @@ export default function AuthShell({ children, marketingTitle, marketingBody }: P
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-3 py-1 text-xs text-blue-200 mb-5 backdrop-blur-sm"
+            className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-sm px-3 py-1 text-xs text-blue-200 mb-5"
           >
             <Sparkles size={12} className="text-blue-300" />
             Verified Skills for Proven Hiring
@@ -82,7 +82,7 @@ export default function AuthShell({ children, marketingTitle, marketingBody }: P
             {marketingTitle ?? (
               <>
                 Prove your skills.<br />
-                <span className="bg-gradient-to-r from-blue-300 via-indigo-300 to-purple-300 bg-clip-text text-transparent">
+                <span className=" text-ink-900">
                   Earn your badge.
                 </span>
               </>
@@ -134,7 +134,7 @@ export default function AuthShell({ children, marketingTitle, marketingBody }: P
           {/* Mobile-only logo */}
           <div className="lg:hidden text-center mb-6">
             <Link to="/" className="inline-flex items-center gap-2 justify-center">
-              <div className="w-9 h-9 bg-gradient-to-br from-brand to-brand-dark rounded-xl flex items-center justify-center shadow-sm">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm">
                 <ShieldCheck size={19} className="text-white" />
               </div>
               <span className="text-xl font-bold text-gray-900 tracking-tight">SkillSeal</span>

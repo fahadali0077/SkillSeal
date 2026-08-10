@@ -11,7 +11,7 @@ export default function BillingSuccessPage(){
   const[params]=useSearchParams();const qc=useQueryClient();const{data:billing,refetch}=useBillingStatus();
   useEffect(()=>{const t=setTimeout(()=>{void qc.invalidateQueries({queryKey:['billing','status']});void refetch();},1500);return()=>clearTimeout(t);},[]);
   const isRec=billing?.accountType==='recruiter';const unlocks=isRec?REC_UNLOCKS:PRO_UNLOCKS;const planLabel=billing?.planLabel??'Pro';
-  return(<div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center px-4 py-12">
+  return(<div className="min-h-screen bg-paper-sunk flex items-center justify-center px-4 py-12">
     <motion.div initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} transition={{type:'spring',damping:22}} className="max-w-md w-full text-center space-y-6">
       <motion.div initial={{scale:0.5}} animate={{scale:1}} transition={{type:'spring',delay:0.1,stiffness:200}} className="w-24 h-24 rounded-full bg-brand/10 border-4 border-brand/30 flex items-center justify-center mx-auto"><CheckCircle2 size={44} className="text-brand"/></motion.div>
       <div><h1 className="text-3xl font-bold text-gray-900">Welcome to {planLabel}! 🎉</h1><p className="text-gray-500 mt-2">Your subscription is active. Here's what you've unlocked:</p></div>

@@ -79,14 +79,14 @@ describe('TimerBar', () => {
     expect(container.textContent).toContain('01:30');
   });
 
-  it('bar is blue when >50% remaining', () => {
+  it('bar is pass-green when >50% remaining', () => {
     const { container } = render(
       <TimerBar timeLimitMs={60_000} timeRemainingMs={40_000} />
     );
     const bar = container.querySelector('[style*="background"]') as HTMLElement;
     const bg = bar?.style.background ?? bar?.style.backgroundColor ?? '';
-    // accept hex #3b82f6 or rgb(59, 130, 246)
-    expect(bg.toLowerCase()).toMatch(/3b82f6|59,\s*130,\s*246/i);
+    // pass #1D7A4C or rgb(29, 122, 76)
+    expect(bg.toLowerCase()).toMatch(/1d7a4c|29,\s*122,\s*76/i);
   });
 
   it('bar is amber at 30% remaining', () => {
@@ -95,8 +95,8 @@ describe('TimerBar', () => {
     );
     const bar = container.querySelector('[style*="background"]') as HTMLElement;
     const bg = bar?.style.background ?? bar?.style.backgroundColor ?? '';
-    // accept hex #f59e0b or rgb(245, 158, 11)
-    expect(bg.toLowerCase()).toMatch(/f59e0b|245,\s*158,\s*11/i);
+    // warn #A8710F or rgb(168, 113, 15)
+    expect(bg.toLowerCase()).toMatch(/a8710f|168,\s*113,\s*15/i);
   });
 
   it('bar is red at 16% remaining', () => {
@@ -105,8 +105,8 @@ describe('TimerBar', () => {
     );
     const bar = container.querySelector('[style*="background"]') as HTMLElement;
     const bg = bar?.style.background ?? bar?.style.backgroundColor ?? '';
-    // accept hex #ef4444 or rgb(239, 68, 68)
-    expect(bg.toLowerCase()).toMatch(/ef4444|239,\s*68,\s*68/i);
+    // fail #A3221B or rgb(163, 34, 27)
+    expect(bg.toLowerCase()).toMatch(/a3221b|163,\s*34,\s*27/i);
   });
 
   it('shows "00s" when timeRemainingMs is 0', () => {

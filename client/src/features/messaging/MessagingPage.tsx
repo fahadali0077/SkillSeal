@@ -75,8 +75,8 @@ function NewConversationPanel({
           </button>
         )}
         {recipientPhoto
-          ? <img src={recipientPhoto} alt={recipientName} className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm" />
-          : <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center font-bold text-brand text-sm ring-2 ring-white shadow-sm">{initials || '?'}</div>
+          ? <img src={recipientPhoto} alt={recipientName} className="w-10 h-10 rounded-full object-cover ring-1 ring-paper-card shadow-sm" />
+          : <div className="w-10 h-10 rounded-full bg-paper-sunk flex items-center justify-center font-bold text-brand text-sm ring-1 ring-paper-card shadow-sm">{initials || '?'}</div>
         }
         <div>
           <p className="text-sm font-semibold text-gray-900">{recipientName || <span className="text-gray-300">Loading…</span>}</p>
@@ -87,8 +87,8 @@ function NewConversationPanel({
       </div>
 
       {/* Empty state */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 bg-gradient-to-br from-gray-50/50 to-white">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 bg-paper-sunk">
+        <div className="w-20 h-20 rounded-2xl bg-paper-sunk flex items-center justify-center">
           <MessageSquareDashed size={36} className="text-brand" />
         </div>
         <p className="text-base font-bold text-gray-900">Start a conversation</p>
@@ -99,7 +99,7 @@ function NewConversationPanel({
 
       {/* Compose input */}
       <div className="border-t border-gray-100 p-3 bg-white shrink-0">
-        <div className="flex items-end gap-2 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/10 transition-all px-3 py-2">
+        <div className="flex items-end gap-2 bg-gray-50 rounded-2xl border border-gray-200 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/10 transition-all px-3 py-2">
           <textarea
             ref={textRef}
             value={text}
@@ -115,7 +115,7 @@ function NewConversationPanel({
           <button
             onClick={handleSend}
             disabled={!text.trim() || sendMessage.isPending}
-            className={`shrink-0 p-2 rounded-xl transition-all mb-0.5 active:scale-95
+            className={`shrink-0 p-2 rounded-xl transition-all mb-0.5 active:scale-[0.99]
               ${text.trim() && !sendMessage.isPending
                 ? 'bg-brand text-white hover:bg-brand-dark shadow-sm'
                 : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`}
@@ -197,7 +197,7 @@ export default function MessagingPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 h-[calc(100vh-80px)]">
-      <div className="bg-white rounded-2xl border border-gray-200 h-full overflow-hidden flex" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div className="bg-white rounded-2xl border border-gray-200 h-full overflow-hidden flex" style={{ boxShadow: '0 1px 3px rgba(14,26,43,0.04)' }}>
 
         {/* ── Left panel: thread list ─────────────────────────────────────── */}
         <div className={`
@@ -220,7 +220,7 @@ export default function MessagingPage() {
             >
               Requests
               {requestCount > 0 && (
-                <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] text-[10px] font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-white tabular-nums ${
+                <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] text-[10px] font-bold rounded-sm flex items-center justify-center px-1 ring-1 ring-paper-card tabular-nums ${
                   activeTab === 'requests' ? 'bg-white text-brand' : 'bg-red-500 text-white'
                 }`}>
                   {requestCount > 9 ? '9+' : requestCount}
@@ -295,12 +295,12 @@ export default function MessagingPage() {
                 key="empty"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex-1 flex flex-col items-center justify-center gap-3 p-8 bg-gradient-to-br from-gray-50/50 to-white relative overflow-hidden"
+                className="flex-1 flex flex-col items-center justify-center gap-3 p-8 bg-paper-sunk relative overflow-hidden"
               >
                 {/* Decorative ambient glow */}
                 <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-72 h-72 rounded-full bg-brand/5 blur-3xl pointer-events-none" />
 
-                <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center">
+                <div className="relative w-24 h-24 rounded-3xl bg-paper-sunk flex items-center justify-center">
                   <MessageSquareDashed size={42} className="text-brand" />
                 </div>
                 <p className="relative text-lg font-bold text-gray-900 mt-2">Your messages</p>

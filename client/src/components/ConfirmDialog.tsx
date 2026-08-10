@@ -47,7 +47,7 @@ export default function ConfirmDialog({
             key="backdrop"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={!loading ? onCancel : undefined}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/40 z-50"
           />
           <motion.div
             key="dialog"
@@ -80,7 +80,7 @@ export default function ConfirmDialog({
               <button
                 onClick={onConfirm}
                 disabled={loading}
-                className={`inline-flex items-center justify-center gap-2 font-semibold px-4 py-2 rounded-xl text-sm transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed ${v.confirm}`}
+                className={`inline-flex items-center justify-center gap-2 font-semibold px-4 py-2 rounded-xl text-sm transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed ${v.confirm}`}
               >
                 {loading ? 'Working…' : confirmLabel}
               </button>

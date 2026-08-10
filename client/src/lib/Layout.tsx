@@ -1,11 +1,7 @@
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Home, Users, Briefcase, MessageSquare, Bell, Search,
-  LogOut, User, ShieldCheck, ChevronDown, LayoutDashboard,
-  PenSquare, CreditCard, ClipboardList, ShieldAlert,
-} from 'lucide-react';
+import { Search, LogOut, User, ChevronDown, CreditCard, ClipboardList, Bell } from 'lucide-react';
 import { useAuthStore } from '../features/auth/useAuth';
 import NotificationBell from '../features/notifications/NotificationBell';
 import { useNotificationSocket } from '../features/notifications/useNotifications';
@@ -15,28 +11,60 @@ import { useNotificationSocket } from '../features/notifications/useNotification
 void useNotificationSocket;
 import { useUnreadCount } from '../features/messaging/useMessaging';
 import { connectSocket, disconnectSocket } from './socketClient';
+import SealMark from '../components/SealMark';
+import { enter } from './motion';
 
+// Text nav, not icon-over-label. The bar should read as a document header.
 const CANDIDATE_NAV = [
-  { to: '/feed',       icon: <Home size={20} />,           label: 'Home' },
-  { to: '/assessment', icon: <ShieldCheck size={20} />,    label: 'Verify' },
-  { to: '/network',    icon: <Users size={20} />,          label: 'Network' },
-  { to: '/jobs',       icon: <Briefcase size={20} />,      label: 'Jobs' },
-  { to: '/messages',   icon: <MessageSquare size={20} />,  label: 'Messages' },
+  { to: '/feed',       label: 'Home' },
+  { to: '/assessment', label: 'Verify' },
+  { to: '/network',    label: 'Network' },
+  { to: '/jobs',       label: 'Jobs' },
+  { to: '/messages',   label: 'Messages' },
 ];
 
 const RECRUITER_NAV = [
-  { to: '/recruiter',  icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-  { to: '/jobs',       icon: <Briefcase size={20} />,       label: 'Jobs' },
-  { to: '/network',    icon: <Users size={20} />,           label: 'Candidates' },
-  { to: '/messages',   icon: <MessageSquare size={20} />,   label: 'Messages' },
+  { to: '/recruiter',  label: 'Dashboard' },
+  { to: '/network',    label: 'Talent search' },
+  { to: '/jobs',       label: 'Jobs' },
+  { to: '/messages',   label: 'Messages' },
 ];
 
 const ADMIN_NAV = [
-  { to: '/admin',      icon: <ShieldAlert size={20} />,     label: 'Admin' },
-  { to: '/feed',       icon: <Home size={20} />,            label: 'Feed' },
-  { to: '/network',    icon: <Users size={20} />,           label: 'Network' },
-  { to: '/jobs',       icon: <Briefcase size={20} />,       label: 'Jobs' },
+  { to: '/admin',      label: 'Console' },
+  { to: '/feed',       label: 'Feed' },
+  { to: '/network',    label: 'Network' },
+  { to: '/jobs',       label: 'Jobs' },
 ];
+
+function Count({ n }: { n: number }) {
+  return (
+    <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-sm bg-seal-600 text-paper font-mono text-[10px] font-medium tabular-nums">
+      {n > 99 ? '99+' : n}
+    </span>
+  );
+}
+
+// ── Context strip ────────────────────────────────────────────────────────────
+// Role is declared in a thin strip rather than by recoloring the whole chrome.
+// Recruiters and admins see the same product, differently labelled.
+function ContextStrip({ label, detail }: { label: string; detail?: string }) {
+  return (
+    <div className="bg-ink-900 text-paper">
+      <div className="max-w-6xl mx-auto px-4 h-8 flex items-center gap-3">
+        <span className="font-mono text-[10px] font-medium tracking-[0.12em] uppercase">
+          {label}
+        </span>
+        {detail && (
+          <>
+            <span className="text-ink-400 text-[10px]">·</span>
+            <span className="font-mono text-[10px] tracking-[0.06em] text-ink-300 truncate">{detail}</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function AvatarMenu() {
   const [open, setOpen] = useState(false);
@@ -56,73 +84,82 @@ function AvatarMenu() {
   }, []);
 
   const handleLogout = async () => { await logout(); disconnectSocket(); navigate('/login'); };
-  const u = user as unknown as { profilePhoto?: string; headline?: string; customUrl?: string; _id?: string; lastName?: string };
+  const u = user as unknown as {
+    profilePhoto?: string; headline?: string; customUrl?: string;
+    _id?: string; lastName?: string;
+  };
+
+  const roleLabel = isAdmin ? 'Platform admin' : isRecruiter ? 'Recruiter' : 'Candidate';
+  const item = 'flex items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-paper-sunk transition-colors';
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1.5 p-1.5 rounded-xl hover:bg-gray-100">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 p-1 rounded hover:bg-paper-sunk transition-colors"
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
         {u?.profilePhoto
-          ? <img src={u.profilePhoto} alt={user?.firstName} className="w-8 h-8 rounded-full object-cover" />
-          : <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${isRecruiter ? 'bg-indigo-100 text-indigo-600' : 'bg-brand/10 text-brand'}`}>{user?.firstName?.[0] ?? 'U'}</div>
+          ? <img src={u.profilePhoto} alt={user?.firstName} className="w-8 h-8 rounded-full object-cover border border-paper-line" />
+          : <div className="w-8 h-8 rounded-full bg-ink-800 text-paper flex items-center justify-center font-mono text-[11px] font-medium tracking-wide">
+              {(user?.firstName?.[0] ?? 'U')}{(u?.lastName?.[0] ?? '')}
+            </div>
         }
-        <ChevronDown size={14} className={`text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} className={`text-ink-400 transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.96 }}
-            transition={{ type: 'spring', damping: 24, stiffness: 320 }}
-            className="absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 w-[230px] max-w-[calc(100vw-1.5rem)] py-1.5 overflow-y-auto max-h-[calc(100vh-5rem)]"
+            {...enter}
+            className="absolute right-0 top-full mt-2 bg-paper-card border border-paper-rule rounded-lg shadow-pop z-50 w-[248px] max-w-[calc(100vw-1.5rem)] overflow-hidden"
+            role="menu"
           >
-            <div className="px-4 py-3 border-b border-gray-100">
-              <p className="font-semibold text-sm text-gray-900">{user?.firstName} {u?.lastName}</p>
-              <p className="text-xs text-gray-500 truncate">{u?.headline ?? (isRecruiter ? 'Recruiter' : 'Candidate')}</p>
-              <span className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${isAdmin ? 'bg-red-50 text-red-600' : isRecruiter ? 'bg-indigo-50 text-indigo-600' : 'bg-brand/10 text-brand'}`}>
-                {isAdmin ? 'Platform admin' : isRecruiter ? 'Recruiter' : 'Candidate'}
-              </span>
+            <div className="px-4 py-3.5 border-b border-paper-line">
+              <p className="font-display text-base text-ink-900 leading-tight">
+                {user?.firstName} {u?.lastName}
+              </p>
+              <p className="text-xs text-ink-500 truncate mt-0.5">
+                {u?.headline ?? roleLabel}
+              </p>
+              <span className="label mt-2 inline-block">{roleLabel}</span>
             </div>
 
             <div className="py-1">
-              <Link to={`/profile/${u?.customUrl || u?._id}`} onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                <User size={15} />View profile
+              <Link to={`/profile/${u?.customUrl || u?._id}`} onClick={() => setOpen(false)} className={item}>
+                <User size={16} />View profile
               </Link>
 
               {isAdmin && (
-                <Link to="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                  <ShieldAlert size={15} />Admin console
+                <Link to="/admin" onClick={() => setOpen(false)} className={item}>
+                  <ClipboardList size={16} />Admin console
                 </Link>
               )}
 
               {isRecruiter ? (
-                <>
-                  <Link to="/recruiter" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <LayoutDashboard size={15} />Recruiter dashboard
-                  </Link>
-                  <Link to="/billing" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <CreditCard size={15} />Billing &amp; plan
-                  </Link>
-                </>
+                <Link to="/recruiter" onClick={() => setOpen(false)} className={item}>
+                  <ClipboardList size={16} />Recruiter workspace
+                </Link>
               ) : (
                 <>
-                  <Link to="/assessment" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <ShieldCheck size={15} />Verify a skill
+                  <Link to="/assessment" onClick={() => setOpen(false)} className={item}>
+                    <SealMark size={16} tone="seal" />Verify a skill
                   </Link>
-                  <Link to="/applications" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <ClipboardList size={15} />My applications
-                  </Link>
-                  <Link to="/billing" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                    <CreditCard size={15} />Billing &amp; plan
+                  <Link to="/applications" onClick={() => setOpen(false)} className={item}>
+                    <ClipboardList size={16} />My applications
                   </Link>
                 </>
               )}
+
+              <Link to="/billing" onClick={() => setOpen(false)} className={item}>
+                <CreditCard size={16} />Billing &amp; plan
+              </Link>
             </div>
 
-            <div className="border-t border-gray-100 py-1">
-              <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                <LogOut size={15} />Sign out
+            <div className="border-t border-paper-line py-1">
+              <button onClick={handleLogout} className={`${item} w-full text-ink-500 hover:text-ink-900`}>
+                <LogOut size={16} />Sign out
               </button>
             </div>
           </motion.div>
@@ -134,14 +171,10 @@ function AvatarMenu() {
 
 function GlobalSearch({ isRecruiter }: { isRecruiter: boolean }) {
   const [q, setQ] = useState('');
-  const [focused, setFocused] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   // Context-aware search: route + placeholder depend on which page you're on.
-  // - On /network → search PEOPLE (separate from job search entirely)
-  // - On /jobs → search JOBS
-  // - Anywhere else → default by role (recruiters → people, candidates → jobs)
   const onNetwork = location.pathname.startsWith('/network');
   const onJobs    = location.pathname.startsWith('/jobs');
   const mode: 'people' | 'jobs' =
@@ -156,24 +189,22 @@ function GlobalSearch({ isRecruiter }: { isRecruiter: boolean }) {
     e.preventDefault();
     const value = q.trim();
     if (!value) return;
-    if (mode === 'people') {
-      navigate(`/network?search=${encodeURIComponent(value)}`);
-    } else {
-      navigate(`/jobs?keyword=${encodeURIComponent(value)}`);
-    }
-    setQ(''); setFocused(false);
+    navigate(mode === 'people'
+      ? `/network?search=${encodeURIComponent(value)}`
+      : `/jobs?keyword=${encodeURIComponent(value)}`);
+    setQ('');
   };
+
   return (
     <form onSubmit={handle} className="relative">
-      <div className={`flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2 transition-all ${focused ? 'ring-2 ring-brand bg-white border border-brand/30' : ''}`}>
-        <Search size={15} className="text-gray-400 shrink-0" />
+      <div className="flex items-center gap-2 bg-paper-sunk border border-paper-line rounded px-3 py-2 focus-within:border-ink-800 focus-within:bg-paper-card transition-colors duration-150">
+        <Search size={16} className="text-ink-400 shrink-0" />
         <input
           value={q}
           onChange={e => setQ(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
           placeholder={placeholder}
-          className="bg-transparent text-sm text-gray-800 placeholder:text-gray-400 outline-none w-52"
+          aria-label={placeholder}
+          className="bg-transparent text-sm text-ink-900 placeholder:text-ink-400 outline-none w-44 lg:w-52"
         />
       </div>
     </form>
@@ -183,8 +214,13 @@ function GlobalSearch({ isRecruiter }: { isRecruiter: boolean }) {
 export default function Layout({ children }: { children: React.ReactNode }) {
   // PARTIAL-06: useNotificationSocket has moved to App.tsx so it stays
   // mounted during the assessment overlay (which renders without Layout).
-  const { user, accessToken } = useAuthStore() as { user: typeof useAuthStore extends () => { user: infer U } ? U : unknown; accessToken: string | null; logout: () => Promise<void> };
+  const { user, accessToken } = useAuthStore() as {
+    user: typeof useAuthStore extends () => { user: infer U } ? U : unknown;
+    accessToken: string | null;
+    logout: () => Promise<void>;
+  };
   const role = (user as { role?: string })?.role ?? 'candidate';
+  const company = (user as { companyName?: string })?.companyName;
   const isRecruiter = role === 'recruiter' || role === 'company_admin';
   const isAdmin = role === 'platform_admin';
   const navItems = isAdmin ? ADMIN_NAV : isRecruiter ? RECRUITER_NAV : CANDIDATE_NAV;
@@ -192,73 +228,50 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { if (user && accessToken) connectSocket(accessToken); }, [accessToken]);
 
+  const home = isAdmin ? '/admin' : isRecruiter ? '/recruiter' : '/feed';
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-4">
-          {/* Logo */}
-          <Link to={isAdmin ? '/admin' : isRecruiter ? '/recruiter' : '/assessment'} className="flex items-center gap-2 shrink-0">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isAdmin ? 'bg-red-600' : isRecruiter ? 'bg-indigo-600' : 'bg-brand'}`}>
-              <ShieldCheck size={18} className="text-white" />
-            </div>
-            <span className="font-bold text-gray-900 text-lg hidden sm:block">SkillSeal</span>
+    <div className="min-h-screen bg-paper flex flex-col">
+      {isAdmin && <ContextStrip label="Platform administration" detail="elevated session" />}
+      {isRecruiter && <ContextStrip label="Recruiter workspace" detail={company} />}
+
+      <header className="sticky top-0 z-40 bg-paper-card border-b border-paper-rule">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-5">
+          <Link to={home} className="flex items-center gap-2.5 shrink-0" aria-label="SkillSeal home">
+            <SealMark size={26} tone="seal" />
+            <span className="font-display font-medium text-[19px] leading-none tracking-[-0.015em] text-ink-900 hidden sm:block">
+              SkillSeal
+            </span>
           </Link>
 
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <GlobalSearch isRecruiter={isRecruiter} />
           </div>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+          {/* Desktop nav — plain text with an inset underline on the active item */}
+          <nav className="hidden md:flex items-stretch gap-7 flex-1 justify-center h-16">
             {navItems.map(item => (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) =>
-                  `flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-colors text-xs font-medium ${isActive
-                    ? (isRecruiter ? 'text-indigo-600 border-b-2 border-indigo-600 rounded-none' : 'text-brand border-b-2 border-brand rounded-none')
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`
-                }
+                className={({ isActive }) => `nav-link flex items-center ${isActive ? 'nav-link-active' : ''}`}
               >
-                {({ isActive }) => (
-                  <>
-                    <span className={`relative ${isActive ? (isRecruiter ? 'text-indigo-600' : 'text-brand') : ''}`}>
-                      {item.icon}
-                      {item.to === '/messages' && unreadMessages > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
-                          {unreadMessages > 99 ? '99+' : unreadMessages}
-                        </span>
-                      )}
-                    </span>
-                    <span>{item.label}</span>
-                  </>
-                )}
+                {item.label}
+                {item.to === '/messages' && unreadMessages > 0 && <Count n={unreadMessages} />}
               </NavLink>
             ))}
           </nav>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-2 ml-auto">
-            {isAdmin ? (
-              <Link
-                to="/admin"
-                className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-red-600 border border-red-300 rounded-full px-3 py-1.5 hover:bg-red-50"
-              >
-                <ShieldAlert size={13} />Admin
+          {/* The one oxblood button per screen is always the issuance action. */}
+          <div className="flex items-center gap-3 ml-auto">
+            {!isRecruiter && !isAdmin && (
+              <Link to="/assessment" className="hidden md:inline-flex btn-seal py-2 px-3.5">
+                Verify a skill
               </Link>
-            ) : isRecruiter ? (
-              <Link
-                to="/recruiter"
-                className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-indigo-600 border border-indigo-400 rounded-full px-3 py-1.5 hover:bg-indigo-50"
-              >
-                <LayoutDashboard size={13} />Dashboard
-              </Link>
-            ) : (
-              <Link
-                to="/assessment"
-                className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-brand border border-brand rounded-full px-3 py-1.5 hover:bg-blue-50"
-              >
-                <ShieldCheck size={13} />Verify Skill
+            )}
+            {isRecruiter && (
+              <Link to="/jobs" className="hidden md:inline-flex btn-seal py-2 px-3.5">
+                Post a role
               </Link>
             )}
             <NotificationBell />
@@ -267,41 +280,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      <main className="flex-1 pb-16 md:pb-0">{children}</main>
 
-      {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 flex items-center justify-around px-2 py-1">
+      {/* Mobile bottom nav — text labels, same underline logic as desktop */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-paper-card border-t border-paper-rule flex items-stretch justify-around">
         {navItems.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl ${isActive ? (isRecruiter ? 'text-indigo-600' : 'text-brand') : 'text-gray-400'}`
+              `relative flex items-center justify-center px-2 py-3.5 text-[11px] font-medium transition-colors
+               ${isActive ? 'text-ink-900 after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-ink-800' : 'text-ink-400'}`
             }
           >
-            {({ isActive }) => (
-              <>
-                <span className={`relative ${isActive ? (isRecruiter ? 'text-indigo-600' : 'text-brand') : 'text-gray-400'}`}>
-                  {item.icon}
-                  {item.to === '/messages' && unreadMessages > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
-                      {unreadMessages > 99 ? '99+' : unreadMessages}
-                    </span>
-                  )}
-                </span>
-                <span className="text-[10px] font-medium">{item.label}</span>
-              </>
-            )}
+            {item.label}
+            {item.to === '/messages' && unreadMessages > 0 && <Count n={unreadMessages} />}
           </NavLink>
         ))}
         <NavLink
           to="/notifications"
           className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl ${isActive ? (isRecruiter ? 'text-indigo-600' : 'text-brand') : 'text-gray-400'}`
+            `relative flex items-center justify-center px-3 py-3.5 transition-colors
+             ${isActive ? 'text-ink-900 after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-ink-800' : 'text-ink-400'}`
           }
+          aria-label="Alerts"
         >
-          <Bell size={20} />
-          <span className="text-[10px] font-medium">Alerts</span>
+          <Bell size={17} />
         </NavLink>
       </nav>
     </div>

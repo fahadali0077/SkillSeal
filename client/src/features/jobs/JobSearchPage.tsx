@@ -41,9 +41,9 @@ export default function JobSearchPage() {
     <div className="max-w-6xl mx-auto px-4 py-6">
 
       {/* ── Gradient hero ───────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-brand to-blue-700 text-white p-5 sm:p-6 mb-5">
+      <div className="relative overflow-hidden rounded-2xl bg-paper-sunk text-white p-5 sm:p-6 mb-5">
         <div className="relative z-10 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
             <Briefcase size={22} />
           </div>
           <div>
@@ -62,7 +62,7 @@ export default function JobSearchPage() {
           <input
             defaultValue={params.get('keyword') ?? ''}
             placeholder="Job title, keyword, or company…"
-            className="w-full bg-gray-50 hover:bg-white focus:bg-white border border-transparent hover:border-gray-200 focus:border-brand focus:ring-4 focus:ring-brand/10 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none transition-all"
+            className="w-full bg-gray-50 hover:bg-white focus:bg-white border border-transparent hover:border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand/10 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none transition-all"
             onKeyDown={(e) => e.key === 'Enter' && setKeyword((e.target as HTMLInputElement).value)}
             onBlur={(e) => setKeyword(e.target.value)}
           />
@@ -72,7 +72,7 @@ export default function JobSearchPage() {
           <input
             defaultValue={params.get('location') ?? ''}
             placeholder="Location"
-            className="w-full bg-gray-50 hover:bg-white focus:bg-white border border-transparent hover:border-gray-200 focus:border-brand focus:ring-4 focus:ring-brand/10 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none transition-all"
+            className="w-full bg-gray-50 hover:bg-white focus:bg-white border border-transparent hover:border-gray-200 focus:border-brand focus:ring-1 focus:ring-brand/10 rounded-xl pl-10 pr-3 py-2.5 text-sm outline-none transition-all"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 const next = new URLSearchParams(params);
@@ -141,7 +141,7 @@ export default function JobSearchPage() {
             </div>
           ) : data?.jobs.length === 0 ? (
             <div className="card p-10 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-paper-sunk flex items-center justify-center">
                 <Briefcase size={28} className="text-gray-400" />
               </div>
               <p className="font-bold text-gray-900 mb-1">No jobs match your filters</p>

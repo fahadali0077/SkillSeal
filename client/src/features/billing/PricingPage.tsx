@@ -22,13 +22,13 @@ export default function PricingPage(){
       <p className="text-gray-500 text-lg max-w-xl mx-auto">AI-powered assessments give recruiters proof — not promises.</p>
       <div className="mt-6 inline-flex items-center gap-3 bg-gray-100 rounded-xl p-1">
         <button onClick={()=>setAnnual(false)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${!annual?'bg-white text-gray-900 shadow-sm':'text-gray-500'}`}>Monthly</button>
-        <button onClick={()=>setAnnual(true)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${annual?'bg-white text-gray-900 shadow-sm':'text-gray-500'}`}>Annual<span className="text-[11px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Save up to 31%</span></button>
+        <button onClick={()=>setAnnual(true)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${annual?'bg-white text-gray-900 shadow-sm':'text-gray-500'}`}>Annual<span className="text-[11px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-sm">Save up to 31%</span></button>
       </div>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
       {PLANS.map((plan,pi)=>{
         const price=annual?Math.round(plan.yearlyTotal/12):plan.monthlyPrice;const isCurrent=cur===plan.id;const isHL=plan.id==='pro';const saving=plan.monthlyPrice>0?Math.round(((plan.monthlyPrice*12-plan.yearlyTotal)/(plan.monthlyPrice*12))*100):0;
-        return(<motion.div key={plan.id} initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:pi*0.07}} className={`relative rounded-2xl border-2 overflow-hidden ${isHL?'border-brand shadow-xl scale-[1.02]':'border-gray-200 shadow-sm'}`}>
+        return(<motion.div key={plan.id} initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:pi*0.07}} className={`relative rounded-2xl border overflow-hidden ${isHL?'border-brand shadow-xl scale-[1.02]':'border-gray-200 shadow-sm'}`}>
           {'badge' in plan&&plan.badge&&<div className="absolute top-0 left-0 right-0 bg-brand text-white text-xs font-bold py-1.5 text-center tracking-wide">{plan.badge}</div>}
           <div className={`p-6 ${'badge' in plan&&plan.badge?'pt-10':''}`}>
             <div className={`flex items-center gap-2 mb-1 ${plan.accent}`}>{plan.icon}<span className="font-bold text-lg">{plan.name}</span></div>

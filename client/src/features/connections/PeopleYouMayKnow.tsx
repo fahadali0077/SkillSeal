@@ -76,7 +76,7 @@ export default function PeopleYouMayKnow() {
               </button>
 
               {/* Banner */}
-              <div className="h-14 bg-gradient-to-br from-brand/70 to-brand/40 shrink-0" />
+              <div className="h-14 bg-paper-sunk shrink-0" />
 
               {/* Avatar — overlaps banner */}
               <div className="flex justify-center -mt-8 px-4 shrink-0">
@@ -85,9 +85,9 @@ export default function PeopleYouMayKnow() {
                     ? <img
                         src={s.profilePhoto}
                         alt={`${s.firstName} ${s.lastName}`}
-                        className="w-16 h-16 rounded-full object-cover border-2 border-white shadow"
+                        className="w-16 h-16 rounded-full object-cover border border-white shadow"
                       />
-                    : <div className="w-16 h-16 rounded-full bg-brand/10 border-2 border-white shadow flex items-center justify-center font-bold text-brand text-lg">
+                    : <div className="w-16 h-16 rounded-full bg-brand/10 border border-white shadow flex items-center justify-center font-bold text-brand text-lg">
                         {initials}
                       </div>
                   }
@@ -129,7 +129,7 @@ export default function PeopleYouMayKnow() {
                 <button
                   onClick={() => handleConnect(s.userId)}
                   disabled={send.isPending}
-                  className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-full border-2 border-brand text-brand text-xs font-semibold hover:bg-brand hover:text-white transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-sm border border-paper-rule text-ink-800 text-xs font-semibold hover:bg-paper-sunk transition-colors disabled:opacity-50"
                 >
                   <UserPlus size={13} />
                   Connect

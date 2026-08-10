@@ -61,7 +61,7 @@ function EmailVerificationPending({ email, firstName }: { email: string; firstNa
 
   return (
     <AuthShell
-      marketingTitle={<>Almost there!<br /><span className="bg-gradient-to-r from-blue-300 via-indigo-300 to-purple-300 bg-clip-text text-transparent">One quick step left.</span></>}
+      marketingTitle={<>Almost there!<br /><span className=" text-ink-900">One quick step left.</span></>}
       marketingBody="We've sent you a verification email. Open it, click the link, and your SkillSeal account is ready to use."
     >
       <div className="card p-6 sm:p-8 text-center">
@@ -73,14 +73,14 @@ function EmailVerificationPending({ email, firstName }: { email: string; firstNa
           className="flex justify-center mb-6"
         >
           <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-br from-brand/15 to-brand/5 rounded-2xl flex items-center justify-center">
+            <div className="w-20 h-20 rounded-2xl flex items-center justify-center">
               <Mail size={36} className="text-brand" />
             </div>
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.4, type: 'spring', stiffness: 300 }}
-              className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-sm ring-2 ring-white"
+              className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-sm ring-1 ring-paper-card"
             >
               <CheckCircle2 size={14} className="text-white" />
             </motion.div>
@@ -203,7 +203,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => setRole('candidate')}
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${role === 'candidate' ? 'border-brand bg-blue-50 ring-2 ring-brand/10' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${role === 'candidate' ? 'border-brand bg-blue-50 ring-2 ring-brand/10' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
             >
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${role === 'candidate' ? 'bg-brand text-white' : 'bg-gray-100 text-gray-500'}`}>
                 <ShieldCheck size={18} />
@@ -217,7 +217,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => setRole('recruiter')}
-              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${role === 'recruiter' ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-500/10' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${role === 'recruiter' ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-500/10' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}
             >
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${role === 'recruiter' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
                 <Briefcase size={18} />
@@ -299,7 +299,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full inline-flex items-center justify-center gap-2 font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-white text-base ${role === 'recruiter' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30' : 'bg-brand hover:bg-brand-dark shadow-lg shadow-brand/20 hover:shadow-brand/30'}`}
+            className={`w-full inline-flex items-center justify-center gap-2 font-semibold py-3 px-4 rounded-xl transition-all active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed text-white text-base ${role === 'recruiter' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30' : 'bg-brand hover:bg-brand-dark shadow-lg shadow-brand/20 hover:shadow-brand/30'}`}
           >
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
             {isLoading ? 'Creating account…' : role === 'recruiter' ? 'Create Recruiter Account' : 'Create Account'}

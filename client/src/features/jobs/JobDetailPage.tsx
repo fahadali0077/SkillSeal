@@ -103,13 +103,13 @@ export default function JobDetailPage() {
             {/* Hero title card */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="card overflow-hidden">
               {/* Top color stripe */}
-              <div className="h-1 bg-gradient-to-r from-brand via-brand-light to-indigo-500" />
+              <div className="h-1 bg-paper-sunk" />
 
               <div className="p-6">
                 <div className="flex items-start gap-4">
                   {job.company.logo
                     ? <img src={job.company.logo} alt={job.company.name} className="w-16 h-16 rounded-xl object-contain border border-gray-100 bg-white shrink-0" />
-                    : <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-brand/15 to-brand/5 flex items-center justify-center text-brand font-bold text-xl shrink-0">{job.company.name[0]}</div>
+                    : <div className="w-16 h-16 rounded-xl bg-paper-sunk flex items-center justify-center text-brand font-bold text-xl shrink-0">{job.company.name[0]}</div>
                   }
                   <div className="flex-1 min-w-0">
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{job.title}</h1>

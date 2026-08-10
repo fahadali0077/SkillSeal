@@ -44,7 +44,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
   return (
     <div className="card overflow-hidden">
       {/* Banner — taller, gradient, with subtle pattern overlay */}
-      <div className="h-40 sm:h-48 bg-gradient-to-br from-brand via-brand-light to-indigo-500 relative overflow-hidden">
+      <div className="h-40 sm:h-48 bg-paper-sunk relative overflow-hidden">
         {profile.bannerImage ? (
           <img src={profile.bannerImage} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -71,7 +71,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
           </>
         )}
         {/* Soft fade to white at bottom for smoother avatar overlap */}
-        <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-white/40 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 inset-x-0 h-8 bg-paper-sunk pointer-events-none" />
       </div>
 
       {/* Avatar + CTAs row */}
@@ -83,7 +83,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
             <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white bg-gray-200 overflow-hidden shadow-xl ring-1 ring-gray-100">
               {profile.profilePhoto
                 ? <img src={profile.profilePhoto} alt={profile.fullName} className="w-full h-full object-cover" />
-                : <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-gray-400 bg-gradient-to-br from-gray-100 to-gray-200">
+                : <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-gray-400 bg-paper-sunk">
                     {profile.firstName[0]}{profile.lastName[0]}
                   </div>
               }
@@ -93,7 +93,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
                 <button
                   onClick={() => inputRef.current?.click()}
                   disabled={uploadPhoto.isPending}
-                  className="absolute bottom-1 right-1 bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-gray-50 hover:scale-105 transition-all"
+                  className="absolute bottom-1 right-1 bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-gray-50 transition-all"
                   aria-label="Upload photo"
                 >
                   {uploadPhoto.isPending
@@ -188,7 +188,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
             <div className="flex flex-wrap gap-2 mt-3">
               {profile.links.map((lk, i) => (
                 <a key={i} href={lk.url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-brand hover:text-white font-medium bg-brand/5 hover:bg-brand border border-brand/15 hover:border-brand px-2.5 py-1 rounded-full transition-all">
+                  className="inline-flex items-center gap-1 text-xs text-brand hover:text-white font-medium bg-brand/5 hover:bg-brand border border-brand/15 hover:border-brand px-2.5 py-1 rounded-sm transition-all">
                   <Link2 size={11} /> {lk.label || lk.type}
                 </a>
               ))}

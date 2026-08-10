@@ -14,7 +14,7 @@ export default function BillingSettings(){
     {billing.subscriptionStatus==='past_due'&&<motion.div initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl"><AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5"/><div><p className="font-semibold text-amber-800 text-sm">Payment failed</p><p className="text-amber-700 text-xs mt-0.5">Please update your payment method to keep your subscription active.</p></div></motion.div>}
     <div className="card p-5">
       <div className="flex items-start justify-between gap-4">
-        <div><p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Current plan</p><div className="flex items-center gap-2"><h2 className="text-xl font-bold text-gray-900">{billing.planLabel}</h2><span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${sb.cls}`}>{sb.label}</span></div>
+        <div><p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Current plan</p><div className="flex items-center gap-2"><h2 className="text-xl font-bold text-gray-900">{billing.planLabel}</h2><span className={`text-[11px] font-semibold px-2 py-0.5 rounded-sm border ${sb.cls}`}>{sb.label}</span></div>
           {billing.currentPeriodEnd&&<p className="text-sm text-gray-500 flex items-center gap-1.5 mt-2"><Calendar size={13}/>Next billing: {new Date(billing.currentPeriodEnd).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'})}</p>}
           {billing.additionalCredits>0&&<p className="text-sm text-brand flex items-center gap-1.5 mt-1"><Zap size={13}/>{billing.additionalCredits} assessment credit{billing.additionalCredits!==1?'s':''} remaining</p>}
         </div>

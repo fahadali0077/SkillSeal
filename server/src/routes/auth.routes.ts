@@ -18,6 +18,9 @@ import {
   REFRESH_COOKIE_KEY,
 } from '../services/auth.service';
 import { authenticate, type AuthRequest } from '../middleware/auth.middleware';
+// AUDIT §1.1: these were defined in rateLimiter.middleware.ts and never imported,
+// so auth-adjacent routes fell back to the blanket 200-per-15-min global limiter.
+import { authLimiter, registerLimiter } from '../middleware/rateLimiter.middleware';
 import { sendSuccess, sendError, sendValidationError } from '../utils/response';
 import { AppError } from '../middleware/error.middleware';
 
@@ -91,11 +94,13 @@ function handleAuthError(err: unknown, res: Response): void {
 
 router.post(
   '/register',
+  registerLimiter,
   [
     body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-    body('firstName').trim().notEmpty().withMessage('First name required'),
-    body('lastName').trim().notEmpty().withMessage('Last name required'),
-    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    body('firstName').isString().bail().trim().notEmpty().withMessage('First name required'),
+    body('lastName').isString().bail().trim().notEmpty().withMessage('Last name required'),
+    body('password').isString().withMessage('Password must be a string').bail()
+      .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   ],
   validate,
   async (req: Request, res: Response): Promise<void> => {
@@ -126,9 +131,11 @@ router.post(
 
 router.post(
   '/login',
+  authLimiter,
   [
     body('email').isEmail().normalizeEmail().withMessage('Valid email required'),
-    body('password').notEmpty().withMessage('Password required'),
+    body('password').isString().withMessage('Password required').bail()
+      .notEmpty().withMessage('Password required'),
   ],
   validate,
   async (req: Request, res: Response): Promise<void> => {
@@ -196,7 +203,7 @@ router.post(
 
 router.post(
   '/verify-email',
-  [body('token').notEmpty().withMessage('Verification token required')],
+  [body('token').isString().bail().notEmpty().withMessage('Verification token required')],
   validate,
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -214,6 +221,7 @@ router.post(
 
 router.post(
   '/resend-verification',
+  authLimiter,
   [body('email').isEmail().normalizeEmail().withMessage('Valid email required')],
   validate,
   async (req: Request, res: Response): Promise<void> => {
@@ -233,6 +241,7 @@ router.post(
 
 router.post(
   '/forgot-password',
+  authLimiter,
   [body('email').isEmail().normalizeEmail().withMessage('Valid email required')],
   validate,
   async (req: Request, res: Response): Promise<void> => {
@@ -252,9 +261,11 @@ router.post(
 
 router.post(
   '/reset-password',
+  authLimiter,
   [
-    body('token').notEmpty().withMessage('Reset token required'),
-    body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    body('token').isString().bail().notEmpty().withMessage('Reset token required'),
+    body('newPassword').isString().withMessage('Password must be a string').bail()
+      .isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   ],
   validate,
   async (req: Request, res: Response): Promise<void> => {
@@ -268,47 +279,10 @@ router.post(
   },
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /auth/_debug/email   ⚠️  TEMPORARY DIAGNOSTIC — REMOVE BEFORE LAUNCH
-// Synchronously sends a test email and returns the exact SMTP result/error
-// in the HTTP response. Lets us debug Brevo without reading server logs.
-// ─────────────────────────────────────────────────────────────────────────────
-
-import { sendVerificationEmail } from '../services/email.service';
-
-router.post(
-  '/_debug/email',
-  [body('to').isEmail().normalizeEmail().withMessage('Valid recipient email required')],
-  validate,
-  async (req: Request, res: Response): Promise<void> => {
-    const { to } = req.body as { to: string };
-    const env = {
-      SMTP_HOST: process.env.SMTP_HOST,
-      SMTP_PORT: process.env.SMTP_PORT,
-      SMTP_USER_set: !!process.env.SMTP_USER,
-      SMTP_PASS_set: !!process.env.SMTP_PASS,
-      FROM_EMAIL: process.env.FROM_EMAIL,
-      NODE_ENV: process.env.NODE_ENV,
-    };
-    try {
-      await sendVerificationEmail({ to, firstName: 'Debug', token: 'debug-token-' + Date.now() });
-      res.status(200).json({ success: true, message: 'Email send completed without throwing.', env });
-    } catch (err) {
-      const e = err as { code?: string; response?: string; responseCode?: number; command?: string; message?: string; stack?: string };
-      res.status(500).json({
-        success: false,
-        message: 'Email send threw an error.',
-        env,
-        error: {
-          message: e.message,
-          code: e.code,
-          responseCode: e.responseCode,
-          response: e.response,
-          command: e.command,
-        },
-      });
-    }
-  },
-);
+// NOTE: a temporary `POST /auth/_debug/email` diagnostic endpoint lived here.
+// It was unauthenticated, sent a real email to any address supplied in the body,
+// and returned SMTP host/port/user-set flags plus raw SMTP error text to the
+// caller. It was marked "REMOVE BEFORE LAUNCH" in a comment and shipped anyway.
+// Removed — use the winston logger for SMTP diagnostics instead.
 
 export default router;

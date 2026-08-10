@@ -137,7 +137,7 @@ export default function IsolationMode() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({}),
-        }).catch(() => null); // best-effort
+        }).catch((): null => null); // best-effort
       }
 
       return e.returnValue;

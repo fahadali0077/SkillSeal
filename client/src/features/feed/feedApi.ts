@@ -1,4 +1,5 @@
 import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
+import { useAuthStore } from '../auth/useAuth';
 // ─────────────────────────────────────────────────────────────────────────────
 // feedApi.ts  –  typed API calls for feed, posts, reactions, hashtags
 // All URLs must be absolute (prefixed with API_ORIGIN) so requests go to the
@@ -111,7 +112,8 @@ export const feedApi = {
     formData.append('file', file);
     // apiFetch sets JSON Content-Type by default; FormData uploads need the
     // browser to pick a multipart boundary, so use a bare fetch here.
-    const token = localStorage.getItem('accessToken') ?? '';
+    // AUDIT §1.3: in-memory token, not localStorage.
+    const token = useAuthStore.getState().accessToken ?? '';
     const res = await fetch(`${API_ORIGIN}/api/v1/users/me/upload-photo`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },

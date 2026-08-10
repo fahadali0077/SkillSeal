@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useIsAuthenticated, useAuthStore, homeRouteForRole } from './features/auth/useAuth';
+import { useIsAuthenticated, useIsBootstrapping, useAuthStore, homeRouteForRole, bootstrapAuth } from './features/auth/useAuth';
 import LoginPage from './features/auth/LoginPage';
 import RegisterPage from './features/auth/RegisterPage';
 import ForgotPasswordPage from './features/auth/ForgotPasswordPage';
@@ -42,15 +43,26 @@ import PostDetailPage from './pages/PostDetailPage';
 import { useAssessmentStatus } from './features/assessment/useAssessment';
 import { useNotificationSocket } from './features/notifications/useNotifications';
 
+/** AUDIT §1.3: the token now lives in memory, so on a fresh page load it is
+ *  briefly absent while bootstrapAuth() exchanges the httpOnly refresh cookie.
+ *  Guards must wait for that rather than redirecting a logged-in user to /login. */
+function AuthGate() {
+  return <div className="min-h-screen bg-paper" aria-busy="true" />;
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuth = useIsAuthenticated();
+  const booting = useIsBootstrapping();
+  if (booting) return <AuthGate />;
   return isAuth ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
 /** Gates routes to platform_admin only; everyone else is bounced to their role home. */
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const isAuth = useIsAuthenticated();
+  const booting = useIsBootstrapping();
   const user = useAuthStore(s => s.user);
+  if (booting) return <AuthGate />;
   if (!isAuth) return <Navigate to="/login" replace />;
   if (user?.role !== 'platform_admin') return <Navigate to={homeRouteForRole(user?.role ?? 'candidate')} replace />;
   return <>{children}</>;
@@ -59,7 +71,9 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 /** Redirect logged-in users away from guest pages (login/register) to their role home */
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const isAuth = useIsAuthenticated();
+  const booting = useIsBootstrapping();
   const user = useAuthStore(s => s.user);
+  if (booting) return <AuthGate />;
   if (!isAuth) return <>{children}</>;
   return <Navigate to={homeRouteForRole(user?.role ?? 'candidate')} replace />;
 }
@@ -80,7 +94,10 @@ function AssessmentActiveRoute() {
 
 export default function App() {
   const isAuthenticated = useIsAuthenticated();
+  const booting = useIsBootstrapping();
   const user = useAuthStore(s => s.user);
+  // AUDIT §1.3: re-obtain the in-memory access token from the httpOnly cookie.
+  useEffect(() => { void bootstrapAuth(); }, []);
   // PARTIAL-06: mount the notification socket at the App level so it survives
   // the assessment overlay and any route that renders without Layout.
   useNotificationSocket();

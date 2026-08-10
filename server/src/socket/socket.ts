@@ -10,6 +10,7 @@ import { verifyAccessToken } from '../utils/jwt';
 import type { ITokenPayload } from '@SkillSeal/shared';
 import { getRedis } from '../config/redis';
 import logger from '../utils/logger';
+import { allowedOrigins } from '../config/origins';
 
 // BROKEN-09: Redis presence tracking. We SET presence:{userId} on each socket
 // connect with a 5-minute TTL refresh, and DEL on disconnect *only* if no
@@ -93,7 +94,9 @@ export function emitToSession(
 export function initSocket(httpServer: HttpServer): SocketServer {
   io = new SocketServer(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:5173',
+      // AUDIT §2.3: was a single CLIENT_URL value, which silently broke every
+      // real-time feature for anyone on the www host. Shares app.ts's allowlist now.
+      origin: allowedOrigins,
       credentials: true,
       methods: ['GET', 'POST'],
     },

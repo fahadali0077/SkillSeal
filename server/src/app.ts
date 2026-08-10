@@ -23,9 +23,14 @@ import privacyRouter from './routes/privacy.routes';
 import skillsRouter from './routes/skills.routes';
 import recruiterDashRouter from './routes/recruiter.routes';
 import adminRouter from './routes/admin.routes';
-import { errorHandler } from './middleware/error.middleware';
+import { errorHandler, AppError } from './middleware/error.middleware';
+// AUDIT §1.1: these were written but never imported, so neither the NoSQL-operator
+// stripping, the XSS stripping, nor the global $where-blocking Mongoose plugin
+// (registered as a side effect of this import) was ever active.
+import { sanitizeInput, xssSanitize } from './middleware/sanitize.middleware';
 import mongoose from 'mongoose';
 import { getRedis } from './config/redis';
+import { isOriginAllowed } from './config/origins';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -39,7 +44,8 @@ app.use(helmet({
         'https://www.skillseal.tech',
         process.env.CLIENT_URL || 'http://localhost:5173',
       ],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
+      // AUDIT §2.2: this API serves JSON only — no inline scripts to allow.
+      scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
       fontSrc: ["'self'", 'data:'],
@@ -50,26 +56,23 @@ app.use(helmet({
   },
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  // Explicitly cover both www and non-www regardless of CLIENT_URL value.
-  // The 403 on login was caused by the browser sending origin
-  // "https://www.skillseal.tech" while CLIENT_URL was set without "www".
-  'https://skillseal.tech',
-  'https://www.skillseal.tech',
-  'http://localhost:5173',
-  'http://localhost:5174',
-].filter(Boolean) as string[];
+// AUDIT §2.3: allowlist moved to config/origins.ts so Socket.IO shares it.
 app.use(cors({
   origin: (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error('Not allowed by CORS'));
+    if (isOriginAllowed(origin)) return cb(null, true);
+    // AUDIT §7.2: was `new Error(...)`, which the generic error handler turned
+    // into a 500 (plus a stack trace in the logs) for routine bad-origin traffic.
+    cb(new AppError('Origin not allowed by CORS', 403, true, 'CORS_001'));
   }, credentials: true, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200, standardHeaders: true, legacyHeaders: false }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+// AUDIT §1.1: order matters — these read req.body, so they sit after the body
+// parsers and ahead of every router.
+app.use(sanitizeInput);
+app.use(xssSanitize);
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 app.get('/health', async (_req, res) => {

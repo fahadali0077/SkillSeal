@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
+import { useAuthStore } from '../auth/useAuth';
 const BASE = `${API_ORIGIN}/api/v1/messages`;
 
 
@@ -96,7 +97,8 @@ export const messagingApi = {
       const res = await fetch(`${BASE}/upload`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken') ?? ''}` },
+        // AUDIT §1.3: in-memory token, not localStorage.
+        headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken ?? ''}` },
         body: form,
         signal: controller.signal,
       });

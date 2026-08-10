@@ -6,7 +6,7 @@ A LinkedIn-style platform with an AI-powered skill verification engine. Candidat
 
 - **Social Network** — Profiles, connections, activity feed, messaging, company pages
 - **Skill Verifier** — Adaptive MCQ/Scenario/Micro-theory assessments with anti-cheat
-- **AI Question Generation** — GPT-4o generates unique questions every session
+- **AI Question Generation** — Groq `llama-3.3-70b-versatile` generates unique questions every session
 - **Recruiter Dashboard** — Full audit trails, behavior integrity scores, pipeline management  
 - **Job Board** — Verified-skill filtering, Easy Apply, match scoring
 - **Monetization** — Stripe-powered Pro and Recruiter subscription tiers
@@ -18,7 +18,7 @@ A LinkedIn-style platform with an AI-powered skill verification engine. Candidat
 | Frontend | Next.js/Vite + React 18, TypeScript, Tailwind CSS, Zustand, TanStack Query, Framer Motion |
 | Backend | Node.js 20, Express 4, TypeScript, Mongoose 8, Socket.io 4 |
 | Database | MongoDB Atlas + Redis (Upstash) |
-| AI | OpenAI GPT-4o (question generation + micro-theory grading) |
+| AI | Groq `llama-3.3-70b-versatile` (question generation + micro-theory grading) |
 | Payments | Stripe Subscriptions |
 | Media | Cloudinary |
 | Email | SendGrid |

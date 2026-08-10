@@ -1,9 +1,17 @@
 import jwt from 'jsonwebtoken';
 import type { ITokenPayload } from '@SkillSeal/shared';
+// AUDIT §2.1 / §7.3: this file used to read process.env directly with the
+// fallbacks 'access_secret_dev' / 'refresh_secret_dev'. Any entry point that
+// imported it without first importing config/env — a script, a cron job, or
+// socket/socket.ts, which imports verifyAccessToken from here directly — would
+// silently sign AND verify tokens with a secret that is public in the source.
+// Importing the validated config makes the guarantee structural rather than
+// import-order-dependent: env.ts hard-fails startup if the secrets are missing.
+import { env } from '../config/env';
 
-const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'access_secret_dev';
-const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret_dev';
-const EMAIL_SECRET = process.env.JWT_ACCESS_SECRET || 'access_secret_dev'; // same key, different expiry
+const ACCESS_SECRET = env.JWT_ACCESS_SECRET;
+const REFRESH_SECRET = env.JWT_REFRESH_SECRET;
+const EMAIL_SECRET = env.JWT_ACCESS_SECRET; // same key, different expiry
 
 // ── Access / Refresh ──────────────────────────────────────────────────────────
 

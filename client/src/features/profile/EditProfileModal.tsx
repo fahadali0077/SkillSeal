@@ -7,6 +7,7 @@ import { X, Loader2, Plus, Trash2, Upload } from 'lucide-react';
 import type { IUserPublic, ILink } from '@SkillSeal/shared';
 import { useUpdateProfile } from './useProfile';
 import { API_ORIGIN } from '../../lib/apiBase';
+import { useAuthStore } from '../auth/useAuth';
 
 const profileSchema = z.object({
   headline: z.string().max(220).optional(),
@@ -28,7 +29,8 @@ interface Props { profile: IUserPublic; onClose: () => void; }
 async function uploadMedia(file: File, endpoint: 'upload-photo' | 'upload-banner'): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
-  const token = localStorage.getItem('accessToken') ?? '';
+  // AUDIT §1.3: read the in-memory token from the store, not localStorage.
+  const token = useAuthStore.getState().accessToken ?? '';
   const res = await fetch(`${API_ORIGIN}/api/v1/users/me/${endpoint}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },

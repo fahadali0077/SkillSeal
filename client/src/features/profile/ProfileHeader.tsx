@@ -34,7 +34,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
-      await navigator.share({ title: profile.fullName, url }).catch(() => null);
+      await navigator.share({ title: profile.fullName, url }).catch((): null => null);
     } else {
       await navigator.clipboard.writeText(url);
       toast.success('Profile link copied!');

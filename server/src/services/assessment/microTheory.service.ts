@@ -1,4 +1,4 @@
-import { getGroq } from '../../config/gemini';
+import { getGroq } from '../../config/groq';
 import logger from '../../utils/logger';
 
 export interface MicroTheoryEvaluation {

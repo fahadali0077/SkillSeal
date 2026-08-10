@@ -24,7 +24,7 @@
         "../shared/src/index.ts"
       ]
     },
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "types": [
       "react",
       "react-dom",

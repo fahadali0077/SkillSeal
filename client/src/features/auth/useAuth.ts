@@ -27,6 +27,8 @@ interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
   isLoading: boolean;
+  /** True until the on-load token refresh settles (AUDIT §1.3). */
+  isBootstrapping: boolean;
   setAuth: (user: AuthUser, token: string) => void;
   logout: () => Promise<void>;
   login: (email: string, password: string) => Promise<{ role: string }>;
@@ -35,7 +37,10 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(persist(
   (set) => ({
-    user: null, accessToken: null, isLoading: false,
+    user: null as AuthUser | null,
+    accessToken: null as string | null,
+    isLoading: false,
+    isBootstrapping: true,
 
     setAuth: (user: AuthUser, accessToken: string) => set({ user, accessToken }),
 
@@ -76,10 +81,53 @@ export const useAuthStore = create<AuthState>()(persist(
       } catch (e) { set({ isLoading: false }); throw e; }
     },
   }),
-  { name: 'SkillSeal-auth', partialize: (s) => ({ user: s.user, accessToken: s.accessToken }) }
+  {
+    name: 'SkillSeal-auth',
+    // AUDIT §1.3: the access token used to be persisted here, which put a live
+    // bearer credential in localStorage where any XSS could read it — bypassing
+    // the httpOnly protection the refresh cookie already has. Only the user
+    // profile is persisted now (so the shell can render immediately); the token
+    // lives in memory and is re-obtained on load from the httpOnly refresh
+    // cookie via bootstrapAuth() below.
+    partialize: (s) => ({ user: s.user }),
+    version: 2,
+    migrate: (persisted) => {
+      // Drop any accessToken left over in localStorage from the previous version.
+      const p = persisted as { user?: AuthUser; accessToken?: string } | null;
+      if (p && 'accessToken' in p) delete p.accessToken;
+      return p as { user: AuthUser | null };
+    },
+  },
 ));
 
+/**
+ * AUDIT §1.3: re-establishes the in-memory access token on page load using the
+ * httpOnly refresh cookie. Called once from App. Until it settles, `isBootstrapping`
+ * is true so the route guards don't bounce a logged-in user to /login.
+ */
+export async function bootstrapAuth(): Promise<void> {
+  const { user, accessToken } = useAuthStore.getState();
+  if (!user || accessToken) { useAuthStore.setState({ isBootstrapping: false }); return; }
+  try {
+    const r = await fetch(`${API_ORIGIN}/api/v1/auth/refresh`, { method: 'POST', credentials: 'include' });
+    if (r.ok) {
+      const data = await r.json() as { success: boolean; data: { token: string } };
+      if (data.success) useAuthStore.setState({ accessToken: data.data.token });
+      else useAuthStore.setState({ user: null });
+    } else {
+      // Refresh cookie gone or rejected — the persisted profile is stale.
+      useAuthStore.setState({ user: null });
+    }
+  } catch {
+    useAuthStore.setState({ user: null });
+  } finally {
+    useAuthStore.setState({ isBootstrapping: false });
+  }
+}
+
 export const useIsAuthenticated = () => useAuthStore(s => !!s.user && !!s.accessToken);
+/** Auth state is still resolving — guards should wait rather than redirect. */
+export const useIsBootstrapping = () => useAuthStore(s => s.isBootstrapping);
 export const useUserRole = () => useAuthStore(s => s.user?.role ?? 'candidate');
 
 /** Returns the home route for the current user based on their role */

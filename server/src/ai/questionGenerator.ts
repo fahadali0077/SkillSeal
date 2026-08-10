@@ -12,7 +12,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import type { IQuestion, IQuestionMutation, QuestionType, SkillTier } from '@SkillSeal/shared';
-import { getGroq } from '../config/gemini';
+import { getGroq } from '../config/groq';
 import logger from '../utils/logger';
 import { getTemplate, interpolateTemplate } from './promptTemplates';
 import { pickConcept, type SupportedSkill } from './conceptLibrary';

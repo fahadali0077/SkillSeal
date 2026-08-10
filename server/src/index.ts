@@ -38,7 +38,7 @@ if (process.env.NODE_ENV === 'production' && KEEP_ALIVE_URL) {
 process.stdout.write(`[boot] Starting SkillSeal API  NODE_ENV=${process.env.NODE_ENV}  PORT=${PORT}\n`);
 process.stdout.write(`[boot] MONGODB_URI  = ${process.env.MONGODB_URI ? '✓ set' : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] REDIS_URL    = ${process.env.REDIS_URL ? '✓ set' : '✗ MISSING'}\n`);
-process.stdout.write(`[boot] GEMINI_API_KEY = ${process.env.GEMINI_API_KEY ? '✓ set' : '✗ MISSING'}\n`);
+process.stdout.write(`[boot] GROQ_API_KEY = ${process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY ? '✓ set' : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] CLOUDINARY_URL = ${process.env.CLOUDINARY_URL ? '✓ set' : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] JWT_ACCESS_SECRET  = ${process.env.JWT_ACCESS_SECRET ? `✓ (${process.env.JWT_ACCESS_SECRET.length} chars)` : '✗ MISSING'}\n`);
 process.stdout.write(`[boot] JWT_REFRESH_SECRET = ${process.env.JWT_REFRESH_SECRET ? `✓ (${process.env.JWT_REFRESH_SECRET.length} chars)` : '✗ MISSING'}\n`);

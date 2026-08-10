@@ -12,8 +12,11 @@ const EnvSchema = z.object({
   JWT_ACCESS_SECRET:  z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),
 
-  // ── AI (Gemini) ───────────────────────────────────────────────────────────
-  GEMINI_API_KEY: z.string().min(10),
+  // ── AI (Groq — llama-3.3-70b-versatile) ───────────────────────────────────
+  // AUDIT §2.5: GROQ_API_KEY is the correct name. GEMINI_API_KEY is accepted as
+  // a legacy fallback so existing deployments keep booting during the rename.
+  GROQ_API_KEY:   z.string().min(10).optional().or(z.literal('')),
+  GEMINI_API_KEY: z.string().min(10).optional().or(z.literal('')),
 
   // ── Media ─────────────────────────────────────────────────────────────────
   CLOUDINARY_URL: z.string().startsWith('cloudinary://'),
@@ -53,6 +56,11 @@ function validateEnv(): Env {
       process.stdout.write(`[env]   • ${e.path.join('.')}: ${e.message}\n`)
     );
     process.stdout.write('[env] Fix the above variables in the Render dashboard → Environment tab\n\n');
+    process.exit(1);
+  }
+  if (!result.data.GROQ_API_KEY && !result.data.GEMINI_API_KEY) {
+    process.stdout.write('\n[env] ❌ Environment validation failed:\n');
+    process.stdout.write('[env]   • GROQ_API_KEY: Required (or legacy GEMINI_API_KEY)\n\n');
     process.exit(1);
   }
   return result.data;

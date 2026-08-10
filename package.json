@@ -20,7 +20,9 @@
     "build:prod": "npm run build:shared && npm run build:prod --workspace=server"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "@types/supertest": "^7.2.1",
+    "concurrently": "^8.2.2",
+    "supertest": "^7.2.2"
   },
   "overrides": {
     "vite": "5.4.21",

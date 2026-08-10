@@ -101,39 +101,37 @@ export default function MyApplicationsPage() {
     <div className="max-w-4xl mx-auto px-4 py-6">
 
       {/* ── Gradient hero with pipeline stats ─────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-paper-sunk text-white p-5 sm:p-6 mb-5">
-        <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
+      <div className="mb-6 pb-4 border-b border-paper-line">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 rounded border border-paper-line bg-paper-sunk text-ink-700 flex items-center justify-center shrink-0">
               <Briefcase size={22} />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Applications</h1>
-              <p className="text-white/80 text-sm mt-0.5">Track every role you've applied to</p>
+              <h1 className="font-display text-[28px] leading-none text-ink-900">My Applications</h1>
+              <p className="text-sm text-ink-500 mt-2">Track every role you've applied to</p>
             </div>
           </div>
 
           {apps.length > 0 && (
             <div className="flex gap-5 text-center">
               <div>
-                <div className="text-2xl font-bold tabular-nums">{stats.total}</div>
-                <div className="text-[10px] text-white/70 uppercase tracking-wide">Total</div>
+                <div className="font-mono text-2xl leading-none text-ink-900 tabular-nums">{stats.total}</div>
+                <div className="label mt-1.5">Total</div>
               </div>
-              <div className="w-px bg-white/20" />
+              <div className="w-px bg-paper-line" />
               <div>
-                <div className="text-2xl font-bold tabular-nums">{stats.active}</div>
-                <div className="text-[10px] text-white/70 uppercase tracking-wide">Active</div>
+                <div className="font-mono text-2xl leading-none text-ink-900 tabular-nums">{stats.active}</div>
+                <div className="label mt-1.5">Active</div>
               </div>
-              <div className="w-px bg-white/20" />
+              <div className="w-px bg-paper-line" />
               <div>
-                <div className="text-2xl font-bold tabular-nums">{stats.offers}</div>
-                <div className="text-[10px] text-white/70 uppercase tracking-wide">Offers</div>
+                <div className="font-mono text-2xl leading-none text-ink-900 tabular-nums">{stats.offers}</div>
+                <div className="label mt-1.5">Offers</div>
               </div>
             </div>
           )}
         </div>
-        <div className="absolute -right-8 -top-12 w-44 h-44 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute -left-12 -bottom-12 w-44 h-44 rounded-full bg-white/5 blur-3xl pointer-events-none" />
       </div>
 
       {/* ── Status filter pill tabs ───────────────────────────────────── */}
@@ -150,7 +148,7 @@ export default function MyApplicationsPage() {
             >
               <span>{tab === 'all' ? 'All' : STATUS_CONFIG[tab]?.label ?? tab}</span>
               {count > 0 && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm tabular-nums ${isActive ? 'bg-white/25' : 'bg-gray-200 text-gray-600'}`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm tabular-nums ${isActive ? 'bg-paper-card text-ink-900' : 'bg-paper-sunk text-ink-500'}`}>
                   {count}
                 </span>
               )}

@@ -102,6 +102,7 @@ export default function App() {
         <Route path="/reset-password" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
 
         {/* Public pages */}
+        <Route path="/verify" element={<PublicVerifyPage />} />
         <Route path="/verify/:certificateId" element={<PublicVerifyPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/pricing" element={<PricingPage />} />

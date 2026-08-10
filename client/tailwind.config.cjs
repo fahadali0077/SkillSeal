@@ -33,9 +33,12 @@ const fail = { DEFAULT: '#A3221B', tint: '#FBEDEC', line: '#EBC9CD' };
 // Warm neutral ramp: paper at the light end, ink at the dark end. This is what
 // every legacy `gray-*` / `slate-*` utility in the codebase now resolves to, so
 // surfaces go warm and text goes navy without touching 100+ files.
+// 400/500 sit one step darker than a naive mapping would put them: legacy
+// `text-gray-400`/`-500` carry meta and secondary copy, and the lighter steps
+// fell below readable contrast on warm paper.
 const neutral = {
   950: '#050C14', 900: '#0A1520', 800: '#12233A', 700: '#23384F',
-  600: '#4A5F79', 500: '#7C8DA1', 400: '#94A6BA', 300: '#D6CEC1',
+  600: '#4A5F79', 500: '#5A7089', 400: '#7C8DA1', 300: '#D6CEC1',
   200: '#E6E0D6', 100: '#F3EFE8',  50: '#F7F4EF',
 };
 

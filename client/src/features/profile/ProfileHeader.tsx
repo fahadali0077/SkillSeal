@@ -61,7 +61,7 @@ export default function ProfileHeader({ profile, isOwner, onEdit }: Props) {
             <motion.div
               animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.6, 0.4] }}
               transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -top-20 -right-20 w-80 h-80 bg-white/15 rounded-full blur-[80px]"
+              className="hidden"
             />
             <motion.div
               animate={{ scale: [1.05, 1, 1.05], opacity: [0.25, 0.4, 0.25] }}

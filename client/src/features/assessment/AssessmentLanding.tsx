@@ -228,15 +228,15 @@ export default function AssessmentLanding() {
     <div className="max-w-5xl mx-auto px-4 py-8">
 
       {/* ── Compact gradient hero ──────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-paper-sunk text-white p-6 mb-6">
-        <div className="relative z-10 flex items-start justify-between gap-6 flex-wrap">
+      <div className="mb-6 pb-4 border-b border-paper-line">
+        <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 rounded border border-paper-line bg-paper-sunk text-ink-700 flex items-center justify-center shrink-0">
               <ShieldCheck size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-bold leading-tight">Skill Verification</h1>
-              <p className="text-white/80 text-sm">Earn verified badges through 20-question assessments</p>
+              <h1 className="font-display text-[28px] leading-none text-ink-900">Skill Verification</h1>
+              <p className="text-sm text-ink-500 mt-2">Earn verified badges through 20-question assessments</p>
             </div>
           </div>
 
@@ -244,25 +244,23 @@ export default function AssessmentLanding() {
           {hasVerifications && (
             <div className="flex gap-5 text-center">
               <div>
-                <div className="text-2xl font-bold tabular-nums">{certifiedCount}</div>
-                <div className="text-[11px] text-white/70 uppercase tracking-wide">Certified</div>
+                <div className="font-mono text-2xl leading-none text-ink-900 tabular-nums">{certifiedCount}</div>
+                <div className="label mt-1.5">Certified</div>
               </div>
-              <div className="w-px bg-white/20" />
+              <div className="w-px bg-paper-line" />
               <div>
-                <div className="text-2xl font-bold tabular-nums">{totalAttempts}</div>
-                <div className="text-[11px] text-white/70 uppercase tracking-wide">Attempts</div>
+                <div className="font-mono text-2xl leading-none text-ink-900 tabular-nums">{totalAttempts}</div>
+                <div className="label mt-1.5">Attempts</div>
               </div>
-              <div className="w-px bg-white/20" />
+              <div className="w-px bg-paper-line" />
               <div>
-                <div className="text-2xl font-bold tabular-nums">{avgScore}</div>
-                <div className="text-[11px] text-white/70 uppercase tracking-wide">Avg score</div>
+                <div className="font-mono text-2xl leading-none text-ink-900 tabular-nums">{avgScore}</div>
+                <div className="label mt-1.5">Avg score</div>
               </div>
             </div>
           )}
         </div>
         {/* Decorative gradient orbs */}
-        <div className="absolute -right-8 -top-12 w-44 h-44 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute -left-12 -bottom-12 w-44 h-44 rounded-full bg-white/5 blur-3xl pointer-events-none" />
       </div>
 
       {/* ── Slim step indicator ───────────────────────────────────────── */}

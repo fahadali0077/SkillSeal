@@ -62,14 +62,14 @@
            font-semibold text-sm rounded px-4 py-3
            hover:bg-seal-700 active:bg-seal-900
            transition-colors duration-150 ease-seal
-           disabled:bg-paper-rule disabled:text-ink-400 disabled:cursor-not-allowed;
+           disabled:bg-paper-rule disabled:text-ink-600 disabled:cursor-not-allowed;
   }
   .btn-ink {
     @apply inline-flex items-center justify-center gap-2 bg-ink-800 text-paper
            font-semibold text-sm rounded px-4 py-3
            hover:bg-ink-700 active:bg-ink-900
            transition-colors duration-150 ease-seal
-           disabled:bg-paper-rule disabled:text-ink-400 disabled:cursor-not-allowed;
+           disabled:bg-paper-rule disabled:text-ink-600 disabled:cursor-not-allowed;
   }
   .btn-quiet {
     @apply inline-flex items-center justify-center gap-2 bg-paper-card border border-paper-rule

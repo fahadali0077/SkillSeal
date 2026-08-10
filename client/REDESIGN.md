@@ -80,3 +80,57 @@ rings and hover-lift transforms.
 - **Timer colour assertions** in `src/tests/IsolationMode.test.tsx` were
   retargeted from the old blue/amber/red to the semantic `pass`/`warn`/`fail`
   hexes.
+
+---
+
+## Post-deploy fix pass
+
+Seven screenshots from the live deploy surfaced two regressions and one broken
+link. All three are fixed, and a contrast audit now guards the whole class.
+
+### 1 · Invisible subtitles on page headers
+
+The internal pages opened with dark gradient bands carrying white text. The
+sweep flattened the gradient to warm paper but left the text white — so titles
+survived (dark serif) while every subtitle vanished.
+
+Those bands are now **document headers**: serif title, ink subtitle, hairline
+rule beneath, decorative orbs gone. Affected: job search, my applications,
+notifications, network, skill verification.
+
+### 2 · Auth panel lost its background entirely
+
+A narrower bug. My sweep stripped `bg-paper-sunk` from *every* element in any
+file containing `bg-clip-text` — correct for the gradient-text node it targeted,
+wrong for the file's other five. `AuthShell`'s left panel lost its surface, and
+its white copy disappeared into the page. The `marketingTitle` spans had the
+mirror problem: gradient text converted to `text-ink-900`, i.e. ink on ink.
+
+`AuthShell` is rebuilt as a proper ink panel with paper text and a numbered
+trust list. Register / reset / forgot titles now use `seal-300` on ink, and the
+icon wells that lost their fill have paper backings again.
+
+### 3 · `/verify/lookup` returned "Certificate Not Found"
+
+My own error: I put that link in the landing nav, but the only route was
+`/verify/:certificateId`, so "lookup" was parsed as an ID.
+
+There is now a real `/verify` route with a certificate lookup form, and
+`PublicVerifyPage` is restyled — the result renders as the same certificate
+object used on the landing page, with status as a band rather than a big emoji
+shield. The not-found state names the ID that failed and offers a retry.
+
+### 4 · Contrast audit
+
+`/tmp/contrast.py` walks every public route, computes each text node's WCAG
+ratio against its own painted backdrop, and reports anything under 3.0. First
+run: **13 failures**. Current run: **0**.
+
+It also exposed a systemic flaw — legacy `text-gray-400` / `-500` carry meta and
+secondary copy, and my ramp had placed them a step too light on warm paper.
+`neutral-400` and `-500` are now one step darker, which fixed most failures at
+the token level rather than screen by screen. Disabled buttons went from
+`ink-400` to `ink-600` so they stay readable.
+
+Worth keeping this script around and pointing it at authenticated routes with a
+session cookie — the audit above only covers public pages.

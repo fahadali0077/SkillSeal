@@ -49,20 +49,20 @@ export default function NotificationsPage() {
     <div className="max-w-3xl mx-auto px-4 py-6">
 
       {/* ── Gradient hero ───────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-paper-sunk text-white p-5 sm:p-6 mb-5">
-        <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
+      <div className="mb-6 pb-4 border-b border-paper-line">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0 relative">
+            <div className="w-11 h-11 rounded border border-paper-line bg-paper-sunk text-ink-700 flex items-center justify-center shrink-0 relative">
               <Bell size={22} />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-seal-600 text-paper text-[10px] font-medium font-mono rounded-sm flex items-center justify-center border border-brand">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-seal-600 text-paper text-[10px] font-medium font-mono rounded-sm flex items-center justify-center border border-paper-card">
                   {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Notifications</h1>
-              <p className="text-white/80 text-sm mt-0.5">
+              <h1 className="font-display text-[28px] leading-none text-ink-900">Notifications</h1>
+              <p className="text-sm text-ink-500 mt-2">
                 {unreadCount > 0
                   ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`
                   : "You're all caught up"}
@@ -74,14 +74,12 @@ export default function NotificationsPage() {
             <button
               onClick={() => markAll.mutate()}
               disabled={markAll.isPending}
-              className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white font-medium text-xs px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+              className="btn-quiet py-2 px-3 text-xs"
             >
               <CheckCheck size={13} /> Mark all read
             </button>
           )}
         </div>
-        <div className="absolute -right-8 -top-12 w-44 h-44 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute -left-12 -bottom-12 w-44 h-44 rounded-full bg-white/5 blur-3xl pointer-events-none" />
       </div>
 
       {/* ── Filter tabs ─────────────────────────────────────────────────── */}
@@ -102,7 +100,7 @@ export default function NotificationsPage() {
               {t.label}
               {t.count > 0 && (
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-sm tabular-nums ${
-                  isActive ? 'bg-white/25' : 'bg-gray-200 text-gray-600'
+                  isActive ? 'bg-paper-card text-ink-900' : 'bg-paper-sunk text-ink-500'
                 }`}>
                   {t.count}
                 </span>

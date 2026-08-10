@@ -29,11 +29,11 @@ export default function CertificateAnnouncement({ badge, authorName }: Props) {
       className={`mt-3 rounded-2xl border border-blue-100 overflow-hidden ${tier.bg}`}
     >
       {/* Header bar */}
-      <div className={`bg-paper-sunk ${tier.color} px-5 py-3 flex items-center gap-3`}>
+      <div className={`bg-ink-900 px-5 py-3 flex items-center gap-3`}>
         <Trophy size={22} className="text-white shrink-0" />
         <div>
           <p className="text-white font-bold text-sm">{authorName} just got verified!</p>
-          <p className="text-white/80 text-xs">{badge.skillName} · {tier.label}</p>
+          <p className="text-ink-300 text-xs">{badge.skillName} · {tier.label}</p>
         </div>
       </div>
 

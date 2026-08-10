@@ -34,11 +34,11 @@ export default function ResetPasswordPage() {
   if (!token) {
     return (
       <AuthShell
-        marketingTitle={<>Hmm…<br /><span className=" text-ink-900">That link looks broken.</span></>}
+        marketingTitle={<>Hmm…<br /><span className="text-seal-300">That link looks broken.</span></>}
         marketingBody="Reset links expire after 1 hour for your security. Request a new one and we'll get you back on track."
       >
         <div className="card p-6 sm:p-8 text-center">
-          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-5 rounded border border-paper-line bg-paper-sunk flex items-center justify-center">
             <AlertCircle size={36} className="text-red-500" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Invalid link</h2>
@@ -56,11 +56,11 @@ export default function ResetPasswordPage() {
   if (done) {
     return (
       <AuthShell
-        marketingTitle={<>All set!<br /><span className=" text-ink-900">Password updated.</span></>}
+        marketingTitle={<>All set!<br /><span className="text-seal-300">Password updated.</span></>}
         marketingBody="Your new password is now active. Sign in to get back to verifying your skills."
       >
         <div className="card p-6 sm:p-8 text-center">
-          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-5 rounded border border-paper-line bg-paper-sunk flex items-center justify-center">
             <CheckCircle2 size={36} className="text-green-500" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">Password updated</h2>
@@ -92,11 +92,11 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthShell
-      marketingTitle={<>Choose a strong<br /><span className=" text-ink-900">new password.</span></>}
+      marketingTitle={<>Choose a strong<br /><span className="text-seal-300">new password.</span></>}
       marketingBody="Use at least 8 characters, mix upper- and lowercase, add a number and a special character."
     >
       <div className="card p-6 sm:p-8">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+        <div className="w-11 h-11 rounded border border-paper-line bg-paper-sunk flex items-center justify-center mb-4">
           <KeyRound size={22} className="text-brand" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-1 tracking-tight">Choose a new password</h2>

@@ -1,20 +1,19 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // AuthShell.tsx
 // Shared visual wrapper for Login / Register / ForgotPassword / ResetPassword.
-// Left panel (desktop only) shows branding + marketing copy.
+// Left panel (desktop only) is an ink surface carrying the brand statement.
 // Right panel renders the children (form, success screen, etc).
 // ─────────────────────────────────────────────────────────────────────────────
 import { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  ShieldCheck, BadgeCheck, Brain, Sparkles, CheckCircle2,
-} from 'lucide-react';
+import SealMark from '../../components/SealMark';
+import { enterAt } from '../../lib/motion';
 
 const TRUST_POINTS = [
-  { icon: <BadgeCheck size={14} />, text: 'AI-monitored, anti-cheat assessments' },
-  { icon: <Brain size={14} />,      text: 'Adaptive difficulty across 3 tiers' },
-  { icon: <ShieldCheck size={14} />, text: 'Publicly verifiable certificates' },
+  'Monitored sessions with a recorded integrity trail',
+  'Adaptive difficulty across four tiers',
+  'A public verification page for every certificate',
 ];
 
 interface Props {
@@ -26,126 +25,68 @@ interface Props {
 
 export default function AuthShell({ children, marketingTitle, marketingBody }: Props) {
   return (
-    <div className="min-h-screen bg-gray-50 grid lg:grid-cols-2">
+    <div className="min-h-screen bg-paper grid lg:grid-cols-2">
 
-      {/* ── LEFT: brand & marketing panel (desktop only) ──────────────── */}
-      <div className="hidden lg:flex relative overflow-hidden text-white p-10 xl:p-14 flex-col justify-between">
-
-        {/* Grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.06] pointer-events-none"
-          style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)',
-            backgroundSize: '52px 52px',
-          }}
-        />
-        {/* Animated glow */}
-        <motion.div
-          animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-1/3 -left-20 w-[420px] h-[420px] bg-brand/25 rounded-full blur-[120px] pointer-events-none"
-        />
-        <motion.div
-          animate={{ scale: [1.05, 1, 1.05], opacity: [0.25, 0.45, 0.25] }}
-          transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-          className="absolute bottom-10 right-0 w-80 h-80 bg-indigo-500/20 rounded-full blur-[110px] pointer-events-none"
-        />
-
-        {/* Logo */}
-        <div className="relative">
-          <Link to="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-brand/40 group- transition-transform">
-              <ShieldCheck size={20} className="text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight">SkillSeal</span>
+      {/* ── LEFT: ink panel (desktop only) ────────────────────────────── */}
+      <div className="hidden lg:flex bg-ink-900 text-paper p-10 xl:p-14 flex-col justify-between">
+        <div>
+          <Link to="/" className="inline-flex items-center gap-2.5">
+            <SealMark size={28} tone="seal" />
+            <span className="font-display font-medium text-xl leading-none tracking-[-0.015em] text-paper">
+              SkillSeal
+            </span>
           </Link>
         </div>
 
-        {/* Hero copy */}
-        <div className="relative">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-            className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-sm px-3 py-1 text-xs text-blue-200 mb-5"
-          >
-            <Sparkles size={12} className="text-blue-300" />
-            Verified Skills for Proven Hiring
-          </motion.div>
-
-          <motion.h2
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
-            className="text-3xl xl:text-4xl font-extrabold leading-tight tracking-tight max-w-md"
-          >
-            {marketingTitle ?? (
-              <>
-                Prove your skills.<br />
-                <span className=" text-ink-900">
-                  Earn your badge.
-                </span>
-              </>
-            )}
-          </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut', delay: 0.2 }}
-            className="mt-3 text-blue-100/70 text-sm max-w-md leading-relaxed"
-          >
-            {marketingBody ?? "Take a proctored AI assessment, get a verified badge, and let recruiters find you based on what you can actually do."}
+        <div className="min-w-0">
+          <motion.p {...enterAt(0)} className="font-mono text-[10px] font-medium tracking-[0.14em] uppercase text-seal-300">
+            Proctored skill credentials
           </motion.p>
 
-          {/* Trust points */}
-          <motion.ul
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: 'easeOut', delay: 0.3 }}
-            className="mt-7 space-y-2.5"
+          <motion.h2
+            {...enterAt(1)}
+            className="font-display text-[40px] xl:text-[46px] leading-[1.02] tracking-[-0.02em] text-paper mt-5 max-w-[16ch]"
           >
-            {TRUST_POINTS.map((p) => (
-              <li key={p.text} className="flex items-center gap-2.5 text-sm text-blue-100/85">
-                <span className="w-7 h-7 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-blue-300 shrink-0">
-                  {p.icon}
+            {marketingTitle ?? 'A skill claim anyone can look up.'}
+          </motion.h2>
+
+          <motion.p {...enterAt(2)} className="mt-5 text-[15px] leading-relaxed text-ink-300 max-w-[46ch]">
+            {marketingBody ?? 'Sit a monitored assessment. Pass, and SkillSeal issues a certificate with a score, an integrity record and a permanent public URL.'}
+          </motion.p>
+
+          <motion.ul {...enterAt(3)} className="mt-8 space-y-3">
+            {TRUST_POINTS.map((t, i) => (
+              <li key={t} className="flex gap-3.5 text-sm text-ink-200">
+                <span className="font-mono text-[11px] text-ink-400 tabular-nums pt-0.5 shrink-0">
+                  {String(i + 1).padStart(2, '0')}
                 </span>
-                {p.text}
+                {t}
               </li>
             ))}
           </motion.ul>
         </div>
 
-        {/* Bottom social proof */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="relative flex items-center gap-3 text-xs text-blue-200/70"
-        >
-          <CheckCircle2 size={13} className="text-blue-400" />
-          Free to get started — no credit card required
-        </motion.div>
+        <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-ink-400">
+          Free to start
+          <span className="mx-2.5 text-ink-400">·</span>
+          No card required
+        </p>
       </div>
 
       {/* ── RIGHT: form area ──────────────────────────────────────────── */}
       <div className="flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-md">
           {/* Mobile-only logo */}
-          <div className="lg:hidden text-center mb-6">
-            <Link to="/" className="inline-flex items-center gap-2 justify-center">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm">
-                <ShieldCheck size={19} className="text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900 tracking-tight">SkillSeal</span>
+          <div className="lg:hidden mb-8">
+            <Link to="/" className="inline-flex items-center gap-2.5">
+              <SealMark size={26} tone="seal" />
+              <span className="font-display font-medium text-xl leading-none tracking-[-0.015em] text-ink-900">
+                SkillSeal
+              </span>
             </Link>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-          >
+          <motion.div {...enterAt(0)}>
             {children}
           </motion.div>
         </div>

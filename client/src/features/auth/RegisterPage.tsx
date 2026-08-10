@@ -61,7 +61,7 @@ function EmailVerificationPending({ email, firstName }: { email: string; firstNa
 
   return (
     <AuthShell
-      marketingTitle={<>Almost there!<br /><span className=" text-ink-900">One quick step left.</span></>}
+      marketingTitle={<>Almost there!<br /><span className="text-seal-300">One quick step left.</span></>}
       marketingBody="We've sent you a verification email. Open it, click the link, and your SkillSeal account is ready to use."
     >
       <div className="card p-6 sm:p-8 text-center">
@@ -73,7 +73,7 @@ function EmailVerificationPending({ email, firstName }: { email: string; firstNa
           className="flex justify-center mb-6"
         >
           <div className="relative">
-            <div className="w-20 h-20 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 rounded border border-paper-line bg-paper-sunk flex items-center justify-center">
               <Mail size={36} className="text-brand" />
             </div>
             <motion.div

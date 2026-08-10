@@ -74,7 +74,7 @@ function LandingNav() {
               {l.label}
             </a>
           ))}
-          <Link to="/verify/lookup" className="text-sm font-medium text-ink-500 hover:text-ink-900 transition-colors">
+          <Link to="/verify" className="text-sm font-medium text-ink-500 hover:text-ink-900 transition-colors">
             Verify a certificate
           </Link>
         </nav>
@@ -209,7 +209,7 @@ function Hero() {
           <ul className="flex flex-wrap items-center gap-x-2.5 gap-y-1 font-mono text-[11px] tracking-[0.08em] uppercase text-ink-400 mt-6">
             {['Free to start', 'No card required', 'Results in 40 minutes'].map((t, i) => (
               <li key={t} className="flex items-center gap-2.5 whitespace-nowrap">
-                {i > 0 && <span className="text-paper-rule" aria-hidden="true">·</span>}
+                {i > 0 && <span className="text-ink-400" aria-hidden="true">·</span>}
                 {t}
               </li>
             ))}
@@ -387,7 +387,7 @@ function Footer() {
       </div>
       <div className="border-t border-ink-800">
         <div className="max-w-6xl mx-auto px-5 sm:px-6 py-4">
-          <p className="font-mono text-[10px] tracking-[0.08em] text-ink-500">
+          <p className="font-mono text-[10px] tracking-[0.08em] text-ink-300">
             © {new Date().getFullYear()} SkillSeal
           </p>
         </div>

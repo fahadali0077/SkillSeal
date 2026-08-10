@@ -64,19 +64,16 @@ export default function NetworkPage() {
     <div className="max-w-5xl mx-auto px-4 py-6">
 
       {/* ── Gradient hero ───────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-paper-sunk text-white p-5 sm:p-6 mb-5">
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+      <div className="mb-6 pb-4 border-b border-paper-line">
+        <div className="flex items-center gap-4">
+          <div className="w-11 h-11 rounded border border-paper-line bg-paper-sunk text-ink-700 flex items-center justify-center shrink-0">
             <Users size={22} />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">My Network</h1>
-            <p className="text-white/80 text-sm mt-0.5">Grow your professional circle on SkillSeal</p>
+            <h1 className="font-display text-[28px] leading-none text-ink-900">My Network</h1>
+            <p className="text-sm text-ink-500 mt-2">Grow your professional circle on SkillSeal</p>
           </div>
         </div>
-        {/* Decorative orbs */}
-        <div className="absolute -right-8 -top-12 w-44 h-44 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute -left-12 -bottom-12 w-44 h-44 rounded-full bg-white/5 blur-3xl pointer-events-none" />
       </div>
 
       {/* ── People search bar (above tabs, always visible) ──────────────── */}

@@ -168,3 +168,104 @@ actually showed.
 The default title and description were also still the old positioning
 ("Verified Skills for Proven Hiring", AI-assessment copy). Both now read from
 the redesign's language in `useSEO` and in the static `index.html` head.
+
+---
+
+## Open Graph card
+
+`public/og-image.jpg` was the last surviving piece of the old identity: dark blue
+gradient, glowing shield, "Verify Your Skills. Get Hired Faster." in a
+pink-to-blue gradient, "AI-Powered Skill Verification Platform" pill. Every
+share link still carried it.
+
+The replacement does what the landing hero does — shows the artifact rather than
+claiming a feature. Warm paper, the seal, and a full-fidelity certificate with
+its ID, score, integrity reading and expiry. Against the wall of dark-blue
+gradient cards in a typical feed, paper stands out more than another dark card
+would.
+
+Regenerate with `tools/generate-og-image.py`. It renders the card headlessly at
+exactly 1200×630 and writes both `og-image.png` and `og-image.jpg`. Because
+Google Fonts is not reachable in a sandbox, the script embeds Newsreader, Public
+Sans and JetBrains Mono as base64 `@font-face` rules pulled from the
+`@fontsource/*` npm packages — so the output always uses the real typefaces
+rather than a fallback serif.
+
+Checked at 500px and 320px wide, which is roughly how Slack and iMessage render
+an unfurl.
+
+The document head had also been pointing at `og-image.jpg` in one place and
+`og-image.png` in two others. It now uses the PNG throughout, which is what
+`useSEO` already defaulted to, plus a declared `og:image:type` and a real
+`og:image:alt`.
+
+---
+
+## Fix · app shell visible beneath the assessment result
+
+**Symptom.** On `/assessment/active`, scrolling past the result screen revealed
+the topbar, an empty page and the mobile nav sitting underneath it.
+
+**Cause.** `AssessmentOverlay` is mounted at the App level, above `<Routes>`, and
+`/assessment/active` renders `null` on the assumption that the overlay owns the
+screen. That holds while a question is on screen — that view is
+`fixed inset-0 z-[9000]`. But `IsolationMode` returned the completed and
+terminated screens *bare*, before that wrapper. Those dropped into normal
+document flow, while `<Routes>` went on rendering `Layout` with an empty body
+below them.
+
+This predates the redesign — the original file had the same shape — but the new
+palette made the seam obvious, since the ink result now meets a paper shell
+instead of two similar greys.
+
+**Fix.** A `SessionShell` wrapper (`fixed inset-0 overflow-y-auto
+overscroll-contain`, `role="dialog"`, `aria-modal`) now wraps every terminal
+state, so the overlay owns the viewport in all of them and scrolls internally.
+Added `useBodyScrollLock` so the page behind can't scroll underneath the overlay
+at all, and marked the active view `aria-modal` too.
+
+**Regression test.** `src/tests/IsolationMode.overlay.test.tsx` asserts that the
+active, completed and terminated states each render inside a fixed modal
+ancestor, and that body scroll is locked while mounted and restored on unmount.
+Confirmed it fails against the pre-fix code rather than passing vacuously.
+
+---
+
+## Result screens reworked
+
+`SessionComplete` and `SessionTerminated` had only had the automated sweep, so
+they were internally consistent but not considered against the direction: a
+circular score ring, a `rounded-full` status pill, five different hues on the
+score bars, a gradient certificate panel, and a trophy icon.
+
+**The framing now matches what the product is.** The examination happens in ink;
+what it produces is a paper document. So the certificate renders as the same
+artifact used on the landing page — white card, seal, mono ID, public URL —
+sitting on the ink result screen. Nothing else on the screen is white, so the
+issued object is unmistakably the point.
+
+- Score ring → a large mono figure against `/100`, with the verdict as a serif
+  headline rather than a badge.
+- Score bars → labelled readings with hairline fills. Only status carries
+  colour: integrity green, AI authenticity amber when flagged. The other three
+  are ink.
+- `SessionTerminated` → a record of what happened: result, what was written to
+  the record, who can see it, and what happens next — stated as facts in a
+  definition list rather than as a scolding.
+
+### A contradiction the render caught
+
+With `aiProbability > 0.5` the screen announced **"Certified"** and stamped the
+certificate **"Sealed"**, directly above a notice saying the credential was
+provisional pending review. A flagged pass now reads as provisional the whole
+way down: the headline says "Provisionally certified", the status reads "Under
+review", the certificate band says "Provisional", and the mark drops to ink so
+it doesn't read as a finished seal.
+
+### Test note
+
+`SessionComplete.test.tsx`'s AI-flag case used `queryByText(/flag/i)`, which
+started matching two nodes once a real notice existed (the notice, and the
+`v-flagged` verification URL). The test had ended in
+`expect(document.body).toBeTruthy()` — vacuous. It now asserts the notice
+itself.

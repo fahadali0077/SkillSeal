@@ -30,7 +30,35 @@ function useElapsed(active: boolean) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
+/**
+ * Owns the viewport for every assessment state, including the result and the
+ * termination screen. Anything rendered outside this would fall into normal
+ * document flow behind the app shell.
+ */
+function SessionShell({ children, label }: { children: React.ReactNode; label: string }) {
+  return (
+    <div
+      className="fixed inset-0 z-[9000] overflow-y-auto overscroll-contain bg-ink-900"
+      role="dialog"
+      aria-modal="true"
+      aria-label={label}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Stops the page behind the overlay from scrolling underneath it. */
+function useBodyScrollLock() {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+}
+
 export default function IsolationMode() {
+  useBodyScrollLock();
   const status = useAssessmentStatus();
   const currentQuestion = useCurrentQuestion();
   const timeRemainingMs = useTimeRemaining();
@@ -124,8 +152,28 @@ export default function IsolationMode() {
     }); return off;
   }, []);
 
-  if (status === 'terminated') return <SessionTerminated onReset={resetAssessment} />;
-  if (status === 'completed') return <SessionComplete sessionId={sessionId_c ?? ''} skillName={skillName ?? 'Assessment'} declaredTier={(tier ?? 'intermediate') as import('@SkillSeal/shared').SkillTier} onReset={resetAssessment} />;
+  // The terminal states stay inside the overlay. Returning them bare put them
+  // in normal document flow at the App level, which left the app shell — topbar,
+  // empty page, mobile nav — sitting underneath the result and visible on scroll.
+  if (status === 'terminated') {
+    return (
+      <SessionShell label="Session terminated">
+        <SessionTerminated onReset={resetAssessment} />
+      </SessionShell>
+    );
+  }
+  if (status === 'completed') {
+    return (
+      <SessionShell label="Session complete">
+        <SessionComplete
+          sessionId={sessionId_c ?? ''}
+          skillName={skillName ?? 'Assessment'}
+          declaredTier={(tier ?? 'intermediate') as import('@SkillSeal/shared').SkillTier}
+          onReset={resetAssessment}
+        />
+      </SessionShell>
+    );
+  }
 
   const isLoading = status === 'starting' || (status === 'submitting' && !currentQuestion);
   const qIndex = (sessionState?.currentQuestionIndex ?? 0) + 1;
@@ -137,6 +185,7 @@ export default function IsolationMode() {
       className="fixed inset-0 z-[9000] bg-ink-900 text-paper flex flex-col overflow-hidden selection:bg-seal-600 selection:text-paper"
       role="application"
       aria-label="Assessment in progress"
+      aria-modal="true"
     >
       <StrikeWarning strikeCount={strikeCount} />
 

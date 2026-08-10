@@ -11,7 +11,7 @@ interface SEOProps {
 
 const SITE_NAME = 'SkillSeal';
 const BASE_URL = 'https://skillseal.tech';
-const DEFAULT_OG_IMAGE = `${BASE_URL}/.png`;
+const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.png`;
 const DEFAULT_DESCRIPTION =
   'Sit a monitored, adaptive assessment. Pass, and SkillSeal issues a certificate with a public verification page, a score, an integrity record and an expiry date.';
 

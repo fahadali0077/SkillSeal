@@ -154,11 +154,9 @@ describe('Score < 50 — fail', () => {
 describe('AI flag notice', () => {
   it('shows flagged notice when aiProbability > 0.5', () => {
     renderSC({ initialData: makeReport(80, { aiProbability: 0.7, verificationId: 'v-flagged' }) as any });
-    const flagText = screen.queryByText(/flag/i) ||
-      screen.queryByText(/review/i) ||
-      screen.queryByText(/ai/i);
-    // Page renders without crash — flag notice presence depends on implementation
-    expect(document.body).toBeTruthy();
+    // Was: a /flag/i lookup that also matched the verification URL, ending in a
+    // vacuous `expect(document.body).toBeTruthy()`. Assert the notice itself.
+    expect(screen.getByText(/flagged for review/i)).toBeTruthy();
   });
 
   it('does not show AI flag with low aiProbability', () => {

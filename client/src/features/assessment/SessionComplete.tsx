@@ -1,31 +1,56 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Copy, CheckCheck, ExternalLink, ArrowRight, RefreshCw, Clock, Loader2, TrendingUp, AlertTriangle, Share2, Trophy } from 'lucide-react';
+import { Copy, CheckCheck, ArrowUpRight, Loader2 } from 'lucide-react';
 import type { SkillTier } from '@SkillSeal/shared';
 import { API_ORIGIN, apiFetch } from '../../lib/apiBase';
+import SealMark from '../../components/SealMark';
+
 interface ScoreBreakdown { compositeScore: number; conceptScore: number; speedScore: number; consistencyScore: number; behaviorScore: number; aiScore: number; aiProbability: number; }
 interface SessionReport { sessionId: string; status: string; finalTier: SkillTier | null; scores: ScoreBreakdown; verificationId: string | null; durationMs: number; completedAt: string; retakeAfterDays: number; }
 export interface Props { sessionId: string; skillName: string; declaredTier: SkillTier; certificateId?: string; onReset: () => void; initialData?: SessionReport; }
-function useCountUp(target: number, durationMs = 1500, enabled = false): number {
+
+const PASS = '#1D7A4C';
+const WARN = '#A8710F';
+const FAIL = '#A3221B';
+
+function useCountUp(target: number, durationMs = 900, enabled = false): number {
   const [value, setValue] = useState(0); const rafRef = useRef<number>(0);
   useEffect(() => { if (!enabled || target === 0) { setValue(0); return; } const start = performance.now(); const tick = (now: number) => { const pct = Math.min((now - start) / durationMs, 1); setValue(Math.round((1 - Math.pow(1 - pct, 3)) * target)); if (pct < 1) rafRef.current = requestAnimationFrame(tick); }; rafRef.current = requestAnimationFrame(tick); return () => cancelAnimationFrame(rafRef.current); }, [target, durationMs, enabled]);
   return value;
 }
-function ScoreBar({ label, value, color, delay }: { label: string; value: number; color: string; delay: number }) {
-  return (<motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay, type: 'spring', damping: 22 }} className="space-y-1.5">
-    <div className="flex items-center justify-between text-sm"><span className="text-gray-300">{label}</span><span className="font-bold tabular-nums" style={{ color }}>{value}</span></div>
-    <div className="h-2 bg-gray-800 rounded-full overflow-hidden"><motion.div className="h-full rounded-full" style={{ background: color }} initial={{ width: 0 }} animate={{ width: `${value}%` }} transition={{ duration: 0.9, ease: 'easeOut', delay: delay + 0.1 }} /></div>
-  </motion.div>);
+
+/** A measured reading with a hairline bar. No rainbow — only status is coloured. */
+function Reading({ label, value, tone }: { label: string; value: number; tone?: string }) {
+  return (
+    <div className="py-2.5">
+      <div className="flex items-baseline justify-between gap-4">
+        <span className="text-sm text-ink-300">{label}</span>
+        <span className="font-mono text-sm tabular-nums" style={{ color: tone ?? '#FBF9F6' }}>{value}</span>
+      </div>
+      <div className="h-px bg-ink-700 mt-2 overflow-hidden">
+        <motion.div
+          className="h-full"
+          style={{ background: tone ?? '#7C8DA1' }}
+          initial={{ width: 0 }}
+          animate={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+          transition={{ duration: 0.4, ease: [0.2, 0, 0, 1] }}
+        />
+      </div>
+    </div>
+  );
 }
+
 function RetakeCountdown({ days }: { days: number }) {
   const end = useRef(Date.now() + days * 86400000); const [label, setLabel] = useState('');
   useEffect(() => { const tick = () => { const diff = end.current - Date.now(); if (diff <= 0) { setLabel('now'); return; } const d = Math.floor(diff / 86400000), h = Math.floor((diff % 86400000) / 3600000), m = Math.floor((diff % 3600000) / 60000); setLabel(d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`); }; tick(); const id = setInterval(tick, 60000); return () => clearInterval(id); }, []);
-  return <span className="flex items-center gap-1.5 text-sm text-gray-500"><Clock size={13} />Retake opens in <strong className="text-gray-300 ml-1">{label}</strong></span>;
+  return <span className="font-mono text-[11px] tracking-[0.06em] uppercase text-ink-300 tabular-nums">Retake opens in {label}</span>;
 }
+
 export default function SessionComplete({ sessionId, skillName, declaredTier, certificateId: propCertId, onReset, initialData }: Props) {
   const [report, setReport] = useState<SessionReport | null>(initialData ?? null); const [certId, setCertId] = useState(propCertId ?? ''); const [fetchErr, setFetchErr] = useState(''); const [loading, setLoading] = useState(!initialData);
   const [idCopied, setIdCopied] = useState(false); const [urlCopied, setUrlCopied] = useState(false);
+
   useEffect(() => {
     if (initialData) return; let cancelled = false;
     // 12 retries with gentle backoff. Total budget: ~45s — enough for slow certificate issuance.
@@ -55,52 +80,166 @@ export default function SessionComplete({ sessionId, skillName, declaredTier, ce
     void attempt(0);
     return () => { cancelled = true; };
   }, [sessionId]);
-  const scores = report?.scores; const target = scores?.compositeScore ?? 0; const display = useCountUp(target, 1500, !loading && !!scores);
-  const passed = target >= 70; const partial = target >= 50 && target < 70; const statusColor = passed ? '#1D7A4C' : partial ? '#A8710F' : '#A3221B';
-  const R = 70, circ = 2 * Math.PI * R;
-  const tierLabel = { beginner: 'Beginner', intermediate: 'Mid Level', advanced: 'Advanced', expert: 'Expert' }[report?.finalTier ?? declaredTier] ?? 'Verified';
-  if (loading) return <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-4"><motion.div animate={{ rotate: 360 }} transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}><Loader2 size={40} className="text-brand" /></motion.div><p className="text-gray-400 text-sm">Computing your results…</p></div>;
-  if (fetchErr || !scores) return <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-5 px-6 text-center"><AlertTriangle size={40} className="text-amber-400" /><p className="text-white font-semibold text-lg">Results temporarily unavailable</p><p className="text-gray-400 text-sm max-w-sm">{fetchErr}</p><Link to="/profile" onClick={onReset} className="flex items-center gap-2 bg-white text-gray-900 font-semibold px-5 py-2.5 rounded-xl">Go to profile <ArrowRight size={15} /></Link></div>;
-  const BARS = [{ label: 'Concept accuracy', value: scores.conceptScore, color: '#23384F', delay: 0.30 }, { label: 'Response speed', value: scores.speedScore, color: '#4A5F79', delay: 0.40 }, { label: 'Consistency', value: scores.consistencyScore, color: '#7C8DA1', delay: 0.50 }, { label: 'Integrity', value: scores.behaviorScore, color: '#1D7A4C', delay: 0.60 }, { label: 'AI authenticity', value: scores.aiScore, color: '#A8710F', delay: 0.70 }];
+
+  const scores = report?.scores;
+  const target = scores?.compositeScore ?? 0;
+  const display = useCountUp(target, 900, !loading && !!scores);
+  const passed = target >= 70;
+  const partial = target >= 50 && target < 70;
+  const flaggedPass = passed && (scores?.aiProbability ?? 0) > 0.5;
+  const statusColor = flaggedPass ? WARN : passed ? PASS : partial ? WARN : FAIL;
+  const tierLabel = { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', expert: 'Expert' }[report?.finalTier ?? declaredTier] ?? 'Verified';
+  const flagged = (scores?.aiProbability ?? 0) > 0.5;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-ink-900 flex flex-col items-center justify-center gap-3 px-6">
+        <Loader2 size={22} className="animate-spin text-ink-300" />
+        <p className="font-mono text-[11px] tracking-[0.12em] uppercase text-ink-400">Computing your results</p>
+      </div>
+    );
+  }
+
+  if (fetchErr || !scores) {
+    return (
+      <div className="min-h-screen bg-ink-900 flex flex-col items-center justify-center px-6">
+        <div className="max-w-md w-full">
+          <p className="font-mono text-[10px] font-medium tracking-[0.14em] uppercase text-warn">Result pending</p>
+          <h1 className="font-display text-[30px] leading-tight text-paper mt-4">Results temporarily unavailable</h1>
+          <p className="text-sm leading-relaxed text-ink-300 mt-3">{fetchErr}</p>
+          <Link to="/profile" onClick={onReset} className="inline-flex items-center gap-2 bg-paper text-ink-900 font-semibold text-sm px-5 py-3 rounded mt-7 hover:bg-ink-100 transition-colors">
+            Go to profile <ArrowUpRight size={15} />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const READINGS = [
+    { label: 'Concept accuracy', value: scores.conceptScore },
+    { label: 'Response speed', value: scores.speedScore },
+    { label: 'Consistency', value: scores.consistencyScore },
+    { label: 'Integrity', value: scores.behaviorScore, tone: PASS },
+    { label: 'AI authenticity', value: scores.aiScore, tone: flagged ? WARN : undefined },
+  ];
+
   const publicUrl = `${window.location.origin}/verify/${report?.verificationId}`;
-  const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(publicUrl)}&title=${encodeURIComponent(`I earned a Verified ${tierLabel} ${skillName} badge on SkillSeal!`)}`;
-  const copyId = () => navigator.clipboard.writeText(certId).then(() => { setIdCopied(true); setTimeout(() => setIdCopied(false), 2000); });
+  const shownId = certId || report?.verificationId || '';
+  const copyId = () => navigator.clipboard.writeText(shownId).then(() => { setIdCopied(true); setTimeout(() => setIdCopied(false), 2000); });
   const copyUrl = () => navigator.clipboard.writeText(publicUrl).then(() => { setUrlCopied(true); setTimeout(() => setUrlCopied(false), 2000); });
+
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-5 py-12 overflow-y-auto">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', damping: 24 }} className="w-full max-w-lg space-y-5">
-        <div className="text-center space-y-3">
-          <p className="text-gray-500 text-xs uppercase tracking-widest">{skillName} · <span className="capitalize">{declaredTier}</span></p>
-          <div className="flex justify-center">
-            <div className="relative inline-flex items-center justify-center">
-              <svg width="168" height="168" viewBox="0 0 168 168" className="-rotate-90"><circle cx="84" cy="84" r={R} fill="none" stroke="#12233A" strokeWidth="12" /><motion.circle cx="84" cy="84" r={R} fill="none" stroke={statusColor} strokeWidth="12" strokeLinecap="round" strokeDasharray={circ} initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ * (1 - target / 100) }} transition={{ duration: 1.5, ease: 'easeOut', delay: 0.2 }} /></svg>
-              <div className="absolute flex flex-col items-center justify-center"><span className="text-4xl font-bold tabular-nums" style={{ color: statusColor }}>{display}</span><span className="text-gray-500 text-sm">/100</span></div>
+    <div className="min-h-screen bg-ink-900 px-5 py-14">
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.16, ease: [0.2, 0, 0, 1] }}
+        className="w-full max-w-lg mx-auto"
+      >
+        {/* ── The verdict ─────────────────────────────────────────────── */}
+        <p className="font-mono text-[10px] font-medium tracking-[0.14em] uppercase text-ink-400">
+          {skillName} · <span className="capitalize">{declaredTier}</span>
+        </p>
+
+        <h1 className="font-display text-[40px] leading-none tracking-[-0.02em] text-paper mt-4">
+          {flaggedPass ? 'Provisionally certified' : passed ? 'Certified' : 'Not certified'}
+        </h1>
+
+        <div className="flex items-baseline gap-3 mt-5 pb-6 border-b border-ink-700">
+          <span className="font-mono text-[52px] leading-none tabular-nums" style={{ color: statusColor }}>{display}</span>
+          <span className="font-mono text-base text-ink-400">/100</span>
+          <span className="ml-auto font-mono text-[10px] font-medium tracking-[0.12em] uppercase" style={{ color: statusColor }}>
+            {flaggedPass ? 'Under review' : passed ? `Sealed · ${tierLabel}` : 'Below threshold'}
+          </span>
+        </div>
+
+        {/* ── The certificate, if one was issued ──────────────────────── */}
+        {/* The examination was ink; what it produces is a paper document. */}
+        {passed && shownId && (
+          <div data-testid="cert-id" className="bg-paper-card border border-paper-rule rounded-2xl overflow-hidden mt-7 shadow-raised">
+            <div className="flex items-center justify-between gap-4 px-5 py-3.5 border-b border-paper-line">
+              <span className="label">Certificate of verification</span>
+              <span
+                className="font-mono text-[10px] tracking-[0.1em] uppercase"
+                style={{ color: flaggedPass ? WARN : PASS }}
+              >
+                {flaggedPass ? 'Provisional' : 'Sealed'}
+              </span>
+            </div>
+
+            <div className="px-5 py-6 flex items-start gap-4">
+              <SealMark size={48} tone={flaggedPass ? 'ink' : 'seal'} className="shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="label">For</p>
+                <p className="font-display text-[26px] leading-none text-ink-900 mt-1.5">
+                  {skillName}
+                  <span className="text-base text-ink-500 ml-2.5 font-sans font-semibold">{tierLabel}</span>
+                </p>
+
+                <p className="label mt-5">Certificate ID</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <code className="font-mono text-[13px] tracking-[0.04em] text-ink-700 flex-1 truncate">{shownId}</code>
+                  <button
+                    onClick={copyId}
+                    aria-label="Copy certificate ID"
+                    className="p-1.5 rounded-sm text-ink-400 hover:text-ink-900 hover:bg-paper-sunk transition-colors"
+                  >
+                    {idCopied ? <CheckCheck size={14} className="text-pass" /> : <Copy size={14} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 bg-paper-sunk border-t border-paper-line flex items-center gap-3">
+              <p className="font-mono text-[11px] tracking-[0.04em] text-ink-500 truncate flex-1">
+                Verified · {publicUrl.replace(/^https?:\/\//, '')}
+              </p>
+              <button onClick={copyUrl} className="text-xs font-semibold text-seal-600 hover:text-seal-700 whitespace-nowrap">
+                {urlCopied ? 'Copied' : 'Copy link'}
+              </button>
             </div>
           </div>
-          <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5, type: 'spring' }} className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border" style={{ background: `${statusColor}18`, borderColor: `${statusColor}40`, color: statusColor }}>
-            {passed && <><ShieldCheck size={16} /><span className="font-bold text-sm">Verified — {tierLabel}</span></>}
-            {partial && <><TrendingUp size={16} /><span className="font-bold text-sm">Almost there — {target}/100</span></>}
-            {!passed && !partial && <><AlertTriangle size={16} /><span className="font-bold text-sm">Not certified — {target}/100</span></>}
-          </motion.div>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
-          <p className="text-gray-600 text-xs uppercase tracking-wider font-semibold">Score breakdown</p>
-          {BARS.map(b => <ScoreBar key={b.label} {...b} />)}
-        </div>
-        {passed && (certId || report?.verificationId) && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75, type: 'spring', damping: 22 }} className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg,#1e3a5f 0%,#0a1628 100%)', border: '1px solid rgba(59,130,246,0.3)' }}>
-            <div className="px-5 py-3 border-b border-white/10 flex items-center gap-3"><ShieldCheck size={18} className="text-blue-400" /><div className="flex-1"><p className="text-blue-300 text-[11px] font-semibold uppercase tracking-wider">Verified Certificate</p><p className="text-white text-sm font-bold">{skillName} · <span className="capitalize">{tierLabel}</span></p></div><Trophy size={18} className="text-amber-400" /></div>
-            <div className="px-5 py-4"><p className="text-gray-600 text-xs mb-1">Certificate ID</p><div className="flex items-center gap-2"><code className="font-mono text-sm text-blue-300 tracking-widest flex-1">{certId || report?.verificationId}</code><button onClick={copyId} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400">{idCopied ? <CheckCheck size={14} className="text-green-400" /> : <Copy size={14} />}</button></div></div>
-            <div className="px-5 pb-4 flex gap-2">
-              <button onClick={copyUrl} className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium bg-white/10 hover:bg-white/20 text-gray-300 py-2 rounded-xl">{urlCopied ? <><CheckCheck size={13} className="text-green-400" />Copied!</> : <><Share2 size={13} />Copy public link</>}</button>
-              <a href={liUrl} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium bg-[#12233A] text-white py-2 rounded-xl"><ExternalLink size={13} />LinkedIn</a>
-            </div>
-          </motion.div>
         )}
-        {!passed && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-3"><p className="text-white font-semibold text-sm">{partial ? "You didn't quite make it — score 70+ to certify" : "Keep practising — you'll get there!"}</p><div className="flex items-center justify-between pt-1"><RetakeCountdown days={report!.retakeAfterDays} /><RefreshCw size={14} className="text-gray-700" /></div></motion.div>}
-        <div className="flex flex-col gap-3 pt-1">
-          <Link to="/profile" onClick={onReset} className="flex items-center justify-center gap-2 bg-white text-gray-900 font-semibold px-6 py-3 rounded-xl hover:bg-gray-100">View profile <ArrowRight size={16} /></Link>
-          <button onClick={onReset} className="text-gray-600 hover:text-gray-400 text-sm py-1">Back to assessments</button>
+
+        {/* ── Score breakdown ─────────────────────────────────────────── */}
+        <div className="mt-8">
+          <p className="font-mono text-[10px] font-medium tracking-[0.14em] uppercase text-ink-400 mb-2">Score breakdown</p>
+          <div className="divide-y divide-ink-700">
+            {READINGS.map(r => <Reading key={r.label} {...r} />)}
+          </div>
+        </div>
+
+        {flagged && (
+          <p className="text-sm leading-relaxed text-warn mt-6 pt-5 border-t border-ink-700">
+            This session was flagged for review — the written answers scored as likely AI-assisted.
+            The credential stays provisional until a reviewer confirms it.
+          </p>
+        )}
+
+        {/* ── Retake ──────────────────────────────────────────────────── */}
+        {!passed && (
+          <div className="mt-8 pt-6 border-t border-ink-700">
+            <p className="text-[15px] leading-relaxed text-ink-200">
+              {partial
+                ? 'Close. A score of 70 or above issues a certificate at this tier — the attempt stays on your record either way.'
+                : 'This attempt stays on your record. Sit it again once the cooldown ends, or try a lower tier.'}
+            </p>
+            <p className="mt-3"><RetakeCountdown days={report!.retakeAfterDays} /></p>
+          </div>
+        )}
+
+        {/* ── Actions ─────────────────────────────────────────────────── */}
+        <div className="flex flex-col gap-3 mt-9">
+          <Link
+            to="/profile"
+            onClick={onReset}
+            className="inline-flex items-center justify-center gap-2 bg-paper text-ink-900 font-semibold text-sm px-6 py-3.5 rounded hover:bg-ink-100 transition-colors"
+          >
+            View profile <ArrowUpRight size={16} />
+          </Link>
+          <button onClick={onReset} className="text-sm font-semibold text-ink-400 hover:text-paper py-1 transition-colors">
+            Back to assessments
+          </button>
         </div>
       </motion.div>
     </div>

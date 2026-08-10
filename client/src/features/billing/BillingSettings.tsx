@@ -2,9 +2,11 @@ import {Link} from 'react-router-dom';
 import {motion} from 'framer-motion';
 import {CreditCard,ShieldCheck,Calendar,CheckCircle2,XCircle,ExternalLink,Loader2,Zap,AlertTriangle} from 'lucide-react';
 import {useBillingStatus,useManageSubscription} from './billingApi';
+import { useSEO } from '../../lib/useSEO';
 const FEATURES=[{key:'unlimitedVerifications' as const,label:'Unlimited skill verifications'},{key:'inmail' as const,label:'InMail messaging'},{key:'profileViews' as const,label:'Who viewed your profile'},{key:'profileBoost' as const,label:'Profile boost in recruiter search'},{key:'recruiterDashboard' as const,label:'Recruiter dashboard'},{key:'csvExport' as const,label:'CSV export'}];
 const STATUS_BADGE:Record<string,{label:string;cls:string}>={active:{label:'Active',cls:'bg-green-50 text-green-700 border-green-200'},past_due:{label:'Payment due',cls:'bg-amber-50 text-amber-700 border-amber-200'},canceled:{label:'Canceled',cls:'bg-gray-100 text-gray-600 border-gray-200'},'':{label:'Free',cls:'bg-gray-100 text-gray-600 border-gray-200'}};
 export default function BillingSettings(){
+  useSEO({ title: 'Billing & plan', canonical: '/billing', noIndex: true });
   const{data:billing,isLoading}=useBillingStatus();const portal=useManageSubscription();
   if(isLoading)return <div className="flex justify-center py-20"><Loader2 size={28} className="animate-spin text-gray-300"/></div>;
   if(!billing)return null;

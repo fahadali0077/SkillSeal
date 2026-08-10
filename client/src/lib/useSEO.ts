@@ -13,7 +13,7 @@ const SITE_NAME = 'SkillSeal';
 const BASE_URL = 'https://skillseal.tech';
 const DEFAULT_OG_IMAGE = `${BASE_URL}/og-image.png`;
 const DEFAULT_DESCRIPTION =
-  'SkillSeal verifies candidate skills through AI-powered contextual assessments. Recruiters hire with confidence. Candidates prove their expertise with a Seal.';
+  'Sit a monitored, adaptive assessment. Pass, and SkillSeal issues a certificate with a public verification page, a score, an integrity record and an expiry date.';
 
 export function useSEO({
   title,
@@ -24,7 +24,7 @@ export function useSEO({
   noIndex = false,
 }: SEOProps = {}) {
   useEffect(() => {
-    const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Verified Skills for Proven Hiring`;
+    const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} — Proctored Skill Credentials`;
 
     // Title
     document.title = fullTitle;

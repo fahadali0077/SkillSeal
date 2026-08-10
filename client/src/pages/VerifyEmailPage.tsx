@@ -7,10 +7,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../features/auth/authApi';
+import { useSEO } from '../lib/useSEO';
 
 type Status = 'loading' | 'success' | 'error' | 'missing';
 
 export default function VerifyEmailPage() {
+  useSEO({ title: 'Confirm your email', canonical: '/verify-email', noIndex: true });
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<Status>('loading');

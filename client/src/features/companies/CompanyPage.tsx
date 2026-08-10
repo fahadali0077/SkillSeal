@@ -1,10 +1,12 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { useSEO } from '../../lib/useSEO';
 
 const API: string = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_URL) ?? '';
 
 export default function CompanyPage() {
+  useSEO({ title: 'Company' });
   const { slug } = useParams<{ slug: string }>();
 
   const { data, isLoading, error } = useQuery({

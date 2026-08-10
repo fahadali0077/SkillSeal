@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import SealMark from '../components/SealMark';
 import { enter, enterAt } from '../lib/motion';
+import { useSEO } from '../lib/useSEO';
 
 // ── Content ──────────────────────────────────────────────────────────────────
 
@@ -397,6 +398,11 @@ function Footer() {
 }
 
 export default function LandingPage() {
+  useSEO({
+    description: 'Sit a monitored, adaptive assessment. Pass, and SkillSeal issues a certificate with a public verification page, a score, an integrity record and an expiry date.',
+    canonical: '/',
+  });
+
   return (
     <div className="min-h-screen bg-paper">
       <LandingNav />

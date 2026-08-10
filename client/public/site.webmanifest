@@ -1,18 +1,20 @@
 {
-  "name": "SkillSeal — Verify Skills & Hire Verified Talent",
+  "name": "SkillSeal — Proctored Skill Credentials",
   "short_name": "SkillSeal",
-  "description": "Verify your technical skills with AI-powered assessments. Earn a badge recruiters trust.",
+  "description": "Sit a monitored assessment and receive a certificate anyone can look up.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0a66c2",
+  "background_color": "#FBF9F6",
+  "theme_color": "#12233A",
   "orientation": "portrait-primary",
   "categories": ["business", "productivity", "developer tools"],
   "icons": [
-    { "src": "/favicon-16.png",      "sizes": "16x16",   "type": "image/png" },
-    { "src": "/favicon-32.png",      "sizes": "32x32",   "type": "image/png" },
-    { "src": "/favicon-96.png",      "sizes": "96x96",   "type": "image/png" },
-    { "src": "/apple-touch-icon.png","sizes": "180x180", "type": "image/png" },
-    { "src": "/favicon.svg",         "sizes": "any",     "type": "image/svg+xml", "purpose": "maskable any" }
+    { "src": "/favicon-16.png",       "sizes": "16x16",   "type": "image/png" },
+    { "src": "/favicon-32.png",       "sizes": "32x32",   "type": "image/png" },
+    { "src": "/favicon-96.png",       "sizes": "96x96",   "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/favicon-192.png",      "sizes": "192x192", "type": "image/png" },
+    { "src": "/favicon-512.png",      "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/favicon.svg",          "sizes": "any",     "type": "image/svg+xml" }
   ]
 }

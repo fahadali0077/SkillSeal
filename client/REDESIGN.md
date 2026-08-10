@@ -134,3 +134,37 @@ the token level rather than screen by screen. Disabled buttons went from
 
 Worth keeping this script around and pointing it at authenticated routes with a
 session cookie — the audit above only covers public pages.
+
+---
+
+## Tab-bar fix pass
+
+### Favicon still showed the old blue shield
+
+`public/favicon.svg` was untouched by the redesign — a blue rounded square with a
+white shield and checkmark, i.e. exactly the consumer-app vocabulary the
+direction replaces. It now carries the mark: a solid oxblood disc with the
+struck serif S, rimless, per the spec's rule that the rim is dropped at 24px and
+under.
+
+The PNG set the HTML and manifest referenced (`favicon-16/32/96`) never existed
+in `public/`, and `apple-touch-icon.png` was a zero-byte file — so every browser
+was falling back to the SVG. All are now generated from the mark, with the
+milled rim retained at 96px and above where it reads. Added 192 and 512 for
+Android and install prompts. `site.webmanifest` moves to the ink theme colour on
+a paper background.
+
+### Home screen showed "Log In | SkillSeal"
+
+`useSEO` sets `document.title` on mount but never restores it, and
+`LandingPage` never called the hook — so navigating login → home left the login
+title in the tab. Client-side navigation made it stick indefinitely.
+
+`LandingPage` now claims the title, as do the four other routed pages that were
+missing it: post detail, verify-email, company, and billing. Verified by
+driving the SPA navigation rather than reloading, which is where the bug
+actually showed.
+
+The default title and description were also still the old positioning
+("Verified Skills for Proven Hiring", AI-assessment copy). Both now read from
+the redesign's language in `useSEO` and in the static `index.html` head.

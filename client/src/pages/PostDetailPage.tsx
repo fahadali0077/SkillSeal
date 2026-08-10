@@ -12,6 +12,7 @@ import { ArrowLeft, Hash, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { feedApi } from '../features/feed/feedApi';
 import CommentSection from '../features/feed/CommentSection';
+import { useSEO } from '../lib/useSEO';
 
 function Avatar({ src, name }: { src: string; name: string }) {
   return src
@@ -25,6 +26,11 @@ export default function PostDetailPage() {
     queryKey: ['post', id],
     queryFn:  () => feedApi.getPost(id!),
     enabled:  !!id,
+  });
+
+  useSEO({
+    title: post ? `${post.author.fullName}'s post` : 'Post',
+    canonical: id ? `/posts/${id}` : undefined,
   });
 
   if (isLoading) {

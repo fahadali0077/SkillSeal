@@ -8,10 +8,11 @@
     "dev": "ts-node-dev --respawn --transpile-only --exit-child src/index.ts",
     "build": "tsc --project tsconfig.json",
     "seed": "node dist/scripts/seedSkills.js",
-    "build:prod": "tsc --project tsconfig.json && node dist/scripts/seedSkills.js && node -e \"require('fs').rmSync('dist/scripts',{recursive:true,force:true})\"",
+    "build:prod": "tsc --project tsconfig.json && node scripts/smoke-dist.cjs && node dist/scripts/seedSkills.js && node -e \"require('fs').rmSync('dist/scripts',{recursive:true,force:true})\"",
     "start": "node dist/index.js",
     "lint": "eslint src --ext .ts --max-warnings 0",
-    "test": "jest --runInBand --forceExit --detectOpenHandles"
+    "test": "jest --runInBand --forceExit --detectOpenHandles",
+    "smoke": "node scripts/smoke-dist.cjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -43,14 +44,12 @@
     "socket.io": "^4.7.5",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5",
-    "uuid": "^14.0.1",
     "winston": "^3.13.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/node-cron": "^3.0.11",
-    "@types/uuid": "^11.0.0",
     "@typescript-eslint/eslint-plugin": "^7.12.0",
     "@typescript-eslint/parser": "^7.12.0",
     "eslint": "^8.57.0",

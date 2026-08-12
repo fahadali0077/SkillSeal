@@ -10,7 +10,11 @@
 // • Logs generation time and alerts if > 2000ms
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { v4 as uuidv4 } from 'uuid';
+// Node's built-in UUID generator. Replaces the `uuid` package, which went
+// ESM-only at v14 and broke this CommonJS build at runtime (the compiled
+// require() throws ERR_REQUIRE_ESM). randomUUID is v4, available since Node
+// 14.17, and removes a dependency plus its advisory entirely.
+import { randomUUID } from 'crypto';
 import type { IQuestion, IQuestionMutation, QuestionType, SkillTier } from '@SkillSeal/shared';
 import { getGroq } from '../config/groq';
 import logger from '../utils/logger';
@@ -134,7 +138,7 @@ function parseModelOutput(
     };
     return {
       ...base,
-      _id: uuidv4(),
+      _id: randomUUID(),
       correctAnswer: raw.correctAnswer,
       explanation: optionMap[raw.correctAnswer] ?? '',
       aiEvalCriteria: '',
@@ -164,7 +168,7 @@ function parseModelOutput(
   };
   return {
     ...base,
-    _id: uuidv4(),
+    _id: randomUUID(),
     correctAnswer: raw.rubric.join('\n'),
     explanation: '',
     aiEvalCriteria: raw.rubric.join('\n'),
